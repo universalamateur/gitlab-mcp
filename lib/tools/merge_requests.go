@@ -9,23 +9,55 @@ import (
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
+// MergeRequestsServiceInterface defines the interface for merge request-related GitLab operations.
+// It provides methods for retrieving and listing merge requests and their associated data such as
+// approvals, commits, changes, participants, pipelines, and dependencies.
 type MergeRequestsServiceInterface interface {
+	// AddTo registers all merge request-related tools with the provided MCPServer.
 	AddTo(srv *server.MCPServer)
+
+	// ListUserMergeRequests returns a tool for listing all merge requests authored by a specific user.
 	ListUserMergeRequests() server.ServerTool
+
+	// ListProjectMergeRequests returns a tool for listing all merge requests within a specific project.
 	ListProjectMergeRequests() server.ServerTool
+
+	// ListGroupMergeRequests returns a tool for listing all merge requests within a specific group.
 	ListGroupMergeRequests() server.ServerTool
+
+	// GetMergeRequest returns a tool for fetching a specific merge request by its ID.
 	GetMergeRequest() server.ServerTool
+
+	// GetMergeRequestApprovals returns a tool for fetching approval information for a specific merge request.
 	GetMergeRequestApprovals() server.ServerTool
+
+	// GetMergeRequestCommits returns a tool for fetching all commits associated with a specific merge request.
 	GetMergeRequestCommits() server.ServerTool
+
+	// GetMergeRequestChanges returns a tool for fetching file changes information for a specific merge request.
 	GetMergeRequestChanges() server.ServerTool
+
+	// ListMergeRequestDiffs returns a tool for listing all versions of diffs for a specific merge request.
 	ListMergeRequestDiffs() server.ServerTool
+
+	// GetMergeRequestParticipants returns a tool for fetching all participants of a specific merge request.
 	GetMergeRequestParticipants() server.ServerTool
+
+	// GetMergeRequestReviewers returns a tool for fetching all reviewers of a specific merge request.
 	GetMergeRequestReviewers() server.ServerTool
+
+	// ListMergeRequestPipelines returns a tool for listing all CI/CD pipelines for a specific merge request.
 	ListMergeRequestPipelines() server.ServerTool
+
+	// GetIssuesClosedOnMerge returns a tool for fetching all issues that would be closed by merging a specific merge request.
 	GetIssuesClosedOnMerge() server.ServerTool
+
+	// GetMergeRequestDependencies returns a tool for fetching all dependencies of a specific merge request.
 	GetMergeRequestDependencies() server.ServerTool
 }
 
+// NewMergeRequestsTools creates a new instance of MergeRequestsServiceInterface with the provided GitLab client
+// and current user. It returns an implementation that can be used to interact with GitLab's merge request API.
 func NewMergeRequestsTools(client *gitlab.Client, currentUser string) MergeRequestsServiceInterface {
 	return &mergeRequestsService{
 		client:      client,
@@ -38,6 +70,8 @@ type mergeRequestsService struct {
 	currentUser string
 }
 
+// AddTo registers all merge request-related tools with the provided MCPServer.
+// It adds tools for listing, retrieving, and managing merge requests and their associated data.
 func (m *mergeRequestsService) AddTo(srv *server.MCPServer) {
 	srv.AddTools(
 		m.ListUserMergeRequests(),
@@ -56,6 +90,8 @@ func (m *mergeRequestsService) AddTo(srv *server.MCPServer) {
 	)
 }
 
+// ListUserMergeRequests returns a ServerTool for listing all merge requests authored by a specific user.
+// The tool accepts optional author and state filter parameters.
 func (m *mergeRequestsService) ListUserMergeRequests() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.listUserMergeRequests,
@@ -109,6 +145,8 @@ func (m *mergeRequestsService) listUserMergeRequests(ctx context.Context, reques
 	return newToolResultJSON(mergeRequests)
 }
 
+// ListProjectMergeRequests returns a ServerTool for listing all merge requests within a specific project.
+// The tool accepts a project ID and optional state filter parameters.
 func (m *mergeRequestsService) ListProjectMergeRequests() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.listProjectMergeRequests,
@@ -162,6 +200,8 @@ func (m *mergeRequestsService) listProjectMergeRequests(ctx context.Context, req
 	return newToolResultJSON(mergeRequests)
 }
 
+// ListGroupMergeRequests returns a ServerTool for listing all merge requests within a specific group.
+// The tool accepts a group ID and optional state filter parameters.
 func (m *mergeRequestsService) ListGroupMergeRequests() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.listGroupMergeRequests,
@@ -215,6 +255,8 @@ func (m *mergeRequestsService) listGroupMergeRequests(ctx context.Context, reque
 	return newToolResultJSON(mergeRequests)
 }
 
+// GetMergeRequest returns a ServerTool for fetching information about a specific merge request.
+// The tool accepts a project ID and a merge request internal ID as parameters.
 func (m *mergeRequestsService) GetMergeRequest() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.getMergeRequest,
@@ -251,6 +293,8 @@ func (m *mergeRequestsService) getMergeRequest(ctx context.Context, request mcp.
 	return newToolResultJSON(mr)
 }
 
+// GetMergeRequestApprovals returns a ServerTool for fetching approval information for a specific merge request.
+// The tool accepts a project ID and a merge request internal ID as parameters.
 func (m *mergeRequestsService) GetMergeRequestApprovals() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.getMergeRequestApprovals,
@@ -285,6 +329,8 @@ func (m *mergeRequestsService) getMergeRequestApprovals(ctx context.Context, req
 	return newToolResultJSON(approvals)
 }
 
+// GetMergeRequestCommits returns a ServerTool for fetching all commits associated with a specific merge request.
+// The tool accepts a project ID and a merge request internal ID as parameters.
 func (m *mergeRequestsService) GetMergeRequestCommits() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.getMergeRequestCommits,
@@ -336,6 +382,8 @@ func (m *mergeRequestsService) getMergeRequestCommits(ctx context.Context, reque
 	return newToolResultJSON(commits)
 }
 
+// GetMergeRequestChanges returns a ServerTool for fetching file changes information for a specific merge request.
+// The tool accepts a project ID and a merge request internal ID as parameters.
 func (m *mergeRequestsService) GetMergeRequestChanges() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.getMergeRequestChanges,
@@ -372,6 +420,8 @@ func (m *mergeRequestsService) getMergeRequestChanges(ctx context.Context, reque
 	return newToolResultJSON(mr)
 }
 
+// ListMergeRequestDiffs returns a ServerTool for listing all versions of diffs for a specific merge request.
+// The tool accepts a project ID and a merge request internal ID as parameters.
 func (m *mergeRequestsService) ListMergeRequestDiffs() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.listMergeRequestDiffs,
@@ -425,6 +475,8 @@ func (m *mergeRequestsService) listMergeRequestDiffs(ctx context.Context, reques
 	return newToolResultJSON(diffs)
 }
 
+// GetMergeRequestParticipants returns a ServerTool for fetching all participants of a specific merge request.
+// The tool accepts a project ID and a merge request internal ID as parameters.
 func (m *mergeRequestsService) GetMergeRequestParticipants() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.getMergeRequestParticipants,
@@ -459,6 +511,8 @@ func (m *mergeRequestsService) getMergeRequestParticipants(ctx context.Context, 
 	return newToolResultJSON(participants)
 }
 
+// GetMergeRequestReviewers returns a ServerTool for fetching all reviewers of a specific merge request.
+// The tool accepts a project ID and a merge request internal ID as parameters.
 func (m *mergeRequestsService) GetMergeRequestReviewers() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.getMergeRequestReviewers,
@@ -493,6 +547,8 @@ func (m *mergeRequestsService) getMergeRequestReviewers(ctx context.Context, req
 	return newToolResultJSON(reviewers)
 }
 
+// ListMergeRequestPipelines returns a ServerTool for listing all CI/CD pipelines for a specific merge request.
+// The tool accepts a project ID and a merge request internal ID as parameters.
 func (m *mergeRequestsService) ListMergeRequestPipelines() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.listMergeRequestPipelines,
@@ -527,6 +583,8 @@ func (m *mergeRequestsService) listMergeRequestPipelines(ctx context.Context, re
 	return newToolResultJSON(pipelines)
 }
 
+// GetIssuesClosedOnMerge returns a ServerTool for fetching all issues that would be closed by merging a specific merge request.
+// The tool accepts a project ID and a merge request internal ID as parameters.
 func (m *mergeRequestsService) GetIssuesClosedOnMerge() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.getIssuesClosedOnMerge,
@@ -578,6 +636,8 @@ func (m *mergeRequestsService) getIssuesClosedOnMerge(ctx context.Context, reque
 	return newToolResultJSON(issues)
 }
 
+// GetMergeRequestDependencies returns a ServerTool for fetching all dependencies of a specific merge request.
+// The tool accepts a project ID and a merge request internal ID as parameters.
 func (m *mergeRequestsService) GetMergeRequestDependencies() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.getMergeRequestDependencies,

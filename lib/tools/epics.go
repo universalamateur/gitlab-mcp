@@ -9,14 +9,27 @@ import (
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
+// EpicServiceInterface defines the interface for epic-related GitLab operations.
+// It provides methods for retrieving and listing epics and their associated issues.
 type EpicServiceInterface interface {
+	// AddTo registers all epic-related tools with the provided MCPServer.
 	AddTo(srv *server.MCPServer)
+
+	// ListGroupEpics returns a tool for listing all epics in a specific group.
 	ListGroupEpics() server.ServerTool
+
+	// GetEpic returns a tool for fetching a specific epic by its ID.
 	GetEpic() server.ServerTool
+
+	// GetEpicLinks returns a tool for fetching all child epics of a specific epic.
 	GetEpicLinks() server.ServerTool
+
+	// ListEpicIssues returns a tool for listing all issues assigned to a specific epic.
 	ListEpicIssues() server.ServerTool
 }
 
+// NewEpicTools creates a new instance of EpicServiceInterface with the provided GitLab client.
+// It returns an implementation that can be used to interact with GitLab's epic API.
 func NewEpicTools(client *gitlab.Client) EpicServiceInterface {
 	return &epicService{client: client}
 }
@@ -25,6 +38,8 @@ type epicService struct {
 	client *gitlab.Client
 }
 
+// AddTo registers all epic-related tools with the provided MCPServer.
+// It adds tools for listing, retrieving, and managing epics and their associated issues.
 func (e *epicService) AddTo(srv *server.MCPServer) {
 	srv.AddTools(
 		e.ListGroupEpics(),
@@ -34,6 +49,8 @@ func (e *epicService) AddTo(srv *server.MCPServer) {
 	)
 }
 
+// ListGroupEpics returns a ServerTool for listing all epics in a specific group.
+// The tool accepts a group ID and optional state filter parameters.
 func (e *epicService) ListGroupEpics() server.ServerTool {
 	return server.ServerTool{
 		Handler: e.listGroupEpics,
@@ -87,6 +104,8 @@ func (e *epicService) listGroupEpics(ctx context.Context, request mcp.CallToolRe
 	return newToolResultJSON(epics)
 }
 
+// GetEpic returns a ServerTool for fetching information about a specific epic.
+// The tool accepts a group ID and an epic internal ID as parameters.
 func (e *epicService) GetEpic() server.ServerTool {
 	return server.ServerTool{
 		Handler: e.getEpic,
@@ -121,6 +140,8 @@ func (e *epicService) getEpic(ctx context.Context, request mcp.CallToolRequest) 
 	return newToolResultJSON(epic)
 }
 
+// GetEpicLinks returns a ServerTool for retrieving all child epics of a specific epic.
+// The tool accepts a group ID and an epic internal ID as parameters.
 func (e *epicService) GetEpicLinks() server.ServerTool {
 	return server.ServerTool{
 		Handler: e.getEpicLinks,
@@ -155,6 +176,8 @@ func (e *epicService) getEpicLinks(ctx context.Context, request mcp.CallToolRequ
 	return newToolResultJSON(epics)
 }
 
+// ListEpicIssues returns a ServerTool for listing all issues assigned to a specific epic.
+// The tool accepts a group ID and an epic internal ID as parameters.
 func (e *epicService) ListEpicIssues() server.ServerTool {
 	return server.ServerTool{
 		Handler: e.listEpicIssues,
