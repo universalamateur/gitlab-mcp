@@ -32,6 +32,9 @@ type Tools struct {
 
 	// MergeRequests provides access to GitLab merge request-related operations.
 	MergeRequests MergeRequestsServiceInterface
+
+	// Users provides tools for looking up user IDs, a user's activity and status, etc.
+	Users UsersServiceInterface
 }
 
 // New creates a new instance of Tools with the provided GitLab client and current user.
@@ -41,6 +44,7 @@ func New(client *gitlab.Client, currentUser string) *Tools {
 		Epics:         NewEpicTools(client),
 		Issues:        NewIssuesTools(client, currentUser),
 		MergeRequests: NewMergeRequestsTools(client, currentUser),
+		Users:         NewUsersTools(client, currentUser),
 	}
 }
 
@@ -50,6 +54,7 @@ func (s *Tools) AddTo(srv *server.MCPServer) {
 	s.Epics.AddTo(srv)
 	s.Issues.AddTo(srv)
 	s.MergeRequests.AddTo(srv)
+	s.Users.AddTo(srv)
 }
 
 // newToolResultJSON encodes the provided value as JSON and returns it as a tool result.
