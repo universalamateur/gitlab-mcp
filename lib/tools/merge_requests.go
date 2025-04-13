@@ -16,7 +16,7 @@ type MergeRequestsServiceInterface interface {
 	// AddTo registers all merge request-related tools with the provided MCPServer.
 	AddTo(srv *server.MCPServer)
 
-	// ListUserMergeRequests returns a tool for listing all merge requests authored by a specific user.
+	// ListUserMergeRequests returns a tool for listing all merge requests authored by or assigned to a specific user for review.
 	ListUserMergeRequests() server.ServerTool
 
 	// ListProjectMergeRequests returns a tool for listing all merge requests within a specific project.
@@ -90,18 +90,22 @@ func (m *mergeRequestsService) AddTo(srv *server.MCPServer) {
 	)
 }
 
-// ListUserMergeRequests returns a ServerTool for listing all merge requests authored by a specific user.
-// The tool accepts optional author and state filter parameters.
+// ListUserMergeRequests returns a ServerTool for listing all merge requests authored by or assigned to a specific user for review.
+// The tool accepts optional username and state filter parameters, as well as a role parameter to determine
+// whether to list merge requests where the user is the author or a reviewer.
 func (m *mergeRequestsService) ListUserMergeRequests() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.listUserMergeRequests,
 		Tool: mcp.NewTool("list_user_merge_requests",
-			mcp.WithDescription("Get all merge requests authors by a user"),
-			mcp.WithString("author",
-				mcp.Description("Filter merge requests by author. If left blank, returns all merge requests authored by the authenticated user")),
+			mcp.WithDescription("Get all merge requests authored by or assigned to a user for review"),
+			mcp.WithString("username",
+				mcp.Description("Filter merge requests by username. If left blank, returns merge requests for the authenticated user")),
 			mcp.WithString("state",
 				mcp.Description("Return all merge requests or just those that are opened, closed, or merged"),
 				mcp.Enum("all", "opened", "closed", "merged")),
+			mcp.WithString("role",
+				mcp.Description("Specify whether to list merge requests where the user is the author or reviewer"),
+				mcp.Enum("author", "reviewer")),
 		),
 	}
 }
@@ -117,11 +121,24 @@ func (m *mergeRequestsService) listUserMergeRequests(ctx context.Context, reques
 	)
 
 	// Parse optional parameters
-	author := m.currentUser
-	if a, ok := request.Params.Arguments["author"].(string); ok && a != "" {
-		author = a
+	username := m.currentUser
+	if u, ok := request.Params.Arguments["username"].(string); ok && u != "" {
+		username = u
 	}
-	opt.AuthorUsername = gitlab.Ptr(author)
+
+	role, _ := request.Params.Arguments["role"].(string)
+	if role == "" {
+		role = "author"
+	}
+
+	switch role {
+	case "author":
+		opt.AuthorUsername = gitlab.Ptr(username)
+	case "reviewer":
+		opt.ReviewerUsername = gitlab.Ptr(username)
+	default:
+		return nil, fmt.Errorf("invalid role: %q, must be one of 'author' or 'reviewer'", role)
+	}
 
 	if v, ok := request.Params.Arguments["state"].(string); ok && v != "" {
 		opt.State = gitlab.Ptr(v)
