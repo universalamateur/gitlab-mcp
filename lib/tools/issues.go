@@ -1,9 +1,7 @@
 package tools
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -46,7 +44,7 @@ func (i *issuesService) AddTo(srv *server.MCPServer) {
 
 func (i *issuesService) ListUserIssues() server.ServerTool {
 	return server.ServerTool{
-		Handler: i.listIssues,
+		Handler: i.listUserIssues,
 		Tool: mcp.NewTool("list_user_issues",
 			mcp.WithDescription("Lists all issues assigned to a user"),
 			mcp.WithBoolean("assignee",
@@ -58,7 +56,7 @@ func (i *issuesService) ListUserIssues() server.ServerTool {
 	}
 }
 
-func (i *issuesService) listIssues(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (i *issuesService) listUserIssues(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var (
 		opt = gitlab.ListIssuesOptions{
 			ListOptions: gitlab.ListOptions{
@@ -94,12 +92,7 @@ func (i *issuesService) listIssues(ctx context.Context, request mcp.CallToolRequ
 		opt.Page = resp.NextPage
 	}
 
-	var b bytes.Buffer
-	if err := json.NewEncoder(&b).Encode(issues); err != nil {
-		return nil, fmt.Errorf("encoding issue list: %w", err)
-	}
-
-	return mcp.NewToolResultText(b.String()), nil
+	return newToolResultJSON(issues)
 }
 
 func (i *issuesService) ListGroupIssues() server.ServerTool {
@@ -152,12 +145,7 @@ func (i *issuesService) listGroupIssues(ctx context.Context, request mcp.CallToo
 		opt.Page = resp.NextPage
 	}
 
-	var b bytes.Buffer
-	if err := json.NewEncoder(&b).Encode(issues); err != nil {
-		return nil, fmt.Errorf("encoding group issue list: %w", err)
-	}
-
-	return mcp.NewToolResultText(b.String()), nil
+	return newToolResultJSON(issues)
 }
 
 func (i *issuesService) ListProjectIssues() server.ServerTool {
@@ -210,12 +198,7 @@ func (i *issuesService) listProjectIssues(ctx context.Context, request mcp.CallT
 		opt.Page = resp.NextPage
 	}
 
-	var b bytes.Buffer
-	if err := json.NewEncoder(&b).Encode(issues); err != nil {
-		return nil, fmt.Errorf("encoding project issue list: %w", err)
-	}
-
-	return mcp.NewToolResultText(b.String()), nil
+	return newToolResultJSON(issues)
 }
 
 func (i *issuesService) GetIssue() server.ServerTool {
@@ -249,12 +232,7 @@ func (i *issuesService) getIssue(ctx context.Context, request mcp.CallToolReques
 		return nil, fmt.Errorf("GetIssue(%q, %d): %w", projectID, int(issueIID), err)
 	}
 
-	var b bytes.Buffer
-	if err := json.NewEncoder(&b).Encode(issue); err != nil {
-		return nil, fmt.Errorf("encoding issue: %w", err)
-	}
-
-	return mcp.NewToolResultText(b.String()), nil
+	return newToolResultJSON(issue)
 }
 
 func (i *issuesService) ListMergeRequestsRelatedToIssue() server.ServerTool {
@@ -305,10 +283,5 @@ func (i *issuesService) listMergeRequestsRelatedToIssue(ctx context.Context, req
 		opt.Page = resp.NextPage
 	}
 
-	var b bytes.Buffer
-	if err := json.NewEncoder(&b).Encode(mergeRequests); err != nil {
-		return nil, fmt.Errorf("encoding merge request list: %w", err)
-	}
-
-	return mcp.NewToolResultText(b.String()), nil
+	return newToolResultJSON(mergeRequests)
 }

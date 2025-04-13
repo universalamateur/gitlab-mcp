@@ -1,9 +1,7 @@
 package tools
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -120,12 +118,7 @@ func (e *epicService) getEpic(ctx context.Context, request mcp.CallToolRequest) 
 		return nil, fmt.Errorf("GetEpic(%q, %d): %w", groupID, int(epicIID), err)
 	}
 
-	var b bytes.Buffer
-	if err := json.NewEncoder(&b).Encode(epic); err != nil {
-		return nil, fmt.Errorf("encoding epic: %w", err)
-	}
-
-	return mcp.NewToolResultText(b.String()), nil
+	return newToolResultJSON(epic)
 }
 
 func (e *epicService) GetEpicLinks() server.ServerTool {
@@ -159,12 +152,7 @@ func (e *epicService) getEpicLinks(ctx context.Context, request mcp.CallToolRequ
 		return nil, fmt.Errorf("GetEpicLinks(%q, %d): %w", groupID, int(epicIID), err)
 	}
 
-	var b bytes.Buffer
-	if err := json.NewEncoder(&b).Encode(epics); err != nil {
-		return nil, fmt.Errorf("encoding epic list: %w", err)
-	}
-
-	return mcp.NewToolResultText(b.String()), nil
+	return newToolResultJSON(epics)
 }
 
 func (e *epicService) ListEpicIssues() server.ServerTool {
@@ -216,10 +204,5 @@ func (e *epicService) listEpicIssues(ctx context.Context, request mcp.CallToolRe
 		opts.Page = resp.NextPage
 	}
 
-	var b bytes.Buffer
-	if err := json.NewEncoder(&b).Encode(issues); err != nil {
-		return nil, fmt.Errorf("encoding issue list: %w", err)
-	}
-
-	return mcp.NewToolResultText(b.String()), nil
+	return newToolResultJSON(issues)
 }
