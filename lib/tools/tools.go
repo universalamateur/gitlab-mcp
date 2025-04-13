@@ -33,6 +33,9 @@ type Tools struct {
 	// MergeRequests provides access to GitLab merge request-related operations.
 	MergeRequests MergeRequestsServiceInterface
 
+	// Snippets provides access to GitLab snippet-related operations.
+	Snippets SnippetsServiceInterface
+
 	// Users provides tools for looking up user IDs, a user's activity and status, etc.
 	Users UsersServiceInterface
 }
@@ -44,6 +47,7 @@ func New(client *gitlab.Client, currentUser string) *Tools {
 		Epics:         NewEpicTools(client),
 		Issues:        NewIssuesTools(client, currentUser),
 		MergeRequests: NewMergeRequestsTools(client, currentUser),
+		Snippets:      NewSnippetsTools(client, currentUser),
 		Users:         NewUsersTools(client, currentUser),
 	}
 }
@@ -54,6 +58,7 @@ func (s *Tools) AddTo(srv *server.MCPServer) {
 	s.Epics.AddTo(srv)
 	s.Issues.AddTo(srv)
 	s.MergeRequests.AddTo(srv)
+	s.Snippets.AddTo(srv)
 	s.Users.AddTo(srv)
 }
 
