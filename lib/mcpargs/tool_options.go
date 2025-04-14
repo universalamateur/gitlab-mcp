@@ -10,6 +10,8 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
+var ErrMarshalArguments = errors.New("failed to marshal arguments")
+
 // NewTool is a wrapper around mcp.NewTool that automatically marshals the struct to MCP tool options.
 // It panics if the marshaling fails.
 func NewTool(name string, v any, opts ...mcp.ToolOption) mcp.Tool {
@@ -21,6 +23,7 @@ func NewTool(name string, v any, opts ...mcp.ToolOption) mcp.Tool {
 	if err != nil {
 		panic(err)
 	}
+
 	toolOpts = append(toolOpts, structOpts...)
 
 	return mcp.NewTool(name, toolOpts...)
@@ -34,15 +37,15 @@ func NewTool(name string, v any, opts ...mcp.ToolOption) mcp.Tool {
 //   - `mcp_desc`: Describes the field and is required.
 //   - `mcp_required`: Indicates if the field is required.
 //   - `mcp_enum`: Specifies allowed values for a string field in a comma-separated list.
-func Marshal(v any) ([]mcp.ToolOption, error) {
-
+func Marshal(v any) ([]mcp.ToolOption, error) { //nolint:cyclop,funlen,gocognit,gocyclo // Unfortunately reflection is complex.
 	// Get the type of the struct
 	t := reflect.TypeOf(v)
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
+
 	if t.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("expected struct, got %s", t.Kind())
+		return nil, fmt.Errorf("%w: expected struct, got %s", ErrMarshalArguments, t.Kind())
 	}
 
 	var (
@@ -71,7 +74,7 @@ func Marshal(v any) ([]mcp.ToolOption, error) {
 		// Set the description.
 		description := field.Tag.Get("mcp_desc")
 		if description == "" {
-			errs = errors.Join(errs, fmt.Errorf(`missing "mcp_desc" tag on field %q`, fieldName))
+			errs = errors.Join(errs, fmt.Errorf(`%w: missing "mcp_desc" tag on field %q`, ErrMarshalArguments, fieldName))
 			continue
 		}
 
@@ -84,14 +87,14 @@ func Marshal(v any) ([]mcp.ToolOption, error) {
 		case "false", "":
 			// no-op
 		default:
-			errs = errors.Join(errs, fmt.Errorf(`invalid "mcp_required" tag on field %q: must be "true" or "false"`, fieldName))
+			errs = errors.Join(errs, fmt.Errorf(`%w: invalid "mcp_required" tag on field %q: must be "true" or "false"`, ErrMarshalArguments, fieldName))
 			continue
 		}
 
 		// Set enum values if provided.
 		if enumTag := field.Tag.Get("mcp_enum"); enumTag != "" {
 			if fieldType.Kind() != reflect.String {
-				errs = errors.Join(errs, fmt.Errorf(`invalid "mcp_enum" tag on field %q: must be a string`, fieldName))
+				errs = errors.Join(errs, fmt.Errorf(`%w: invalid "mcp_enum" tag on field %q: must be a string`, ErrMarshalArguments, fieldName))
 				continue
 			}
 
@@ -116,13 +119,14 @@ func Marshal(v any) ([]mcp.ToolOption, error) {
 			case TypeNumber:
 				toolOpts = append(toolOpts, mcp.WithNumber(optName, propOpts...))
 			default:
-				errs = errors.Join(errs, fmt.Errorf("unsupported field type %v for field %q", typer.Marshal(), fieldName))
+				errs = errors.Join(errs, fmt.Errorf("%w: unsupported field type %v for field %q", ErrMarshalArguments, typer.Marshal(), fieldName))
 				continue
 			}
 
 			continue
 		}
 
+		//nolint:exhaustive // Unhandled cases return an error.
 		switch fieldType.Kind() {
 		case reflect.String:
 			toolOpts = append(toolOpts, mcp.WithString(optName, propOpts...))
@@ -133,7 +137,7 @@ func Marshal(v any) ([]mcp.ToolOption, error) {
 			reflect.Float32, reflect.Float64:
 			toolOpts = append(toolOpts, mcp.WithNumber(optName, propOpts...))
 		default:
-			errs = errors.Join(errs, fmt.Errorf("unsupported field type %q for field %q", fieldType.Kind(), fieldName))
+			errs = errors.Join(errs, fmt.Errorf("%w: unsupported field type %q for field %q", ErrMarshalArguments, fieldType.Kind(), fieldName))
 			continue
 		}
 	}
@@ -162,7 +166,7 @@ type Marshaler interface {
 	Marshal() MCPType
 }
 
-// toSnakeCase converts a camelCase string to snake_case
+// toSnakeCase converts a camelCase string to snake_case.
 func toSnakeCase(s string) string {
 	var result strings.Builder
 
@@ -178,6 +182,7 @@ func toSnakeCase(s string) string {
 				result.WriteRune('_')
 			}
 		}
+
 		result.WriteRune(unicode.ToLower(r))
 	}
 

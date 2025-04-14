@@ -159,9 +159,11 @@ func TestToolOptions(t *testing.T) {
 					t.Errorf("ToolOptions() error = nil, wantErr %q", tt.wantErr)
 					return
 				}
+
 				if !errors.Is(err, err) && !strings.Contains(err.Error(), tt.wantErr) {
 					t.Errorf("ToolOptions() error = %v, wantErr %q", err, tt.wantErr)
 				}
+
 				return
 			}
 
@@ -173,8 +175,6 @@ func TestToolOptions(t *testing.T) {
 			wantTool := mcp.NewTool("test_tool", tt.want...)
 			gotTool := mcp.NewTool("test_tool", got...)
 
-			// Use go-cmp to compare the results
-			// Note: We might need to create a custom comparer depending on how mcp.ToolOption is defined
 			if diff := cmp.Diff(wantTool, gotTool, cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("ToolOptions() mismatch (-want +got):\n%s", diff)
 			}
@@ -182,7 +182,7 @@ func TestToolOptions(t *testing.T) {
 	}
 }
 
-// TestToolOptionsMultipleErrors tests that multiple errors are correctly joined together
+// TestToolOptionsMultipleErrors tests that multiple errors are correctly joined together.
 func TestToolOptionsMultipleErrors(t *testing.T) {
 	input := struct {
 		Name  string

@@ -6,8 +6,9 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
+
+	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
 
 // EpicServiceInterface defines the interface for epic-related GitLab operations.
@@ -31,17 +32,17 @@ type EpicServiceInterface interface {
 
 // NewEpicTools creates a new instance of EpicServiceInterface with the provided GitLab client.
 // It returns an implementation that can be used to interact with GitLab's epic API.
-func NewEpicTools(client *gitlab.Client) EpicServiceInterface {
-	return &epicService{client: client}
+func NewEpicTools(client *gitlab.Client) *EpicService {
+	return &EpicService{client: client}
 }
 
-type epicService struct {
+type EpicService struct {
 	client *gitlab.Client
 }
 
 // AddTo registers all epic-related tools with the provided MCPServer.
 // It adds tools for listing, retrieving, and managing epics and their associated issues.
-func (e *epicService) AddTo(srv *server.MCPServer) {
+func (e *EpicService) AddTo(srv *server.MCPServer) {
 	srv.AddTools(
 		e.ListGroupEpics(),
 		e.GetEpic(),
@@ -57,7 +58,7 @@ type listGroupEpicsArgs struct {
 
 // ListGroupEpics returns a ServerTool for listing all epics in a specific group.
 // The tool accepts a group ID and optional state filter parameters.
-func (e *epicService) ListGroupEpics() server.ServerTool {
+func (e *EpicService) ListGroupEpics() server.ServerTool {
 	return server.ServerTool{
 		Handler: e.listGroupEpics,
 		Tool: mcpargs.NewTool("list_group_epics", listGroupEpicsArgs{},
@@ -66,10 +67,10 @@ func (e *epicService) ListGroupEpics() server.ServerTool {
 	}
 }
 
-func (e *epicService) listGroupEpics(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (e *EpicService) listGroupEpics(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listGroupEpicsArgs
 	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+		return nil, err //nolint:wrapcheck
 	}
 
 	var (
@@ -111,7 +112,7 @@ type getEpicArgs struct {
 
 // GetEpic returns a ServerTool for fetching information about a specific epic.
 // The tool accepts a group ID and an epic internal ID as parameters.
-func (e *epicService) GetEpic() server.ServerTool {
+func (e *EpicService) GetEpic() server.ServerTool {
 	return server.ServerTool{
 		Handler: e.getEpic,
 		Tool: mcpargs.NewTool("get_epic", getEpicArgs{},
@@ -120,10 +121,10 @@ func (e *epicService) GetEpic() server.ServerTool {
 	}
 }
 
-func (e *epicService) getEpic(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (e *EpicService) getEpic(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args getEpicArgs
 	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+		return nil, err //nolint:wrapcheck
 	}
 
 	epic, _, err := e.client.Epics.GetEpic(args.GroupID.Value(), args.EpicIID, gitlab.WithContext(ctx))
@@ -141,7 +142,7 @@ type getEpicLinksArgs struct {
 
 // GetEpicLinks returns a ServerTool for retrieving all child epics of a specific epic.
 // The tool accepts a group ID and an epic internal ID as parameters.
-func (e *epicService) GetEpicLinks() server.ServerTool {
+func (e *EpicService) GetEpicLinks() server.ServerTool {
 	return server.ServerTool{
 		Handler: e.getEpicLinks,
 		Tool: mcpargs.NewTool("get_epic_links", getEpicLinksArgs{},
@@ -150,10 +151,10 @@ func (e *epicService) GetEpicLinks() server.ServerTool {
 	}
 }
 
-func (e *epicService) getEpicLinks(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (e *EpicService) getEpicLinks(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args getEpicLinksArgs
 	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+		return nil, err //nolint:wrapcheck
 	}
 
 	epics, _, err := e.client.Epics.GetEpicLinks(args.GroupID.Value(), args.EpicIID, gitlab.WithContext(ctx))
@@ -171,7 +172,7 @@ type listEpicIssuesArgs struct {
 
 // ListEpicIssues returns a ServerTool for listing all issues assigned to a specific epic.
 // The tool accepts a group ID and an epic internal ID as parameters.
-func (e *epicService) ListEpicIssues() server.ServerTool {
+func (e *EpicService) ListEpicIssues() server.ServerTool {
 	return server.ServerTool{
 		Handler: e.listEpicIssues,
 		Tool: mcpargs.NewTool("list_epic_issues", listEpicIssuesArgs{},
@@ -180,10 +181,10 @@ func (e *epicService) ListEpicIssues() server.ServerTool {
 	}
 }
 
-func (e *epicService) listEpicIssues(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (e *EpicService) listEpicIssues(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listEpicIssuesArgs
 	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+		return nil, err //nolint:wrapcheck
 	}
 
 	var (

@@ -251,6 +251,7 @@ func TestUnmarshal(t *testing.T) {
 				if tt.wantErrContains != "" && !strings.Contains(err.Error(), tt.wantErrContains) {
 					t.Errorf("Unmarshal() error = %v, wantErrContains %q", err, tt.wantErrContains)
 				}
+
 				return
 			}
 
@@ -267,7 +268,7 @@ func TestUnmarshal(t *testing.T) {
 	}
 }
 
-// Additional test for errors
+// Additional test for errors.
 func TestUnmarshalErrors(t *testing.T) {
 	tests := []struct {
 		name            string

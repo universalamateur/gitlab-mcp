@@ -7,7 +7,7 @@ import (
 
 // ID is a type that can represent an ID either as a string or an integer.
 // It implements the Unmarshaler interface to unmarshal from either string or int types.
-type ID struct {
+type ID struct { //nolint:recvcheck // Unmarshal requires pointer receiver.
 	String  string
 	Integer int
 }
@@ -21,7 +21,7 @@ var _ Unmarshaler = &ID{}
 func (id *ID) Unmarshal(v any) error {
 	s, ok := v.(string)
 	if !ok {
-		return fmt.Errorf("cannot unmarshal ID from %T", v)
+		return fmt.Errorf("%w: cannot unmarshal ID from %T", ErrUnmarshalArguments, v)
 	}
 
 	if i, err := strconv.Atoi(s); err == nil {
@@ -47,6 +47,7 @@ func (id ID) Value() any {
 	if id.Integer != 0 {
 		return id.Integer
 	}
+
 	return id.String
 }
 
