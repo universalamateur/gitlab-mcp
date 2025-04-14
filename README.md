@@ -14,6 +14,8 @@ GitLab MCP implements the [Model Context Protocol](https://github.com/anthropics
 
 ## Installation
 
+### Option 1: Build from source
+
 1. Clone this repository
 2. Build the binary with `go build`
 3. Set up your GitLab token as an environment variable:
@@ -21,35 +23,21 @@ GitLab MCP implements the [Model Context Protocol](https://github.com/anthropics
    export GITLAB_TOKEN=your_gitlab_token
    ```
 
+### Option 2: Docker
+
+A pre-built Docker image is available:
+
+```bash
+docker run -e GITLAB_TOKEN=your_gitlab_token registry.gitlab.com/fforster/gitlab-mcp:latest
+```
+
+The Docker image contains the compiled GitLab MCP server and is the simplest way to get started.
+
 ## Usage with Claude Desktop
 
 To use the GitLab MCP server with Claude Desktop, add the following to your Claude Desktop configuration file:
 
-```json
-{
-  "mcpServers": {
-    "GitLab": {
-      "command": "/bin/bash",
-      "args": [
-        "-c",
-        "/path/to/gitlab-mcp"
-      ]
-    }
-  }
-}
-```
-
-The configuration file is typically located at:
-- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- Linux: `~/.config/Claude/claude_desktop_config.json`
-- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
-
-### Environment Variables
-
-You can provide the GitLab token in one of two ways:
-
-1. **Via shell initialization files** (as shown above using `bash -c`), where your `.bashrc` or similar file sets the `GITLAB_TOKEN` environment variable
-2. **Directly in the configuration**, by adding an `env` section:
+### Using the binary
 
 ```json
 {
@@ -63,6 +51,54 @@ You can provide the GitLab token in one of two ways:
   }
 }
 ```
+
+### Using Docker
+
+```json
+{
+  "mcpServers": {
+    "GitLab": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-e", "GITLAB_TOKEN",
+        "registry.gitlab.com/fforster/gitlab-mcp:latest"
+      ],
+      "env": {
+        "GITLAB_TOKEN": "your_gitlab_token"
+      }
+    }
+  }
+}
+```
+
+### Config file location
+
+The configuration file is typically located at:
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Linux: `~/.config/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+### Environment Variables
+
+You can provide the GitLab token in one of two ways:
+
+1. **Directly in the configuration**, by adding an `env` section. This is what the above examples use.
+2. **Via shell initialization files**, where your `.bashrc` or similar file sets the `GITLAB_TOKEN` environment variable:
+
+   ```json
+   {
+     "mcpServers": {
+       "GitLab": {
+         "command": "/bin/bash",
+         "args": [
+           "-c",
+           "/path/to/gitlab-mcp"
+         ],
+       }
+     }
+   }
+   ```
 
 ## Supported Tools
 
