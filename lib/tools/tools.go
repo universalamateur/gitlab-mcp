@@ -6,8 +6,6 @@
 // through a unified API. It handles pagination automatically and provides
 // convenient access to GitLab's epics, issues, and merge requests endpoints.
 // All results are returned as JSON for easy integration with other systems.
-//
-//nolint:dupl
 package tools
 
 import (
