@@ -204,6 +204,32 @@ func TestUnmarshal(t *testing.T) {
 			wantErr:         true,
 			wantErrContains: "must be a pointer to a struct",
 		},
+		{
+			name: "group ID using string",
+			arguments: map[string]any{
+				"id": "owner/namespace",
+			},
+			want: struct {
+				ID ID `mcp_desc:"The group ID" mcp_required:"true"`
+			}{
+				ID: ID{
+					String: "owner/namespace",
+				},
+			},
+		},
+		{
+			name: "group ID using integer",
+			arguments: map[string]any{
+				"id": "1234",
+			},
+			want: struct {
+				ID ID `mcp_desc:"The group ID" mcp_required:"true"`
+			}{
+				ID: ID{
+					Integer: 1234,
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

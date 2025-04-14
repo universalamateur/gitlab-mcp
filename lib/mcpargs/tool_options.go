@@ -33,7 +33,7 @@ func ToolOptions(v any) ([]mcp.ToolOption, error) {
 	)
 
 	// Iterate through all fields of the struct
-	for i := 0; i < t.NumField(); i++ {
+	for i := range t.NumField() {
 		field := t.Field(i)
 
 		// Skip unexported fields
@@ -81,6 +81,30 @@ func ToolOptions(v any) ([]mcp.ToolOption, error) {
 			propOpts = append(propOpts, mcp.Enum(enumValues...))
 		}
 
+		// If the field implements the MCPTyper interface, use the MCPType method to determine the tool option type.
+		var fieldValue reflect.Value
+		if reflect.ValueOf(v).Kind() == reflect.Ptr {
+			fieldValue = reflect.ValueOf(v).Elem().Field(i)
+		} else {
+			fieldValue = reflect.ValueOf(v).Field(i)
+		}
+
+		if typer, ok := fieldValue.Interface().(MCPTyper); ok {
+			switch typer.MCPType() {
+			case TypeString:
+				toolOpts = append(toolOpts, mcp.WithString(optName, propOpts...))
+			case TypeBoolean:
+				toolOpts = append(toolOpts, mcp.WithBoolean(optName, propOpts...))
+			case TypeNumber:
+				toolOpts = append(toolOpts, mcp.WithNumber(optName, propOpts...))
+			default:
+				errs = errors.Join(errs, fmt.Errorf("unsupported field type %v for field %q", typer.MCPType(), fieldName))
+				continue
+			}
+
+			continue
+		}
+
 		switch fieldType.Kind() {
 		case reflect.String:
 			toolOpts = append(toolOpts, mcp.WithString(optName, propOpts...))
@@ -101,6 +125,21 @@ func ToolOptions(v any) ([]mcp.ToolOption, error) {
 	}
 
 	return toolOpts, nil
+}
+
+type MCPType int
+
+const (
+	TypeString MCPType = iota
+	TypeNumber
+	TypeBoolean
+)
+
+// MCPTyper is an interface for types that can return their MCPType.
+// This allows the type to be identified without requiring knowledge of the specific type.
+// In particular, it allows MCP tool parameters to work with composite types.
+type MCPTyper interface {
+	MCPType() MCPType
 }
 
 // toSnakeCase converts a camelCase string to snake_case

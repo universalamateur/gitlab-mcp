@@ -37,13 +37,6 @@ func Unmarshal(arguments map[string]any, v any) error {
 			continue
 		}
 
-		// Check for unsupported field types
-		switch field.Type.Kind() {
-		case reflect.Struct, reflect.Chan, reflect.Func, reflect.Map, reflect.Slice, reflect.Array,
-			reflect.Interface, reflect.Ptr:
-			errs = errors.Join(errs, fmt.Errorf("field %q has unsupported type %s", field.Name, field.Type.Kind()))
-		}
-
 		snakeName := toSnakeCase(field.Name)
 		value, ok := arguments[snakeName]
 		if !ok {
@@ -58,13 +51,34 @@ func Unmarshal(arguments map[string]any, v any) error {
 		// Get the field value we want to set
 		fieldValue := rv.Field(i)
 
+		// First, check if the field implements the Unmarshaler interface
+		// We need to create a pointer to the field since Unmarshaler is only implemented on pointer types
+		if fieldValue.CanAddr() {
+			ptrToField := fieldValue.Addr()
+
+			// Check if the pointer implements Unmarshaler
+			if unmarshaler, ok := ptrToField.Interface().(Unmarshaler); ok {
+				if err := unmarshaler.Unmarshal(value); err != nil {
+					errs = errors.Join(errs, fmt.Errorf("failed to unmarshal field %q: %w", field.Name, err))
+				}
+				continue
+			}
+		}
+
+		// Check for unsupported field types
+		switch field.Type.Kind() {
+		case reflect.Struct, reflect.Chan, reflect.Func, reflect.Map, reflect.Slice, reflect.Array,
+			reflect.Interface, reflect.Ptr:
+			errs = errors.Join(errs, fmt.Errorf("field %q has unsupported type %s", field.Name, field.Type.Kind()))
+		}
+
 		// Only set the field if it's settable (exported)
 		if !fieldValue.CanSet() {
 			errs = errors.Join(errs, fmt.Errorf("field %q is not settable", field.Name))
 			continue
 		}
 
-		// Try to convert the value to the field's type and set it
+		// If not a custom unmarshaler, try to convert the value to the field's type and set it
 		if err := setValue(fieldValue, value); err != nil {
 			errs = errors.Join(errs, fmt.Errorf("failed to set field %q: %w", field.Name, err))
 		}
@@ -181,4 +195,9 @@ func setValue(target reflect.Value, value any) error {
 	}
 
 	return nil
+}
+
+// Unmarshaler is the interface implemented by types that can unmarshal an MCP argument themselves.
+type Unmarshaler interface {
+	Unmarshal(v any) error
 }

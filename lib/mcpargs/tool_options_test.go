@@ -138,6 +138,15 @@ func TestToolOptions(t *testing.T) {
 			want:    nil,
 			wantErr: `missing "mcp_desc" tag on field "Name"`,
 		},
+		{
+			name: "field implementing MCPTyper",
+			input: struct {
+				ID ID `mcp_desc:"The resource ID" mcp_required:"true"`
+			}{},
+			want: []mcp.ToolOption{
+				mcp.WithString("id", mcp.Description("The resource ID"), mcp.Required()),
+			},
+		},
 	}
 
 	for _, tt := range tests {
