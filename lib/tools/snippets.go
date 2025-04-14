@@ -2,11 +2,11 @@ package tools
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
@@ -102,28 +102,32 @@ func (s *snippetsService) listUserSnippets(ctx context.Context, request mcp.Call
 	return newToolResultJSON(snippets)
 }
 
+type listAllSnippetsArgs struct {
+	IncludePrivate bool `mcp_desc:"Include private snippets in the results. If false (the default), only public snippets are returned"`
+}
+
 // ListAllSnippets returns a ServerTool for listing all snippets the user has access to.
 // The include_private parameter determines whether to include private snippets or only public ones.
 func (s *snippetsService) ListAllSnippets() server.ServerTool {
 	return server.ServerTool{
 		Handler: s.listAllSnippets,
-		Tool: mcp.NewTool("list_all_snippets",
+		Tool: mcpargs.NewTool("list_all_snippets", listAllSnippetsArgs{},
 			mcp.WithDescription("List all snippets the user has access to"),
-			mcp.WithBoolean("include_private",
-				mcp.Description("Include private snippets in the results. If false (the default), only public snippets are returned")),
 		),
 	}
 }
 
 func (s *snippetsService) listAllSnippets(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	var args listAllSnippetsArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+	}
+
 	var (
 		snippets []*gitlab.Snippet
 	)
 
-	// Check if we should include private snippets
-	includePrivate, _ := request.Params.Arguments["include_private"].(bool)
-
-	if includePrivate {
+	if args.IncludePrivate {
 		// List all snippets (private and public)
 		opt := &gitlab.ListAllSnippetsOptions{
 			ListOptions: gitlab.ListOptions{
@@ -170,32 +174,37 @@ func (s *snippetsService) listAllSnippets(ctx context.Context, request mcp.CallT
 	return newToolResultJSON(snippets)
 }
 
+type getSnippetArgs struct {
+	SnippetID int `mcp_desc:"The ID of the snippet" mcp_required:"true"`
+}
+
 // GetSnippet returns a ServerTool for fetching information about a specific snippet.
 // The tool accepts a snippet ID as a parameter.
 func (s *snippetsService) GetSnippet() server.ServerTool {
 	return server.ServerTool{
 		Handler: s.getSnippet,
-		Tool: mcp.NewTool("get_snippet",
+		Tool: mcpargs.NewTool("get_snippet", getSnippetArgs{},
 			mcp.WithDescription("Returns the metadata of a snippet, such as title and description. File content is not returned."),
-			mcp.WithNumber("snippet_id",
-				mcp.Description("The ID of the snippet"),
-				mcp.Required()),
 		),
 	}
 }
 
 func (s *snippetsService) getSnippet(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	snippetID, err := intParam(request.Params.Arguments["snippet_id"])
-	if err != nil {
-		return nil, fmt.Errorf("invalid snippet ID: %w", err)
+	var args getSnippetArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
 	}
 
-	snippet, _, err := s.client.Snippets.GetSnippet(int(snippetID), gitlab.WithContext(ctx))
+	snippet, _, err := s.client.Snippets.GetSnippet(args.SnippetID, gitlab.WithContext(ctx))
 	if err != nil {
-		return nil, fmt.Errorf("GetSnippet(%d): %w", int(snippetID), err)
+		return nil, fmt.Errorf("GetSnippet(%d): %w", args.SnippetID, err)
 	}
 
 	return newToolResultJSON(snippet)
+}
+
+type getSnippetContentArgs struct {
+	SnippetID int `mcp_desc:"The ID of the snippet" mcp_required:"true"`
 }
 
 // GetSnippetContent returns a ServerTool for fetching the content of a specific snippet.
@@ -203,27 +212,32 @@ func (s *snippetsService) getSnippet(ctx context.Context, request mcp.CallToolRe
 func (s *snippetsService) GetSnippetContent() server.ServerTool {
 	return server.ServerTool{
 		Handler: s.getSnippetContent,
-		Tool: mcp.NewTool("get_snippet_content",
+		Tool: mcpargs.NewTool("get_snippet_content", getSnippetContentArgs{},
 			mcp.WithDescription("Get the raw content of a snippet"),
-			mcp.WithNumber("snippet_id",
-				mcp.Description("The ID of the snippet"),
-				mcp.Required()),
 		),
 	}
 }
 
 func (s *snippetsService) getSnippetContent(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	snippetID, err := intParam(request.Params.Arguments["snippet_id"])
-	if err != nil {
-		return nil, fmt.Errorf("invalid snippet ID: %w", err)
+	var args getSnippetContentArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
 	}
 
-	content, _, err := s.client.Snippets.SnippetContent(snippetID, gitlab.WithContext(ctx))
+	content, _, err := s.client.Snippets.SnippetContent(args.SnippetID, gitlab.WithContext(ctx))
 	if err != nil {
-		return nil, fmt.Errorf("SnippetContent(%d): %w", snippetID, err)
+		return nil, fmt.Errorf("SnippetContent(%d): %w", args.SnippetID, err)
 	}
 
 	return newToolResultJSON(map[string]string{"content": string(content)})
+}
+
+type createSnippetArgs struct {
+	Title       string `mcp_desc:"The title of the snippet" mcp_required:"true"`
+	FileName    string `mcp_desc:"The name of the snippet file" mcp_required:"true"`
+	Content     string `mcp_desc:"The content of the snippet" mcp_required:"true"`
+	Visibility  string `mcp_desc:"The visibility level of the snippet. Default to private." mcp_enum:"private,internal,public"`
+	Description string `mcp_desc:"The description of the snippet"`
 }
 
 // CreateSnippet returns a ServerTool for creating a new snippet.
@@ -231,46 +245,21 @@ func (s *snippetsService) getSnippetContent(ctx context.Context, request mcp.Cal
 func (s *snippetsService) CreateSnippet() server.ServerTool {
 	return server.ServerTool{
 		Handler: s.createSnippet,
-		Tool: mcp.NewTool("create_snippet",
+		Tool: mcpargs.NewTool("create_snippet", createSnippetArgs{},
 			mcp.WithDescription("Create a new snippet"),
-			mcp.WithString("title",
-				mcp.Description("The title of the snippet"),
-				mcp.Required()),
-			mcp.WithString("file_name",
-				mcp.Description("The name of the snippet file"),
-				mcp.Required()),
-			mcp.WithString("content",
-				mcp.Description("The content of the snippet"),
-				mcp.Required()),
-			mcp.WithString("visibility",
-				mcp.Description("The visibility level of the snippet. Default to private."),
-				mcp.Enum("private", "internal", "public")),
-			mcp.WithString("description",
-				mcp.Description("The description of the snippet")),
 		),
 	}
 }
 
 func (s *snippetsService) createSnippet(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	// Required arguments
-	title, ok := request.Params.Arguments["title"].(string)
-	if !ok || title == "" {
-		return nil, errors.New(`the "title" argument is required`)
+	var args createSnippetArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
 	}
 
-	fileName, ok := request.Params.Arguments["file_name"].(string)
-	if !ok || fileName == "" {
-		return nil, errors.New(`the "file_name" argument is required`)
-	}
-
-	content, ok := request.Params.Arguments["content"].(string)
-	if !ok || content == "" {
-		return nil, errors.New(`the "content" argument is required`)
-	}
-
-	// Optional arguments
-	visibility, ok := request.Params.Arguments["visibility"].(string)
-	if !ok || visibility == "" {
+	// Set default visibility if not provided
+	visibility := args.Visibility
+	if visibility == "" {
 		visibility = "private"
 	}
 
@@ -287,19 +276,19 @@ func (s *snippetsService) createSnippet(ctx context.Context, request mcp.CallToo
 	}
 
 	opt := &gitlab.CreateSnippetOptions{
-		Title:      gitlab.Ptr(title),
+		Title:      gitlab.Ptr(args.Title),
 		Visibility: &visibilityLevel,
 		Files: gitlab.Ptr([]*gitlab.CreateSnippetFileOptions{
 			{
-				FilePath: gitlab.Ptr(fileName),
-				Content:  gitlab.Ptr(content),
+				FilePath: gitlab.Ptr(args.FileName),
+				Content:  gitlab.Ptr(args.Content),
 			},
 		}),
 	}
 
 	// Add description if provided
-	if description, ok := request.Params.Arguments["description"].(string); ok && description != "" {
-		opt.Description = gitlab.Ptr(description)
+	if args.Description != "" {
+		opt.Description = gitlab.Ptr(args.Description)
 	}
 
 	snippet, _, err := s.client.Snippets.CreateSnippet(opt, gitlab.WithContext(ctx))
@@ -310,53 +299,37 @@ func (s *snippetsService) createSnippet(ctx context.Context, request mcp.CallToo
 	return newToolResultJSON(snippet)
 }
 
+type updateSnippetArgs struct {
+	SnippetID   int    `mcp_desc:"The ID of the snippet to update" mcp_required:"true"`
+	Title       string `mcp_desc:"The title of the snippet"`
+	Description string `mcp_desc:"The description of the snippet"`
+	Visibility  string `mcp_desc:"The visibility level of the snippet" mcp_enum:"private,internal,public"`
+	FileAction  string `mcp_desc:"The action to perform on the file. Default is 'replace'" mcp_enum:"create,update,delete,move" mcp_required:"true"`
+	FileName    string `mcp_desc:"The name of the snippet file" mcp_required:"true"`
+	Content     string `mcp_desc:"The content of the snippet" mcp_required:"true"`
+}
+
 // UpdateSnippet returns a ServerTool for updating an existing snippet.
 // The tool accepts snippet_id and optional title, file_name, content, visibility, and description parameters.
 func (s *snippetsService) UpdateSnippet() server.ServerTool {
 	return server.ServerTool{
 		Handler: s.updateSnippet,
-		Tool: mcp.NewTool("update_snippet",
+		Tool: mcpargs.NewTool("update_snippet", updateSnippetArgs{},
 			mcp.WithDescription("Update an existing snippet"),
-			mcp.WithNumber("snippet_id",
-				mcp.Description("The ID of the snippet to update"),
-				mcp.Required()),
-			mcp.WithString("title",
-				mcp.Description("The title of the snippet")),
-			mcp.WithString("description",
-				mcp.Description("The description of the snippet")),
-			mcp.WithString("visibility",
-				mcp.Description("The visibility level of the snippet"),
-				mcp.Enum("private", "internal", "public")),
-			mcp.WithString("file_action",
-				mcp.Description("The action to perform on the file. Default is 'replace'"),
-				mcp.Enum("create", "update", "delete", "move"),
-				mcp.Required()),
-			mcp.WithString("file_name",
-				mcp.Description("The name of the snippet file"),
-				mcp.Required()),
-			mcp.WithString("content",
-				mcp.Description("The content of the snippet"),
-				mcp.Required()),
 		),
 	}
 }
 
 func (s *snippetsService) updateSnippet(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	snippetID, err := intParam(request.Params.Arguments["snippet_id"])
-	if err != nil {
-		return nil, fmt.Errorf("invalid snippet ID: %w", err)
+	var args updateSnippetArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
 	}
 
 	opt := &gitlab.UpdateSnippetOptions{}
 
-	// Required parameters
-	fileAction, ok := request.Params.Arguments["file_action"].(string)
-	if !ok || fileAction == "" {
-		return nil, errors.New(`the "file_action" argument is required`)
-	}
-
 	var fileActionValue gitlab.FileActionValue
-	switch fileAction {
+	switch args.FileAction {
 	case "create":
 		fileActionValue = gitlab.FileCreate
 	case "update":
@@ -366,37 +339,27 @@ func (s *snippetsService) updateSnippet(ctx context.Context, request mcp.CallToo
 	case "move":
 		fileActionValue = gitlab.FileMove
 	default:
-		return nil, fmt.Errorf("invalid file action: %s", fileAction)
-	}
-
-	fileName, ok := request.Params.Arguments["file_name"].(string)
-	if !ok || fileName == "" {
-		return nil, errors.New(`the "file_name" argument is required`)
-	}
-
-	content, ok := request.Params.Arguments["content"].(string)
-	if !ok || content == "" {
-		return nil, errors.New(`the "content" argument is required`)
+		return nil, fmt.Errorf("invalid file action: %s", args.FileAction)
 	}
 
 	opt.Files = gitlab.Ptr([]*gitlab.UpdateSnippetFileOptions{{
 		Action:   gitlab.Ptr(string(fileActionValue)),
-		FilePath: gitlab.Ptr(fileName),
-		Content:  gitlab.Ptr(content),
+		FilePath: gitlab.Ptr(args.FileName),
+		Content:  gitlab.Ptr(args.Content),
 	}})
 
 	// Add optional parameters if provided
-	if title, ok := request.Params.Arguments["title"].(string); ok && title != "" {
-		opt.Title = gitlab.Ptr(title)
+	if args.Title != "" {
+		opt.Title = gitlab.Ptr(args.Title)
 	}
 
-	if description, ok := request.Params.Arguments["description"].(string); ok && description != "" {
-		opt.Description = gitlab.Ptr(description)
+	if args.Description != "" {
+		opt.Description = gitlab.Ptr(args.Description)
 	}
 
-	if visibility, ok := request.Params.Arguments["visibility"].(string); ok && visibility != "" {
+	if args.Visibility != "" {
 		var visibilityLevel gitlab.VisibilityValue
-		switch visibility {
+		switch args.Visibility {
 		case "private":
 			visibilityLevel = gitlab.PrivateVisibility
 		case "internal":
@@ -404,17 +367,21 @@ func (s *snippetsService) updateSnippet(ctx context.Context, request mcp.CallToo
 		case "public":
 			visibilityLevel = gitlab.PublicVisibility
 		default:
-			return nil, fmt.Errorf("invalid visibility level: %s", visibility)
+			return nil, fmt.Errorf("invalid visibility level: %s", args.Visibility)
 		}
 		opt.Visibility = &visibilityLevel
 	}
 
-	snippet, _, err := s.client.Snippets.UpdateSnippet(int(snippetID), opt, gitlab.WithContext(ctx))
+	snippet, _, err := s.client.Snippets.UpdateSnippet(args.SnippetID, opt, gitlab.WithContext(ctx))
 	if err != nil {
-		return nil, fmt.Errorf("UpdateSnippet(%d): %w", int(snippetID), err)
+		return nil, fmt.Errorf("UpdateSnippet(%d): %w", args.SnippetID, err)
 	}
 
 	return newToolResultJSON(snippet)
+}
+
+type deleteSnippetArgs struct {
+	SnippetID int `mcp_desc:"The ID of the snippet to delete" mcp_required:"true"`
 }
 
 // DeleteSnippet returns a ServerTool for deleting a snippet.
@@ -422,24 +389,21 @@ func (s *snippetsService) updateSnippet(ctx context.Context, request mcp.CallToo
 func (s *snippetsService) DeleteSnippet() server.ServerTool {
 	return server.ServerTool{
 		Handler: s.deleteSnippet,
-		Tool: mcp.NewTool("delete_snippet",
+		Tool: mcpargs.NewTool("delete_snippet", deleteSnippetArgs{},
 			mcp.WithDescription("Delete a snippet"),
-			mcp.WithNumber("snippet_id",
-				mcp.Description("The ID of the snippet to delete"),
-				mcp.Required()),
 		),
 	}
 }
 
 func (s *snippetsService) deleteSnippet(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	snippetID, err := intParam(request.Params.Arguments["snippet_id"])
-	if err != nil {
-		return nil, fmt.Errorf("invalid snippet ID: %w", err)
+	var args deleteSnippetArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
 	}
 
-	_, err = s.client.Snippets.DeleteSnippet(int(snippetID), gitlab.WithContext(ctx))
+	_, err := s.client.Snippets.DeleteSnippet(args.SnippetID, gitlab.WithContext(ctx))
 	if err != nil {
-		return nil, fmt.Errorf("DeleteSnippet(%d): %w", int(snippetID), err)
+		return nil, fmt.Errorf("DeleteSnippet(%d): %w", args.SnippetID, err)
 	}
 
 	return newToolResultJSON(map[string]string{"result": "success"})

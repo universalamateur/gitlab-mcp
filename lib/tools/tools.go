@@ -71,14 +71,3 @@ func newToolResultJSON(v any) (*mcp.CallToolResult, error) {
 	}
 	return mcp.NewToolResultText(b.String()), nil
 }
-
-// intParam converts an MCP parameter to an integer.
-// MCP parameters that represent numbers are usually provided as float64,
-// so this function converts them to int, which is required by many GitLab API functions.
-func intParam(v any) (int, error) {
-	f, ok := v.(float64)
-	if !ok {
-		return 0, fmt.Errorf("makeInt: value %v is a %T, not a number (float64)", v, v)
-	}
-	return int(f), nil
-}
