@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
@@ -51,22 +51,29 @@ func (u *usersService) AddTo(srv *server.MCPServer) {
 	)
 }
 
+type getUserArgs struct {
+	UserID mcpargs.ID `mcp_desc:"The ID or username of the user. If not provided, returns information about the authenticated user"`
+}
+
 // GetUser returns a ServerTool for fetching information about a specific user or the current user.
 // If no user ID is provided, it returns information about the authenticated user.
 func (u *usersService) GetUser() server.ServerTool {
 	return server.ServerTool{
 		Handler: u.getUser,
-		Tool: mcp.NewTool("get_user",
+		Tool: mcpargs.NewTool("get_user", getUserArgs{},
 			mcp.WithDescription("Get information about a specific user or the current user. In particular, this tool can be used to resolve a username to an ID."),
-			mcp.WithString("user_id",
-				mcp.Description("The ID or username of the user. If not provided, returns information about the authenticated user")),
 		),
 	}
 }
 
 func (u *usersService) getUser(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	var args getUserArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+	}
+
 	// Get current user
-	if userID, ok := request.Params.Arguments["user_id"]; !ok || userID == nil {
+	if args.UserID.IsZero() {
 		user, _, err := u.client.Users.CurrentUser(gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("CurrentUser: %w", err)
@@ -75,26 +82,21 @@ func (u *usersService) getUser(ctx context.Context, request mcp.CallToolRequest)
 		return newToolResultJSON(user)
 	}
 
-	// Get specific user
-	id, err := idParam(request.Params.Arguments["user_id"])
-	if err != nil {
-		return nil, fmt.Errorf("invalid user ID: %w", err)
-	}
-
-	switch id := id.(type) {
-	case int:
-		user, _, err := u.client.Users.GetUser(id, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
+	switch {
+	case args.UserID.Integer != 0:
+		user, _, err := u.client.Users.GetUser(args.UserID.Integer, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
 		if err != nil {
-			return nil, fmt.Errorf("GetUser(%d): %w", id, err)
+			return nil, fmt.Errorf("GetUser(%d): %w", args.UserID.Integer, err)
 		}
 
 		return newToolResultJSON(user)
 
-	case string:
-		id = strings.TrimPrefix(id, "@")
+	case args.UserID.String != "":
+		id := strings.TrimPrefix(args.UserID.String, "@")
 		opts := gitlab.ListUsersOptions{
 			Username: gitlab.Ptr(id),
 		}
+
 		users, _, err := u.client.Users.ListUsers(&opts, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("ListUsers(username=%q): %w", id, err)
@@ -107,71 +109,73 @@ func (u *usersService) getUser(ctx context.Context, request mcp.CallToolRequest)
 		return newToolResultJSON(users[0])
 
 	default:
-		return nil, fmt.Errorf("unexpected user ID type: %T", id)
+		return nil, fmt.Errorf("unexpected user ID: %#v", args.UserID)
 	}
+}
+
+type getUserStatusArgs struct {
+	UserID int `mcp_desc:"ID of the user to get a status of" mcp_required:"true"`
 }
 
 // GetUserStatus returns a ServerTool for fetching a user's status.
 func (u *usersService) GetUserStatus() server.ServerTool {
 	return server.ServerTool{
 		Handler: u.getUserStatus,
-		Tool: mcp.NewTool("get_user_status",
+		Tool: mcpargs.NewTool("get_user_status", getUserStatusArgs{},
 			mcp.WithDescription("Get a user's status"),
-			mcp.WithNumber("user_id",
-				mcp.Description("ID of the user to get a status of"),
-				mcp.Required()),
 		),
 	}
 }
 
 func (u *usersService) getUserStatus(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	userID, err := intParam(request.Params.Arguments["user_id"])
-	if err != nil {
-		return nil, fmt.Errorf("invalid user ID: %w", err)
+	var args getUserStatusArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
-
-	status, _, err := u.client.Users.GetUserStatus(userID, gitlab.WithContext(ctx))
+	status, _, err := u.client.Users.GetUserStatus(args.UserID, gitlab.WithContext(ctx))
 	if err != nil {
-		return nil, fmt.Errorf("GetUserStatus(%d): %w", userID, err)
+		return nil, fmt.Errorf("GetUserStatus(%d): %w", args.UserID, err)
 	}
 
 	return newToolResultJSON(status)
+}
+
+type setUserStatusArgs struct {
+	Emoji        string `mcp_desc:"Name of the emoji to use as status. If omitted 'speech_balloon' is used. Emoji name can be one of the specified names in the Gemojione index."`
+	Message      string `mcp_desc:"Message to set as a status. It can also contain emoji codes. Cannot exceed 100 characters."`
+	Availability string `mcp_desc:"The availability of the user: either 'busy' or 'not_set' if the user is available." mcp_enum:"busy,not_set"`
 }
 
 // SetUserStatus returns a ServerTool for setting a user's status.
 func (u *usersService) SetUserStatus() server.ServerTool {
 	return server.ServerTool{
 		Handler: u.setUserStatus,
-		Tool: mcp.NewTool("set_user_status",
+		Tool: mcpargs.NewTool("set_user_status", setUserStatusArgs{},
 			mcp.WithDescription("Set the current user's status"),
-			mcp.WithString("emoji",
-				mcp.Description("Name of the emoji to use as status. If omitted `speech_balloon` is used. Emoji name can be one of the specified names in the Gemojione index.")),
-			mcp.WithString("message",
-				mcp.Description("Message to set as a status. It can also contain emoji codes. Cannot exceed 100 characters.")),
-			mcp.WithString("availability",
-				mcp.Description("The availability of the user: either `busy` or `not_set` if the user is available."),
-				mcp.Enum("busy", "not_set")),
 		),
 	}
 }
 
 func (u *usersService) setUserStatus(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	var args setUserStatusArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+	}
+
 	opt := &gitlab.UserStatusOptions{}
 
-	// Parse optional parameters
-	if v, ok := request.Params.Arguments["emoji"].(string); ok && v != "" {
-		opt.Emoji = gitlab.Ptr(v)
+	// Set optional parameters
+	if args.Emoji != "" {
+		opt.Emoji = gitlab.Ptr(args.Emoji)
 	}
 
-	if v, ok := request.Params.Arguments["message"].(string); ok && v != "" {
-		opt.Message = gitlab.Ptr(v)
+	if args.Message != "" {
+		opt.Message = gitlab.Ptr(args.Message)
 	}
 
-	if v, ok := request.Params.Arguments["availability"].(string); ok && v != "" {
-		opt.Availability = gitlab.Ptr(gitlab.AvailabilityValue(v))
+	if args.Availability != "" {
+		opt.Availability = gitlab.Ptr(gitlab.AvailabilityValue(args.Availability))
 	}
 
 	status, _, err := u.client.Users.SetUserStatus(opt, gitlab.WithContext(ctx))
