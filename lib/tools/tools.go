@@ -12,7 +12,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -71,22 +70,6 @@ func newToolResultJSON(v any) (*mcp.CallToolResult, error) {
 		return nil, fmt.Errorf("encoding to JSON: %w", err)
 	}
 	return mcp.NewToolResultText(b.String()), nil
-}
-
-// idParam converts an MCP parameter (always a string) to either a string or an integer for the GitLab API.
-// It attempts to convert the parameter to an integer first, and if that fails, it returns the original string.
-// This is useful for GitLab API endpoints that accept either a numeric ID or a path-like string identifier.
-func idParam(v any) (any, error) {
-	s, ok := v.(string)
-	if !ok {
-		return nil, fmt.Errorf("makeID: value %v is a %T, not a string", v, v)
-	}
-
-	id, err := strconv.Atoi(s)
-	if err == nil {
-		return id, nil
-	}
-	return s, nil
 }
 
 // intParam converts an MCP parameter to an integer.

@@ -6,6 +6,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
@@ -90,27 +91,30 @@ func (m *mergeRequestsService) AddTo(srv *server.MCPServer) {
 	)
 }
 
+type listUserMergeRequestsArgs struct {
+	Username string `mcp_desc:"Filter merge requests by username. If left blank, returns merge requests for the authenticated user"`
+	State    string `mcp_desc:"Return all merge requests or just those that are opened, closed, or merged" mcp_enum:"all,opened,closed,merged"`
+	Role     string `mcp_desc:"Specify whether to list merge requests where the user is the author or reviewer" mcp_enum:"author,reviewer"`
+}
+
 // ListUserMergeRequests returns a ServerTool for listing all merge requests authored by or assigned to a specific user for review.
 // The tool accepts optional username and state filter parameters, as well as a role parameter to determine
 // whether to list merge requests where the user is the author or a reviewer.
 func (m *mergeRequestsService) ListUserMergeRequests() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.listUserMergeRequests,
-		Tool: mcp.NewTool("list_user_merge_requests",
+		Tool: mcpargs.NewTool("list_user_merge_requests", listUserMergeRequestsArgs{},
 			mcp.WithDescription("Get all merge requests authored by or assigned to a user for review"),
-			mcp.WithString("username",
-				mcp.Description("Filter merge requests by username. If left blank, returns merge requests for the authenticated user")),
-			mcp.WithString("state",
-				mcp.Description("Return all merge requests or just those that are opened, closed, or merged"),
-				mcp.Enum("all", "opened", "closed", "merged")),
-			mcp.WithString("role",
-				mcp.Description("Specify whether to list merge requests where the user is the author or reviewer"),
-				mcp.Enum("author", "reviewer")),
 		),
 	}
 }
 
 func (m *mergeRequestsService) listUserMergeRequests(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	var args listUserMergeRequestsArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+	}
+
 	var (
 		opt = gitlab.ListMergeRequestsOptions{
 			ListOptions: gitlab.ListOptions{
@@ -122,26 +126,21 @@ func (m *mergeRequestsService) listUserMergeRequests(ctx context.Context, reques
 
 	// Parse optional parameters
 	username := m.currentUser
-	if u, ok := request.Params.Arguments["username"].(string); ok && u != "" {
-		username = u
+	if args.Username != "" {
+		username = args.Username
 	}
 
-	role, _ := request.Params.Arguments["role"].(string)
-	if role == "" {
-		role = "author"
-	}
-
-	switch role {
-	case "author":
+	switch args.Role {
+	case "author", "":
 		opt.AuthorUsername = gitlab.Ptr(username)
 	case "reviewer":
 		opt.ReviewerUsername = gitlab.Ptr(username)
 	default:
-		return nil, fmt.Errorf("invalid role: %q, must be one of 'author' or 'reviewer'", role)
+		return nil, fmt.Errorf("invalid role: %q, must be one of 'author' or 'reviewer'", args.Role)
 	}
 
-	if v, ok := request.Params.Arguments["state"].(string); ok && v != "" {
-		opt.State = gitlab.Ptr(v)
+	if args.State != "" {
+		opt.State = gitlab.Ptr(args.State)
 	}
 
 	for {
@@ -162,24 +161,28 @@ func (m *mergeRequestsService) listUserMergeRequests(ctx context.Context, reques
 	return newToolResultJSON(mergeRequests)
 }
 
+type listProjectMergeRequestsArgs struct {
+	ProjectID mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
+	State     string     `mcp_desc:"Return all merge requests or just those that are opened, closed, or merged" mcp_enum:"all,opened,closed,merged"`
+}
+
 // ListProjectMergeRequests returns a ServerTool for listing all merge requests within a specific project.
 // The tool accepts a project ID and optional state filter parameters.
 func (m *mergeRequestsService) ListProjectMergeRequests() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.listProjectMergeRequests,
-		Tool: mcp.NewTool("list_project_merge_requests",
+		Tool: mcpargs.NewTool("list_project_merge_requests", listProjectMergeRequestsArgs{},
 			mcp.WithDescription("Get all merge requests for this project"),
-			mcp.WithString("project_id",
-				mcp.Description("ID of the project either in owner/project format or the numeric project ID"),
-				mcp.Required()),
-			mcp.WithString("state",
-				mcp.Description("Return all merge requests or just those that are opened, closed, or merged"),
-				mcp.Enum("all", "opened", "closed", "merged")),
 		),
 	}
 }
 
 func (m *mergeRequestsService) listProjectMergeRequests(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	var args listProjectMergeRequestsArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+	}
+
 	var (
 		opt = &gitlab.ListProjectMergeRequestsOptions{
 			ListOptions: gitlab.ListOptions{
@@ -189,20 +192,15 @@ func (m *mergeRequestsService) listProjectMergeRequests(ctx context.Context, req
 		mergeRequests []*gitlab.BasicMergeRequest
 	)
 
-	projectID, err := idParam(request.Params.Arguments["project_id"])
-	if err != nil {
-		return nil, fmt.Errorf("invalid project ID: %w", err)
-	}
-
 	// Parse optional parameters
-	if v, ok := request.Params.Arguments["state"].(string); ok && v != "" {
-		opt.State = gitlab.Ptr(v)
+	if args.State != "" {
+		opt.State = gitlab.Ptr(args.State)
 	}
 
 	for {
-		mrs, resp, err := m.client.MergeRequests.ListProjectMergeRequests(projectID, opt, gitlab.WithContext(ctx))
+		mrs, resp, err := m.client.MergeRequests.ListProjectMergeRequests(args.ProjectID.Value(), opt, gitlab.WithContext(ctx))
 		if err != nil {
-			return nil, fmt.Errorf("ListProjectMergeRequests(%q): %w", projectID, err)
+			return nil, fmt.Errorf("ListProjectMergeRequests(%q): %w", args.ProjectID.Value(), err)
 		}
 
 		mergeRequests = append(mergeRequests, mrs...)
@@ -217,24 +215,28 @@ func (m *mergeRequestsService) listProjectMergeRequests(ctx context.Context, req
 	return newToolResultJSON(mergeRequests)
 }
 
+type listGroupMergeRequestsArgs struct {
+	GroupID mcpargs.ID `mcp_desc:"ID of the group either in owner/namespace format or the numeric group ID" mcp_required:"true"`
+	State   string     `mcp_desc:"Return all merge requests or just those that are opened, closed, or merged" mcp_enum:"all,opened,closed,merged"`
+}
+
 // ListGroupMergeRequests returns a ServerTool for listing all merge requests within a specific group.
 // The tool accepts a group ID and optional state filter parameters.
 func (m *mergeRequestsService) ListGroupMergeRequests() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.listGroupMergeRequests,
-		Tool: mcp.NewTool("list_group_merge_requests",
+		Tool: mcpargs.NewTool("list_group_merge_requests", listGroupMergeRequestsArgs{},
 			mcp.WithDescription("Get all merge requests for this group"),
-			mcp.WithString("group_id",
-				mcp.Description("ID of the group either in owner/namespace format or the numeric group ID"),
-				mcp.Required()),
-			mcp.WithString("state",
-				mcp.Description("Return all merge requests or just those that are opened, closed, or merged"),
-				mcp.Enum("all", "opened", "closed", "merged")),
 		),
 	}
 }
 
 func (m *mergeRequestsService) listGroupMergeRequests(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	var args listGroupMergeRequestsArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+	}
+
 	var (
 		opt = &gitlab.ListGroupMergeRequestsOptions{
 			ListOptions: gitlab.ListOptions{
@@ -244,20 +246,15 @@ func (m *mergeRequestsService) listGroupMergeRequests(ctx context.Context, reque
 		mergeRequests []*gitlab.BasicMergeRequest
 	)
 
-	groupID, err := idParam(request.Params.Arguments["group_id"])
-	if err != nil {
-		return nil, fmt.Errorf("invalid group ID: %w", err)
-	}
-
 	// Parse optional parameters
-	if v, ok := request.Params.Arguments["state"].(string); ok && v != "" {
-		opt.State = gitlab.Ptr(v)
+	if args.State != "" {
+		opt.State = gitlab.Ptr(args.State)
 	}
 
 	for {
-		mrs, resp, err := m.client.MergeRequests.ListGroupMergeRequests(groupID, opt, gitlab.WithContext(ctx))
+		mrs, resp, err := m.client.MergeRequests.ListGroupMergeRequests(args.GroupID.Value(), opt, gitlab.WithContext(ctx))
 		if err != nil {
-			return nil, fmt.Errorf("ListGroupMergeRequests(%q): %w", groupID, err)
+			return nil, fmt.Errorf("ListGroupMergeRequests(%q): %w", args.GroupID.Value(), err)
 		}
 
 		mergeRequests = append(mergeRequests, mrs...)
@@ -272,42 +269,41 @@ func (m *mergeRequestsService) listGroupMergeRequests(ctx context.Context, reque
 	return newToolResultJSON(mergeRequests)
 }
 
+type getMergeRequestArgs struct {
+	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
+	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
+}
+
 // GetMergeRequest returns a ServerTool for fetching information about a specific merge request.
 // The tool accepts a project ID and a merge request internal ID as parameters.
 func (m *mergeRequestsService) GetMergeRequest() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.getMergeRequest,
-		Tool: mcp.NewTool("get_merge_request",
+		Tool: mcpargs.NewTool("get_merge_request", getMergeRequestArgs{},
 			mcp.WithDescription("Get a single merge request"),
-			mcp.WithString("project_id",
-				mcp.Description("ID of the project either in owner/project format or the numeric project ID"),
-				mcp.Required()),
-			mcp.WithNumber("merge_request_iid",
-				mcp.Description("The internal ID of the merge request"),
-				mcp.Required()),
 		),
 	}
 }
 
 func (m *mergeRequestsService) getMergeRequest(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	var args getMergeRequestArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+	}
+
 	var opt gitlab.GetMergeRequestsOptions
 
-	projectID, err := idParam(request.Params.Arguments["project_id"])
+	mr, _, err := m.client.MergeRequests.GetMergeRequest(args.ProjectID.Value(), args.MergeRequestIID, &opt, gitlab.WithContext(ctx))
 	if err != nil {
-		return nil, fmt.Errorf("invalid project ID: %w", err)
-	}
-
-	mrIID, err := intParam(request.Params.Arguments["merge_request_iid"])
-	if err != nil {
-		return nil, fmt.Errorf("invalid merge request IID: %w", err)
-	}
-
-	mr, _, err := m.client.MergeRequests.GetMergeRequest(projectID, int(mrIID), &opt, gitlab.WithContext(ctx))
-	if err != nil {
-		return nil, fmt.Errorf("GetMergeRequest(%q, %d): %w", projectID, int(mrIID), err)
+		return nil, fmt.Errorf("GetMergeRequest(%q, %d): %w", args.ProjectID.Value(), args.MergeRequestIID, err)
 	}
 
 	return newToolResultJSON(mr)
+}
+
+type getMergeRequestApprovalsArgs struct {
+	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
+	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
 }
 
 // GetMergeRequestApprovals returns a ServerTool for fetching approval information for a specific merge request.
@@ -315,35 +311,29 @@ func (m *mergeRequestsService) getMergeRequest(ctx context.Context, request mcp.
 func (m *mergeRequestsService) GetMergeRequestApprovals() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.getMergeRequestApprovals,
-		Tool: mcp.NewTool("get_merge_request_approvals",
+		Tool: mcpargs.NewTool("get_merge_request_approvals", getMergeRequestApprovalsArgs{},
 			mcp.WithDescription("Get approvals for a merge request"),
-			mcp.WithString("project_id",
-				mcp.Description("ID of the project either in owner/project format or the numeric project ID"),
-				mcp.Required()),
-			mcp.WithNumber("merge_request_iid",
-				mcp.Description("The internal ID of the merge request"),
-				mcp.Required()),
 		),
 	}
 }
 
 func (m *mergeRequestsService) getMergeRequestApprovals(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	projectID, err := idParam(request.Params.Arguments["project_id"])
-	if err != nil {
-		return nil, fmt.Errorf("invalid project ID: %w", err)
+	var args getMergeRequestApprovalsArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
 	}
 
-	mrIID, err := intParam(request.Params.Arguments["merge_request_iid"])
+	approvals, _, err := m.client.MergeRequests.GetMergeRequestApprovals(args.ProjectID.Value(), args.MergeRequestIID, gitlab.WithContext(ctx))
 	if err != nil {
-		return nil, fmt.Errorf("invalid merge request IID: %w", err)
-	}
-
-	approvals, _, err := m.client.MergeRequests.GetMergeRequestApprovals(projectID, int(mrIID), gitlab.WithContext(ctx))
-	if err != nil {
-		return nil, fmt.Errorf("GetMergeRequestApprovals(%q, %d): %w", projectID, int(mrIID), err)
+		return nil, fmt.Errorf("GetMergeRequestApprovals(%q, %d): %w", args.ProjectID.Value(), args.MergeRequestIID, err)
 	}
 
 	return newToolResultJSON(approvals)
+}
+
+type getMergeRequestCommitsArgs struct {
+	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
+	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
 }
 
 // GetMergeRequestCommits returns a ServerTool for fetching all commits associated with a specific merge request.
@@ -351,19 +341,18 @@ func (m *mergeRequestsService) getMergeRequestApprovals(ctx context.Context, req
 func (m *mergeRequestsService) GetMergeRequestCommits() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.getMergeRequestCommits,
-		Tool: mcp.NewTool("get_merge_request_commits",
+		Tool: mcpargs.NewTool("get_merge_request_commits", getMergeRequestCommitsArgs{},
 			mcp.WithDescription("Get all commits associated with a merge request"),
-			mcp.WithString("project_id",
-				mcp.Description("ID of the project either in owner/project format or the numeric project ID"),
-				mcp.Required()),
-			mcp.WithNumber("merge_request_iid",
-				mcp.Description("The internal ID of the merge request"),
-				mcp.Required()),
 		),
 	}
 }
 
 func (m *mergeRequestsService) getMergeRequestCommits(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	var args getMergeRequestCommitsArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+	}
+
 	var (
 		opt = gitlab.GetMergeRequestCommitsOptions{
 			PerPage: maxPerPage,
@@ -371,20 +360,10 @@ func (m *mergeRequestsService) getMergeRequestCommits(ctx context.Context, reque
 		commits []*gitlab.Commit
 	)
 
-	projectID, err := idParam(request.Params.Arguments["project_id"])
-	if err != nil {
-		return nil, fmt.Errorf("invalid project ID: %w", err)
-	}
-
-	mrIID, err := intParam(request.Params.Arguments["merge_request_iid"])
-	if err != nil {
-		return nil, fmt.Errorf("invalid merge request IID: %w", err)
-	}
-
 	for {
-		c, resp, err := m.client.MergeRequests.GetMergeRequestCommits(projectID, int(mrIID), &opt, gitlab.WithContext(ctx))
+		c, resp, err := m.client.MergeRequests.GetMergeRequestCommits(args.ProjectID.Value(), args.MergeRequestIID, &opt, gitlab.WithContext(ctx))
 		if err != nil {
-			return nil, fmt.Errorf("GetMergeRequestCommits(%q, %d): %w", projectID, int(mrIID), err)
+			return nil, fmt.Errorf("GetMergeRequestCommits(%q, %d): %w", args.ProjectID.Value(), args.MergeRequestIID, err)
 		}
 
 		commits = append(commits, c...)
@@ -399,42 +378,41 @@ func (m *mergeRequestsService) getMergeRequestCommits(ctx context.Context, reque
 	return newToolResultJSON(commits)
 }
 
+type getMergeRequestChangesArgs struct {
+	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
+	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
+}
+
 // GetMergeRequestChanges returns a ServerTool for fetching file changes information for a specific merge request.
 // The tool accepts a project ID and a merge request internal ID as parameters.
 func (m *mergeRequestsService) GetMergeRequestChanges() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.getMergeRequestChanges,
-		Tool: mcp.NewTool("get_merge_request_changes",
+		Tool: mcpargs.NewTool("get_merge_request_changes", getMergeRequestChangesArgs{},
 			mcp.WithDescription("Get information about the merge request including its files and changes"),
-			mcp.WithString("project_id",
-				mcp.Description("ID of the project either in owner/project format or the numeric project ID"),
-				mcp.Required()),
-			mcp.WithNumber("merge_request_iid",
-				mcp.Description("The internal ID of the merge request"),
-				mcp.Required()),
 		),
 	}
 }
 
 func (m *mergeRequestsService) getMergeRequestChanges(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	var args getMergeRequestChangesArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+	}
+
 	var opt gitlab.GetMergeRequestChangesOptions
 
-	projectID, err := idParam(request.Params.Arguments["project_id"])
+	mr, _, err := m.client.MergeRequests.GetMergeRequestChanges(args.ProjectID.Value(), args.MergeRequestIID, &opt, gitlab.WithContext(ctx))
 	if err != nil {
-		return nil, fmt.Errorf("invalid project ID: %w", err)
-	}
-
-	mrIID, err := intParam(request.Params.Arguments["merge_request_iid"])
-	if err != nil {
-		return nil, fmt.Errorf("invalid merge request IID: %w", err)
-	}
-
-	mr, _, err := m.client.MergeRequests.GetMergeRequestChanges(projectID, int(mrIID), &opt, gitlab.WithContext(ctx))
-	if err != nil {
-		return nil, fmt.Errorf("GetMergeRequestChanges(%q, %d): %w", projectID, int(mrIID), err)
+		return nil, fmt.Errorf("GetMergeRequestChanges(%q, %d): %w", args.ProjectID.Value(), args.MergeRequestIID, err)
 	}
 
 	return newToolResultJSON(mr)
+}
+
+type listMergeRequestDiffsArgs struct {
+	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
+	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
 }
 
 // ListMergeRequestDiffs returns a ServerTool for listing all versions of diffs for a specific merge request.
@@ -442,19 +420,18 @@ func (m *mergeRequestsService) getMergeRequestChanges(ctx context.Context, reque
 func (m *mergeRequestsService) ListMergeRequestDiffs() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.listMergeRequestDiffs,
-		Tool: mcp.NewTool("list_merge_request_diffs",
+		Tool: mcpargs.NewTool("list_merge_request_diffs", listMergeRequestDiffsArgs{},
 			mcp.WithDescription("Get a list of merge request diff versions"),
-			mcp.WithString("project_id",
-				mcp.Description("ID of the project either in owner/project format or the numeric project ID"),
-				mcp.Required()),
-			mcp.WithNumber("merge_request_iid",
-				mcp.Description("The internal ID of the merge request"),
-				mcp.Required()),
 		),
 	}
 }
 
 func (m *mergeRequestsService) listMergeRequestDiffs(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	var args listMergeRequestDiffsArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+	}
+
 	var (
 		opt = gitlab.ListMergeRequestDiffsOptions{
 			ListOptions: gitlab.ListOptions{
@@ -464,20 +441,10 @@ func (m *mergeRequestsService) listMergeRequestDiffs(ctx context.Context, reques
 		diffs []*gitlab.MergeRequestDiff
 	)
 
-	projectID, err := idParam(request.Params.Arguments["project_id"])
-	if err != nil {
-		return nil, fmt.Errorf("invalid project ID: %w", err)
-	}
-
-	mrIID, err := intParam(request.Params.Arguments["merge_request_iid"])
-	if err != nil {
-		return nil, fmt.Errorf("invalid merge request IID: %w", err)
-	}
-
 	for {
-		d, resp, err := m.client.MergeRequests.ListMergeRequestDiffs(projectID, int(mrIID), &opt, gitlab.WithContext(ctx))
+		d, resp, err := m.client.MergeRequests.ListMergeRequestDiffs(args.ProjectID.Value(), args.MergeRequestIID, &opt, gitlab.WithContext(ctx))
 		if err != nil {
-			return nil, fmt.Errorf("ListMergeRequestDiffs(%q, %d): %w", projectID, int(mrIID), err)
+			return nil, fmt.Errorf("ListMergeRequestDiffs(%q, %d): %w", args.ProjectID.Value(), args.MergeRequestIID, err)
 		}
 
 		diffs = append(diffs, d...)
@@ -492,40 +459,39 @@ func (m *mergeRequestsService) listMergeRequestDiffs(ctx context.Context, reques
 	return newToolResultJSON(diffs)
 }
 
+type getMergeRequestParticipantsArgs struct {
+	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
+	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
+}
+
 // GetMergeRequestParticipants returns a ServerTool for fetching all participants of a specific merge request.
 // The tool accepts a project ID and a merge request internal ID as parameters.
 func (m *mergeRequestsService) GetMergeRequestParticipants() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.getMergeRequestParticipants,
-		Tool: mcp.NewTool("get_merge_request_participants",
+		Tool: mcpargs.NewTool("get_merge_request_participants", getMergeRequestParticipantsArgs{},
 			mcp.WithDescription("Get a list of merge request participants"),
-			mcp.WithString("project_id",
-				mcp.Description("ID of the project either in owner/project format or the numeric project ID"),
-				mcp.Required()),
-			mcp.WithNumber("merge_request_iid",
-				mcp.Description("The internal ID of the merge request"),
-				mcp.Required()),
 		),
 	}
 }
 
 func (m *mergeRequestsService) getMergeRequestParticipants(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	projectID, err := idParam(request.Params.Arguments["project_id"])
-	if err != nil {
-		return nil, fmt.Errorf("invalid project ID: %w", err)
+	var args getMergeRequestParticipantsArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
 	}
 
-	mrIID, err := intParam(request.Params.Arguments["merge_request_iid"])
+	participants, _, err := m.client.MergeRequests.GetMergeRequestParticipants(args.ProjectID.Value(), args.MergeRequestIID, gitlab.WithContext(ctx))
 	if err != nil {
-		return nil, fmt.Errorf("invalid merge request IID: %w", err)
-	}
-
-	participants, _, err := m.client.MergeRequests.GetMergeRequestParticipants(projectID, int(mrIID), gitlab.WithContext(ctx))
-	if err != nil {
-		return nil, fmt.Errorf("GetMergeRequestParticipants(%q, %d): %w", projectID, int(mrIID), err)
+		return nil, fmt.Errorf("GetMergeRequestParticipants(%q, %d): %w", args.ProjectID.Value(), args.MergeRequestIID, err)
 	}
 
 	return newToolResultJSON(participants)
+}
+
+type getMergeRequestReviewersArgs struct {
+	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
+	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
 }
 
 // GetMergeRequestReviewers returns a ServerTool for fetching all reviewers of a specific merge request.
@@ -533,35 +499,29 @@ func (m *mergeRequestsService) getMergeRequestParticipants(ctx context.Context, 
 func (m *mergeRequestsService) GetMergeRequestReviewers() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.getMergeRequestReviewers,
-		Tool: mcp.NewTool("get_merge_request_reviewers",
+		Tool: mcpargs.NewTool("get_merge_request_reviewers", getMergeRequestReviewersArgs{},
 			mcp.WithDescription("Get a list of merge request reviewers"),
-			mcp.WithString("project_id",
-				mcp.Description("ID of the project either in owner/project format or the numeric project ID"),
-				mcp.Required()),
-			mcp.WithNumber("merge_request_iid",
-				mcp.Description("The internal ID of the merge request"),
-				mcp.Required()),
 		),
 	}
 }
 
 func (m *mergeRequestsService) getMergeRequestReviewers(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	projectID, err := idParam(request.Params.Arguments["project_id"])
-	if err != nil {
-		return nil, fmt.Errorf("invalid project ID: %w", err)
+	var args getMergeRequestReviewersArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
 	}
 
-	mrIID, err := intParam(request.Params.Arguments["merge_request_iid"])
+	reviewers, _, err := m.client.MergeRequests.GetMergeRequestReviewers(args.ProjectID.Value(), args.MergeRequestIID, gitlab.WithContext(ctx))
 	if err != nil {
-		return nil, fmt.Errorf("invalid merge request IID: %w", err)
-	}
-
-	reviewers, _, err := m.client.MergeRequests.GetMergeRequestReviewers(projectID, int(mrIID), gitlab.WithContext(ctx))
-	if err != nil {
-		return nil, fmt.Errorf("GetMergeRequestReviewers(%q, %d): %w", projectID, int(mrIID), err)
+		return nil, fmt.Errorf("GetMergeRequestReviewers(%q, %d): %w", args.ProjectID.Value(), args.MergeRequestIID, err)
 	}
 
 	return newToolResultJSON(reviewers)
+}
+
+type listMergeRequestPipelinesArgs struct {
+	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
+	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
 }
 
 // ListMergeRequestPipelines returns a ServerTool for listing all CI/CD pipelines for a specific merge request.
@@ -569,35 +529,29 @@ func (m *mergeRequestsService) getMergeRequestReviewers(ctx context.Context, req
 func (m *mergeRequestsService) ListMergeRequestPipelines() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.listMergeRequestPipelines,
-		Tool: mcp.NewTool("list_merge_request_pipelines",
+		Tool: mcpargs.NewTool("list_merge_request_pipelines", listMergeRequestPipelinesArgs{},
 			mcp.WithDescription("Get a list of merge request pipelines"),
-			mcp.WithString("project_id",
-				mcp.Description("ID of the project either in owner/project format or the numeric project ID"),
-				mcp.Required()),
-			mcp.WithNumber("merge_request_iid",
-				mcp.Description("The internal ID of the merge request"),
-				mcp.Required()),
 		),
 	}
 }
 
 func (m *mergeRequestsService) listMergeRequestPipelines(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	projectID, err := idParam(request.Params.Arguments["project_id"])
-	if err != nil {
-		return nil, fmt.Errorf("invalid project ID: %w", err)
+	var args listMergeRequestPipelinesArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
 	}
 
-	mrIID, err := intParam(request.Params.Arguments["merge_request_iid"])
+	pipelines, _, err := m.client.MergeRequests.ListMergeRequestPipelines(args.ProjectID.Value(), args.MergeRequestIID, gitlab.WithContext(ctx))
 	if err != nil {
-		return nil, fmt.Errorf("invalid merge request IID: %w", err)
-	}
-
-	pipelines, _, err := m.client.MergeRequests.ListMergeRequestPipelines(projectID, int(mrIID), gitlab.WithContext(ctx))
-	if err != nil {
-		return nil, fmt.Errorf("ListMergeRequestPipelines(%q, %d): %w", projectID, int(mrIID), err)
+		return nil, fmt.Errorf("ListMergeRequestPipelines(%q, %d): %w", args.ProjectID.Value(), args.MergeRequestIID, err)
 	}
 
 	return newToolResultJSON(pipelines)
+}
+
+type getIssuesClosedOnMergeArgs struct {
+	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
+	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
 }
 
 // GetIssuesClosedOnMerge returns a ServerTool for fetching all issues that would be closed by merging a specific merge request.
@@ -605,19 +559,18 @@ func (m *mergeRequestsService) listMergeRequestPipelines(ctx context.Context, re
 func (m *mergeRequestsService) GetIssuesClosedOnMerge() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.getIssuesClosedOnMerge,
-		Tool: mcp.NewTool("get_issues_closed_on_merge",
+		Tool: mcpargs.NewTool("get_issues_closed_on_merge", getIssuesClosedOnMergeArgs{},
 			mcp.WithDescription("Get all the issues that would be closed by merging the provided merge request"),
-			mcp.WithString("project_id",
-				mcp.Description("ID of the project either in owner/project format or the numeric project ID"),
-				mcp.Required()),
-			mcp.WithNumber("merge_request_iid",
-				mcp.Description("The internal ID of the merge request"),
-				mcp.Required()),
 		),
 	}
 }
 
 func (m *mergeRequestsService) getIssuesClosedOnMerge(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	var args getIssuesClosedOnMergeArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+	}
+
 	var (
 		opt = gitlab.GetIssuesClosedOnMergeOptions{
 			PerPage: maxPerPage,
@@ -625,20 +578,10 @@ func (m *mergeRequestsService) getIssuesClosedOnMerge(ctx context.Context, reque
 		issues []*gitlab.Issue
 	)
 
-	projectID, err := idParam(request.Params.Arguments["project_id"])
-	if err != nil {
-		return nil, fmt.Errorf("invalid project ID: %w", err)
-	}
-
-	mrIID, err := intParam(request.Params.Arguments["merge_request_iid"])
-	if err != nil {
-		return nil, fmt.Errorf("invalid merge request IID: %w", err)
-	}
-
 	for {
-		is, resp, err := m.client.MergeRequests.GetIssuesClosedOnMerge(projectID, int(mrIID), &opt, gitlab.WithContext(ctx))
+		is, resp, err := m.client.MergeRequests.GetIssuesClosedOnMerge(args.ProjectID.Value(), args.MergeRequestIID, &opt, gitlab.WithContext(ctx))
 		if err != nil {
-			return nil, fmt.Errorf("GetIssuesClosedOnMerge(%q, %d): %w", projectID, int(mrIID), err)
+			return nil, fmt.Errorf("GetIssuesClosedOnMerge(%q, %d): %w", args.ProjectID.Value(), args.MergeRequestIID, err)
 		}
 
 		issues = append(issues, is...)
@@ -653,37 +596,31 @@ func (m *mergeRequestsService) getIssuesClosedOnMerge(ctx context.Context, reque
 	return newToolResultJSON(issues)
 }
 
+type getMergeRequestDependenciesArgs struct {
+	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
+	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
+}
+
 // GetMergeRequestDependencies returns a ServerTool for fetching all dependencies of a specific merge request.
 // The tool accepts a project ID and a merge request internal ID as parameters.
 func (m *mergeRequestsService) GetMergeRequestDependencies() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.getMergeRequestDependencies,
-		Tool: mcp.NewTool("get_merge_request_dependencies",
+		Tool: mcpargs.NewTool("get_merge_request_dependencies", getMergeRequestDependenciesArgs{},
 			mcp.WithDescription("Get merge request dependencies"),
-			mcp.WithString("project_id",
-				mcp.Description("ID of the project either in owner/project format or the numeric project ID"),
-				mcp.Required()),
-			mcp.WithNumber("merge_request_iid",
-				mcp.Description("The internal ID of the merge request"),
-				mcp.Required()),
 		),
 	}
 }
 
 func (m *mergeRequestsService) getMergeRequestDependencies(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	projectID, err := idParam(request.Params.Arguments["project_id"])
-	if err != nil {
-		return nil, fmt.Errorf("invalid project ID: %w", err)
+	var args getMergeRequestDependenciesArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
 	}
 
-	mrIID, err := intParam(request.Params.Arguments["merge_request_iid"])
+	dependencies, _, err := m.client.MergeRequests.GetMergeRequestDependencies(args.ProjectID.Value(), args.MergeRequestIID, gitlab.WithContext(ctx))
 	if err != nil {
-		return nil, fmt.Errorf("invalid merge request IID: %w", err)
-	}
-
-	dependencies, _, err := m.client.MergeRequests.GetMergeRequestDependencies(projectID, int(mrIID), gitlab.WithContext(ctx))
-	if err != nil {
-		return nil, fmt.Errorf("GetMergeRequestDependencies(%q, %d): %w", projectID, int(mrIID), err)
+		return nil, fmt.Errorf("GetMergeRequestDependencies(%q, %d): %w", args.ProjectID.Value(), args.MergeRequestIID, err)
 	}
 
 	return newToolResultJSON(dependencies)
