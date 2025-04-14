@@ -1,0 +1,90 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+version: 2
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - binary: "gitlab-mcp"
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X '{{.ModulePath}}/cmd.version={{.Version}}' -X '{{.ModulePath}}/cmd.commit={{.Commit}}' -X '{{.ModulePath}}/cmd.date={{.Date}}'
+
+archives:
+  - name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+
+dockers:
+  - image_templates:
+      - "{{ .Env.CI_REGISTRY_IMAGE }}:latest"
+      - "{{ .Env.CI_REGISTRY_IMAGE }}:{{ .Tag }}"
+      - "{{ .Env.CI_REGISTRY_IMAGE }}:v{{ .Major }}.{{ .Minor }}"
+    goos: linux
+    goarch: amd64
+
+release:
+  gitlab:
+    owner: "{{ .Env.CI_PROJECT_NAMESPACE }}"
+    name: "{{ .Env.CI_PROJECT_NAME }}"
+  mode: append
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  use: gitlab
+  filters:
+    exclude:
+      - '^test\b'
+      - '^ci\b'
+
+gitlab_urls:
+  # Use the Generic Package Registry feature in GitLab
+  # https://docs.gitlab.com/ee/user/packages/package_registry/index.html
+  use_package_registry: true
+  api: "{{ .Env.CI_SERVER_URL }}"
+  download: "{{ .Env.CI_SERVER_URL }}"
+
+docker_signs:
+  - id: keyless_cosign
+    cmd: cosign
+    args:
+      - sign
+      - "${artifact}"
+      - "--yes"
+    artifacts: all
+    ids:
+      - docker
+    output: true
+
+# https://goreleaser.com/customization/sign/
+signs:
+  - id: keyless_cosign
+    cmd: cosign
+    args:
+      - "sign-blob"
+      - "--output-signature=${signature}"
+      - "--bundle=${certificate}"  # We choose to write the bundle in the certificate field
+      - "${artifact}"
+      - "--yes"
+    output: true
+    artifacts: archive
+    signature: '{{ trimsuffix (trimsuffix .Env.artifact ".zip") ".tar.gz" }}.sig'
+    certificate: '{{ trimsuffix (trimsuffix .Env.artifact ".zip") ".tar.gz" }}.bundle' # Actually the bundle, not the certificate
+
+# Publish syft SBOMs
+# https://goreleaser.com/customization/sbom/
+sboms:
+  - artifacts: archive
