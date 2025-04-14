@@ -6,11 +6,14 @@
 // through a unified API. It handles pagination automatically and provides
 // convenient access to GitLab's epics, issues, and merge requests endpoints.
 // All results are returned as JSON for easy integration with other systems.
+//
+//nolint:dupl
 package tools
 
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -19,6 +22,9 @@ import (
 )
 
 const maxPerPage = 100
+
+// ErrArgumentType is an error indicating that the argument provided is of an invalid type.
+var ErrArgumentType = errors.New("invalid argument type")
 
 // Tools is the main entry point for GitLab API tools, providing access to
 // GitLab epics, issues, and merge requests functionality.
@@ -69,5 +75,6 @@ func newToolResultJSON(v any) (*mcp.CallToolResult, error) {
 	if err := json.NewEncoder(&b).Encode(v); err != nil {
 		return nil, fmt.Errorf("encoding to JSON: %w", err)
 	}
+
 	return mcp.NewToolResultText(b.String()), nil
 }

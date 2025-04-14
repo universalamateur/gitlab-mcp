@@ -6,8 +6,9 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
+
+	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
 
 // IssuesServiceInterface defines the interface for issue-related GitLab operations.
@@ -34,21 +35,21 @@ type IssuesServiceInterface interface {
 
 // NewIssuesTools creates a new instance of IssuesServiceInterface with the provided GitLab client
 // and current user. It returns an implementation that can be used to interact with GitLab's issue API.
-func NewIssuesTools(client *gitlab.Client, currentUser string) IssuesServiceInterface {
-	return &issuesService{
+func NewIssuesTools(client *gitlab.Client, currentUser string) *IssuesService {
+	return &IssuesService{
 		client:      client,
 		currentUser: currentUser,
 	}
 }
 
-type issuesService struct {
+type IssuesService struct {
 	client      *gitlab.Client
 	currentUser string
 }
 
 // AddTo registers all issue-related tools with the provided MCPServer.
 // It adds tools for listing, retrieving, and managing issues and their related merge requests.
-func (i *issuesService) AddTo(srv *server.MCPServer) {
+func (i *IssuesService) AddTo(srv *server.MCPServer) {
 	srv.AddTools(
 		i.ListUserIssues(),
 		i.ListGroupIssues(),
@@ -65,7 +66,7 @@ type listUserIssuesArgs struct {
 
 // ListUserIssues returns a ServerTool for listing all issues assigned to a user.
 // The tool accepts optional assignee and state filter parameters.
-func (i *issuesService) ListUserIssues() server.ServerTool {
+func (i *IssuesService) ListUserIssues() server.ServerTool {
 	return server.ServerTool{
 		Handler: i.listUserIssues,
 		Tool: mcpargs.NewTool("list_user_issues", listUserIssuesArgs{},
@@ -74,10 +75,10 @@ func (i *issuesService) ListUserIssues() server.ServerTool {
 	}
 }
 
-func (i *issuesService) listUserIssues(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (i *IssuesService) listUserIssues(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listUserIssuesArgs
 	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+		return nil, err //nolint:wrapcheck
 	}
 
 	var (
@@ -94,6 +95,7 @@ func (i *issuesService) listUserIssues(ctx context.Context, request mcp.CallTool
 	if args.Assignee != "" {
 		assignee = args.Assignee
 	}
+
 	opt.AssigneeUsername = gitlab.Ptr(assignee)
 
 	if args.State != "" {
@@ -125,7 +127,7 @@ type listGroupIssuesArgs struct {
 
 // ListGroupIssues returns a ServerTool for listing all issues within a specific group.
 // The tool accepts a group ID and optional state filter parameters.
-func (i *issuesService) ListGroupIssues() server.ServerTool {
+func (i *IssuesService) ListGroupIssues() server.ServerTool {
 	return server.ServerTool{
 		Handler: i.listGroupIssues,
 		Tool: mcpargs.NewTool("list_group_issues", listGroupIssuesArgs{},
@@ -134,10 +136,10 @@ func (i *issuesService) ListGroupIssues() server.ServerTool {
 	}
 }
 
-func (i *issuesService) listGroupIssues(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (i *IssuesService) listGroupIssues(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listGroupIssuesArgs
 	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+		return nil, err //nolint:wrapcheck
 	}
 
 	var (
@@ -179,7 +181,7 @@ type listProjectIssuesArgs struct {
 
 // ListProjectIssues returns a ServerTool for listing all issues within a specific project.
 // The tool accepts a project ID and optional state filter parameters.
-func (i *issuesService) ListProjectIssues() server.ServerTool {
+func (i *IssuesService) ListProjectIssues() server.ServerTool {
 	return server.ServerTool{
 		Handler: i.listProjectIssues,
 		Tool: mcpargs.NewTool("list_project_issues", listProjectIssuesArgs{},
@@ -188,10 +190,10 @@ func (i *issuesService) ListProjectIssues() server.ServerTool {
 	}
 }
 
-func (i *issuesService) listProjectIssues(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (i *IssuesService) listProjectIssues(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listProjectIssuesArgs
 	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+		return nil, err //nolint:wrapcheck
 	}
 
 	var (
@@ -233,7 +235,7 @@ type getIssueArgs struct {
 
 // GetIssue returns a ServerTool for fetching information about a specific issue.
 // The tool accepts a project ID and an issue internal ID as parameters.
-func (i *issuesService) GetIssue() server.ServerTool {
+func (i *IssuesService) GetIssue() server.ServerTool {
 	return server.ServerTool{
 		Handler: i.getIssue,
 		Tool: mcpargs.NewTool("get_issue", getIssueArgs{},
@@ -242,10 +244,10 @@ func (i *issuesService) GetIssue() server.ServerTool {
 	}
 }
 
-func (i *issuesService) getIssue(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (i *IssuesService) getIssue(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args getIssueArgs
 	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+		return nil, err //nolint:wrapcheck
 	}
 
 	issue, _, err := i.client.Issues.GetIssue(args.ProjectID.Value(), args.IssueIID, gitlab.WithContext(ctx))
@@ -263,7 +265,7 @@ type listMergeRequestsRelatedToIssueArgs struct {
 
 // ListMergeRequestsRelatedToIssue returns a ServerTool for listing all merge requests related to a specific issue.
 // The tool accepts a project ID and an issue internal ID as parameters.
-func (i *issuesService) ListMergeRequestsRelatedToIssue() server.ServerTool {
+func (i *IssuesService) ListMergeRequestsRelatedToIssue() server.ServerTool {
 	return server.ServerTool{
 		Handler: i.listMergeRequestsRelatedToIssue,
 		Tool: mcpargs.NewTool("list_merge_requests_related_to_issue", listMergeRequestsRelatedToIssueArgs{},
@@ -272,10 +274,10 @@ func (i *issuesService) ListMergeRequestsRelatedToIssue() server.ServerTool {
 	}
 }
 
-func (i *issuesService) listMergeRequestsRelatedToIssue(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (i *IssuesService) listMergeRequestsRelatedToIssue(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listMergeRequestsRelatedToIssueArgs
 	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+		return nil, err //nolint:wrapcheck
 	}
 
 	var (

@@ -6,8 +6,9 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
+
+	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
 
 // SnippetsServiceInterface defines the interface for snippet-related GitLab operations.
@@ -38,23 +39,29 @@ type SnippetsServiceInterface interface {
 	DeleteSnippet() server.ServerTool
 }
 
+const (
+	snippetVisibilityPrivate  = "private"
+	snippetVisibilityInternal = "internal"
+	snippetVisibilityPublic   = "public"
+)
+
 // NewSnippetsTools creates a new instance of SnippetsServiceInterface with the provided GitLab client
 // and current user. It returns an implementation that can be used to interact with GitLab's snippet API.
-func NewSnippetsTools(client *gitlab.Client, currentUser string) SnippetsServiceInterface {
-	return &snippetsService{
+func NewSnippetsTools(client *gitlab.Client, currentUser string) *SnippetsService {
+	return &SnippetsService{
 		client:      client,
 		currentUser: currentUser,
 	}
 }
 
-type snippetsService struct {
+type SnippetsService struct {
 	client      *gitlab.Client
 	currentUser string
 }
 
 // AddTo registers all snippet-related tools with the provided MCPServer.
 // It adds tools for listing, retrieving, creating, updating, and deleting snippets.
-func (s *snippetsService) AddTo(srv *server.MCPServer) {
+func (s *SnippetsService) AddTo(srv *server.MCPServer) {
 	srv.AddTools(
 		s.ListUserSnippets(),
 		s.ListAllSnippets(),
@@ -67,7 +74,7 @@ func (s *snippetsService) AddTo(srv *server.MCPServer) {
 }
 
 // ListUserSnippets returns a ServerTool for listing snippets owned by the current user.
-func (s *snippetsService) ListUserSnippets() server.ServerTool {
+func (s *SnippetsService) ListUserSnippets() server.ServerTool {
 	return server.ServerTool{
 		Handler: s.listUserSnippets,
 		Tool: mcp.NewTool("list_user_snippets",
@@ -76,7 +83,7 @@ func (s *snippetsService) ListUserSnippets() server.ServerTool {
 	}
 }
 
-func (s *snippetsService) listUserSnippets(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (s *SnippetsService) listUserSnippets(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var (
 		opt = &gitlab.ListSnippetsOptions{
 			PerPage: maxPerPage,
@@ -108,7 +115,7 @@ type listAllSnippetsArgs struct {
 
 // ListAllSnippets returns a ServerTool for listing all snippets the user has access to.
 // The include_private parameter determines whether to include private snippets or only public ones.
-func (s *snippetsService) ListAllSnippets() server.ServerTool {
+func (s *SnippetsService) ListAllSnippets() server.ServerTool {
 	return server.ServerTool{
 		Handler: s.listAllSnippets,
 		Tool: mcpargs.NewTool("list_all_snippets", listAllSnippetsArgs{},
@@ -117,58 +124,69 @@ func (s *snippetsService) ListAllSnippets() server.ServerTool {
 	}
 }
 
-func (s *snippetsService) listAllSnippets(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (s *SnippetsService) listAllSnippets(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listAllSnippetsArgs
 	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+		return nil, err //nolint:wrapcheck
 	}
 
-	var (
-		snippets []*gitlab.Snippet
-	)
-
 	if args.IncludePrivate {
-		// List all snippets (private and public)
-		opt := &gitlab.ListAllSnippetsOptions{
-			ListOptions: gitlab.ListOptions{
-				PerPage: maxPerPage,
-			},
-		}
+		return s.listAllSnippetsIncludingPrivate(ctx)
+	}
 
-		for {
-			snips, resp, err := s.client.Snippets.ListAllSnippets(opt, gitlab.WithContext(ctx))
-			if err != nil {
-				return nil, fmt.Errorf("ListAllSnippets: %w", err)
-			}
+	return s.listAllPublicSnippets(ctx)
+}
 
-			snippets = append(snippets, snips...)
-
-			if resp.NextPage == 0 {
-				break
-			}
-
-			opt.Page = resp.NextPage
-		}
-	} else {
-		// List only public snippets
-		opt := &gitlab.ExploreSnippetsOptions{
+// listAllSnippetsIncludingPrivate lists all snippets, private and public.
+func (s *SnippetsService) listAllSnippetsIncludingPrivate(ctx context.Context) (*mcp.CallToolResult, error) {
+	opt := &gitlab.ListAllSnippetsOptions{
+		ListOptions: gitlab.ListOptions{
 			PerPage: maxPerPage,
+		},
+	}
+
+	var snippets []*gitlab.Snippet
+
+	for {
+		snips, resp, err := s.client.Snippets.ListAllSnippets(opt, gitlab.WithContext(ctx))
+		if err != nil {
+			return nil, fmt.Errorf("ListAllSnippets: %w", err)
 		}
 
-		for {
-			snips, resp, err := s.client.Snippets.ExploreSnippets(opt, gitlab.WithContext(ctx))
-			if err != nil {
-				return nil, fmt.Errorf("ExploreSnippets: %w", err)
-			}
+		snippets = append(snippets, snips...)
 
-			snippets = append(snippets, snips...)
-
-			if resp.NextPage == 0 {
-				break
-			}
-
-			opt.Page = resp.NextPage
+		if resp.NextPage == 0 {
+			break
 		}
+
+		opt.Page = resp.NextPage
+	}
+
+	return newToolResultJSON(snippets)
+}
+
+// listAllPublicSnippets lists all public snippets.
+func (s *SnippetsService) listAllPublicSnippets(ctx context.Context) (*mcp.CallToolResult, error) {
+	// List only public snippets
+	opt := &gitlab.ExploreSnippetsOptions{
+		PerPage: maxPerPage,
+	}
+
+	var snippets []*gitlab.Snippet
+
+	for {
+		snips, resp, err := s.client.Snippets.ExploreSnippets(opt, gitlab.WithContext(ctx))
+		if err != nil {
+			return nil, fmt.Errorf("ExploreSnippets: %w", err)
+		}
+
+		snippets = append(snippets, snips...)
+
+		if resp.NextPage == 0 {
+			break
+		}
+
+		opt.Page = resp.NextPage
 	}
 
 	return newToolResultJSON(snippets)
@@ -180,7 +198,7 @@ type getSnippetArgs struct {
 
 // GetSnippet returns a ServerTool for fetching information about a specific snippet.
 // The tool accepts a snippet ID as a parameter.
-func (s *snippetsService) GetSnippet() server.ServerTool {
+func (s *SnippetsService) GetSnippet() server.ServerTool {
 	return server.ServerTool{
 		Handler: s.getSnippet,
 		Tool: mcpargs.NewTool("get_snippet", getSnippetArgs{},
@@ -189,10 +207,10 @@ func (s *snippetsService) GetSnippet() server.ServerTool {
 	}
 }
 
-func (s *snippetsService) getSnippet(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (s *SnippetsService) getSnippet(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args getSnippetArgs
 	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+		return nil, err //nolint:wrapcheck
 	}
 
 	snippet, _, err := s.client.Snippets.GetSnippet(args.SnippetID, gitlab.WithContext(ctx))
@@ -209,7 +227,7 @@ type getSnippetContentArgs struct {
 
 // GetSnippetContent returns a ServerTool for fetching the content of a specific snippet.
 // The tool accepts a snippet ID as a parameter.
-func (s *snippetsService) GetSnippetContent() server.ServerTool {
+func (s *SnippetsService) GetSnippetContent() server.ServerTool {
 	return server.ServerTool{
 		Handler: s.getSnippetContent,
 		Tool: mcpargs.NewTool("get_snippet_content", getSnippetContentArgs{},
@@ -218,10 +236,10 @@ func (s *snippetsService) GetSnippetContent() server.ServerTool {
 	}
 }
 
-func (s *snippetsService) getSnippetContent(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (s *SnippetsService) getSnippetContent(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args getSnippetContentArgs
 	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+		return nil, err //nolint:wrapcheck
 	}
 
 	content, _, err := s.client.Snippets.SnippetContent(args.SnippetID, gitlab.WithContext(ctx))
@@ -242,7 +260,7 @@ type createSnippetArgs struct {
 
 // CreateSnippet returns a ServerTool for creating a new snippet.
 // The tool accepts title, file_name, content, visibility, and description parameters.
-func (s *snippetsService) CreateSnippet() server.ServerTool {
+func (s *SnippetsService) CreateSnippet() server.ServerTool {
 	return server.ServerTool{
 		Handler: s.createSnippet,
 		Tool: mcpargs.NewTool("create_snippet", createSnippetArgs{},
@@ -251,28 +269,29 @@ func (s *snippetsService) CreateSnippet() server.ServerTool {
 	}
 }
 
-func (s *snippetsService) createSnippet(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (s *SnippetsService) createSnippet(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args createSnippetArgs
 	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+		return nil, err //nolint:wrapcheck
 	}
 
 	// Set default visibility if not provided
 	visibility := args.Visibility
 	if visibility == "" {
-		visibility = "private"
+		visibility = snippetVisibilityPrivate
 	}
 
 	var visibilityLevel gitlab.VisibilityValue
+
 	switch visibility {
-	case "private":
+	case snippetVisibilityPrivate:
 		visibilityLevel = gitlab.PrivateVisibility
-	case "internal":
+	case snippetVisibilityInternal:
 		visibilityLevel = gitlab.InternalVisibility
-	case "public":
+	case snippetVisibilityPublic:
 		visibilityLevel = gitlab.PublicVisibility
 	default:
-		return nil, fmt.Errorf("invalid visibility level: %s", visibility)
+		return nil, fmt.Errorf("%w: invalid visibility level: %s", ErrArgumentType, visibility)
 	}
 
 	opt := &gitlab.CreateSnippetOptions{
@@ -311,7 +330,7 @@ type updateSnippetArgs struct {
 
 // UpdateSnippet returns a ServerTool for updating an existing snippet.
 // The tool accepts snippet_id and optional title, file_name, content, visibility, and description parameters.
-func (s *snippetsService) UpdateSnippet() server.ServerTool {
+func (s *SnippetsService) UpdateSnippet() server.ServerTool {
 	return server.ServerTool{
 		Handler: s.updateSnippet,
 		Tool: mcpargs.NewTool("update_snippet", updateSnippetArgs{},
@@ -320,15 +339,16 @@ func (s *snippetsService) UpdateSnippet() server.ServerTool {
 	}
 }
 
-func (s *snippetsService) updateSnippet(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (s *SnippetsService) updateSnippet(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args updateSnippetArgs
 	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+		return nil, err //nolint:wrapcheck
 	}
 
 	opt := &gitlab.UpdateSnippetOptions{}
 
 	var fileActionValue gitlab.FileActionValue
+
 	switch args.FileAction {
 	case "create":
 		fileActionValue = gitlab.FileCreate
@@ -339,7 +359,7 @@ func (s *snippetsService) updateSnippet(ctx context.Context, request mcp.CallToo
 	case "move":
 		fileActionValue = gitlab.FileMove
 	default:
-		return nil, fmt.Errorf("invalid file action: %s", args.FileAction)
+		return nil, fmt.Errorf("%w: invalid file action: %q", ErrArgumentType, args.FileAction)
 	}
 
 	opt.Files = gitlab.Ptr([]*gitlab.UpdateSnippetFileOptions{{
@@ -359,16 +379,18 @@ func (s *snippetsService) updateSnippet(ctx context.Context, request mcp.CallToo
 
 	if args.Visibility != "" {
 		var visibilityLevel gitlab.VisibilityValue
+
 		switch args.Visibility {
-		case "private":
+		case snippetVisibilityPrivate:
 			visibilityLevel = gitlab.PrivateVisibility
-		case "internal":
+		case snippetVisibilityInternal:
 			visibilityLevel = gitlab.InternalVisibility
-		case "public":
+		case snippetVisibilityPublic:
 			visibilityLevel = gitlab.PublicVisibility
 		default:
-			return nil, fmt.Errorf("invalid visibility level: %s", args.Visibility)
+			return nil, fmt.Errorf("%w: invalid visibility level: %q", ErrArgumentType, args.Visibility)
 		}
+
 		opt.Visibility = &visibilityLevel
 	}
 
@@ -386,7 +408,7 @@ type deleteSnippetArgs struct {
 
 // DeleteSnippet returns a ServerTool for deleting a snippet.
 // The tool accepts a snippet ID as a parameter.
-func (s *snippetsService) DeleteSnippet() server.ServerTool {
+func (s *SnippetsService) DeleteSnippet() server.ServerTool {
 	return server.ServerTool{
 		Handler: s.deleteSnippet,
 		Tool: mcpargs.NewTool("delete_snippet", deleteSnippetArgs{},
@@ -395,10 +417,10 @@ func (s *snippetsService) DeleteSnippet() server.ServerTool {
 	}
 }
 
-func (s *snippetsService) deleteSnippet(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (s *SnippetsService) deleteSnippet(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args deleteSnippetArgs
 	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal arguments: %w", err)
+		return nil, err //nolint:wrapcheck
 	}
 
 	_, err := s.client.Snippets.DeleteSnippet(args.SnippetID, gitlab.WithContext(ctx))

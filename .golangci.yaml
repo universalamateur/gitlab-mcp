@@ -9,16 +9,20 @@ linters:
   default: all
   disable:
     - depguard
+    - dupl
     - exhaustruct
     - gochecknoglobals
     - gochecknoinits
     - gocritic
+    - lll
     - mnd
     - nilnil
     - nolintlint
     - nonamedreturns
+    - paralleltest
     - perfsprint
     - prealloc
+    - tagalign
     - tagliatelle
     - testpackage
     - unparam
@@ -196,6 +200,7 @@ linters:
         path: ^itests/.*
       - linters:
           - funlen
+          - gocognit
         path: _test.go$
         source: ^func (Benchmark|Example|Fuzz|Test)[A-Z]
       - path: (.+)\.go$
@@ -232,7 +237,7 @@ formatters:
       simplify: true
     goimports:
       local-prefixes:
-        - gitlab.com/gitlab-com/gl-infra/gitlab-mcp
+        - gitlab.com/fforster/gitlab-mcp
 
   exclusions:
     generated: lax
