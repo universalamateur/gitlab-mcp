@@ -198,6 +198,7 @@ func setValue(target reflect.Value, value any) error {
 }
 
 // Unmarshaler is the interface implemented by types that can unmarshal an MCP argument themselves.
+// Typically used in combination with the Marshaler interface.
 type Unmarshaler interface {
 	Unmarshal(v any) error
 }

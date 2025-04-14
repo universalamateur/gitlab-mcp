@@ -12,6 +12,10 @@ type ID struct {
 	Integer int
 }
 
+// Interface tests.
+var _ Marshaler = ID{}
+var _ Unmarshaler = &ID{}
+
 // Unmarshal sets the ID value from a string or integer.
 // It implements the Unmarshaler interface.
 func (id *ID) Unmarshal(v any) error {
@@ -33,14 +37,20 @@ func (id *ID) Unmarshal(v any) error {
 	return nil
 }
 
-// MCPType implements the MCPTyper interface.
-func (ID) MCPType() MCPType {
+// Marshal implements the Marshaler interface.
+func (ID) Marshal() MCPType {
 	return TypeString
 }
 
+// Value returns either the integer or the string value of the ID.
 func (id ID) Value() any {
 	if id.Integer != 0 {
 		return id.Integer
 	}
 	return id.String
+}
+
+// IsZero returns true if the ID is zero (both String and Integer are zero).
+func (id ID) IsZero() bool {
+	return id.Integer == 0 && id.String == ""
 }

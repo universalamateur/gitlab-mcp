@@ -10,13 +10,31 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-// ToolOptions accepts a struct and returns a slice of MCP tool options based on the struct's
-// fields and tags.
+// NewTool is a wrapper around mcp.NewTool that automatically marshals the struct to MCP tool options.
+// It panics if the marshaling fails.
+func NewTool(name string, v any, opts ...mcp.ToolOption) mcp.Tool {
+	var toolOpts []mcp.ToolOption
+
+	toolOpts = append(toolOpts, opts...)
+
+	structOpts, err := Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+	toolOpts = append(toolOpts, structOpts...)
+
+	return mcp.NewTool(name, toolOpts...)
+}
+
+// Marshal accepts a struct and returns a slice of MCP tool options based on the struct's
+// fields and tags. Supported fields are string, boolean, int, and float, as
+// well as fields implementing the MCPTyper interface.
 //
-// The `mcp_desc` tag is used to set the description of the tool option.
-// The `mcp_required` tag is used to mark a tool option as required.
-// The `mcp_enum` tag is used to set a comma separated list of allowed enum values for a string tool option.
-func ToolOptions(v any) ([]mcp.ToolOption, error) {
+// Required tags:
+//   - `mcp_desc`: Describes the field and is required.
+//   - `mcp_required`: Indicates if the field is required.
+//   - `mcp_enum`: Specifies allowed values for a string field in a comma-separated list.
+func Marshal(v any) ([]mcp.ToolOption, error) {
 
 	// Get the type of the struct
 	t := reflect.TypeOf(v)
@@ -89,8 +107,8 @@ func ToolOptions(v any) ([]mcp.ToolOption, error) {
 			fieldValue = reflect.ValueOf(v).Field(i)
 		}
 
-		if typer, ok := fieldValue.Interface().(MCPTyper); ok {
-			switch typer.MCPType() {
+		if typer, ok := fieldValue.Interface().(Marshaler); ok {
+			switch typer.Marshal() {
 			case TypeString:
 				toolOpts = append(toolOpts, mcp.WithString(optName, propOpts...))
 			case TypeBoolean:
@@ -98,7 +116,7 @@ func ToolOptions(v any) ([]mcp.ToolOption, error) {
 			case TypeNumber:
 				toolOpts = append(toolOpts, mcp.WithNumber(optName, propOpts...))
 			default:
-				errs = errors.Join(errs, fmt.Errorf("unsupported field type %v for field %q", typer.MCPType(), fieldName))
+				errs = errors.Join(errs, fmt.Errorf("unsupported field type %v for field %q", typer.Marshal(), fieldName))
 				continue
 			}
 
@@ -127,6 +145,7 @@ func ToolOptions(v any) ([]mcp.ToolOption, error) {
 	return toolOpts, nil
 }
 
+// MCPType specifies which MCP type a field should be mapped to.
 type MCPType int
 
 const (
@@ -135,11 +154,12 @@ const (
 	TypeBoolean
 )
 
-// MCPTyper is an interface for types that can return their MCPType.
+// Marshaler is an interface for types that can return their MCPType.
 // This allows the type to be identified without requiring knowledge of the specific type.
 // In particular, it allows MCP tool parameters to work with composite types.
-type MCPTyper interface {
-	MCPType() MCPType
+// Typically used in combination with the Unmarshaler interface.
+type Marshaler interface {
+	Marshal() MCPType
 }
 
 // toSnakeCase converts a camelCase string to snake_case

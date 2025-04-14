@@ -139,7 +139,7 @@ func TestToolOptions(t *testing.T) {
 			wantErr: `missing "mcp_desc" tag on field "Name"`,
 		},
 		{
-			name: "field implementing MCPTyper",
+			name: "field implementing Marshaler",
 			input: struct {
 				ID ID `mcp_desc:"The resource ID" mcp_required:"true"`
 			}{},
@@ -151,7 +151,7 @@ func TestToolOptions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ToolOptions(tt.input)
+			got, err := Marshal(tt.input)
 
 			// Check errors first
 			if tt.wantErr != "" {
@@ -190,7 +190,7 @@ func TestToolOptionsMultipleErrors(t *testing.T) {
 		Data  map[string]string `mcp_desc:"The data"`
 	}{}
 
-	_, err := ToolOptions(input)
+	_, err := Marshal(input)
 
 	if err == nil {
 		t.Fatal("ToolOptions() error = nil, want multiple errors")
