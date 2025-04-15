@@ -27,6 +27,9 @@ var ErrArgumentType = errors.New("invalid argument type")
 // Tools is the main entry point for GitLab API tools, providing access to
 // GitLab epics, issues, and merge requests functionality.
 type Tools struct {
+	// Discussions provides access to GitLab discussion-related operations.
+	Discussions DiscussionServiceInterface
+
 	// Epics provides access to GitLab epic-related operations.
 	Epics EpicServiceInterface
 
@@ -47,6 +50,7 @@ type Tools struct {
 // It initializes all the service interfaces for epics, issues, and merge requests.
 func New(client *gitlab.Client, currentUser string) *Tools {
 	return &Tools{
+		Discussions:   NewDiscussionTools(client),
 		Epics:         NewEpicTools(client),
 		Issues:        NewIssuesTools(client, currentUser),
 		MergeRequests: NewMergeRequestsTools(client, currentUser),
@@ -58,6 +62,7 @@ func New(client *gitlab.Client, currentUser string) *Tools {
 // AddTo registers all GitLab tools with the provided MCPServer.
 // It calls AddTo on all service interfaces to register their respective tools.
 func (s *Tools) AddTo(srv *server.MCPServer) {
+	s.Discussions.AddTo(srv)
 	s.Epics.AddTo(srv)
 	s.Issues.AddTo(srv)
 	s.MergeRequests.AddTo(srv)
