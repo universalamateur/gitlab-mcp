@@ -36,9 +36,6 @@ type MergeRequestsServiceInterface interface { //nolint:interfacebloat
 	// GetMergeRequestCommits returns a tool for fetching all commits associated with a specific merge request.
 	GetMergeRequestCommits() server.ServerTool
 
-	// GetMergeRequestChanges returns a tool for fetching file changes information for a specific merge request.
-	GetMergeRequestChanges() server.ServerTool
-
 	// ListMergeRequestDiffs returns a tool for listing all versions of diffs for a specific merge request.
 	ListMergeRequestDiffs() server.ServerTool
 
@@ -82,7 +79,6 @@ func (m *MergeRequestsService) AddTo(srv *server.MCPServer) {
 		m.GetMergeRequest(),
 		m.GetMergeRequestApprovals(),
 		m.GetMergeRequestCommits(),
-		m.GetMergeRequestChanges(),
 		m.ListMergeRequestDiffs(),
 		m.GetMergeRequestParticipants(),
 		m.GetMergeRequestReviewers(),
@@ -377,38 +373,6 @@ func (m *MergeRequestsService) getMergeRequestCommits(ctx context.Context, reque
 	}
 
 	return newToolResultJSON(commits)
-}
-
-type getMergeRequestChangesArgs struct {
-	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
-}
-
-// GetMergeRequestChanges returns a ServerTool for fetching file changes information for a specific merge request.
-// The tool accepts a project ID and a merge request internal ID as parameters.
-func (m *MergeRequestsService) GetMergeRequestChanges() server.ServerTool {
-	return server.ServerTool{
-		Handler: m.getMergeRequestChanges,
-		Tool: mcpargs.NewTool("get_merge_request_changes", getMergeRequestChangesArgs{},
-			mcp.WithDescription("Get information about the merge request including its files and changes"),
-		),
-	}
-}
-
-func (m *MergeRequestsService) getMergeRequestChanges(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var args getMergeRequestChangesArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
-	var opt gitlab.GetMergeRequestChangesOptions
-
-	mr, _, err := m.client.MergeRequests.GetMergeRequestChanges(args.ProjectID.Value(), args.MergeRequestIID, &opt, gitlab.WithContext(ctx))
-	if err != nil {
-		return nil, fmt.Errorf("GetMergeRequestChanges(%q, %d): %w", args.ProjectID.Value(), args.MergeRequestIID, err)
-	}
-
-	return newToolResultJSON(mr)
 }
 
 type listMergeRequestDiffsArgs struct {
