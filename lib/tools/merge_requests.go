@@ -36,7 +36,7 @@ type MergeRequestsServiceInterface interface { //nolint:interfacebloat
 	// GetMergeRequestCommits returns a tool for fetching all commits associated with a specific merge request.
 	GetMergeRequestCommits() server.ServerTool
 
-	// ListMergeRequestDiffs returns a tool for listing all versions of diffs for a specific merge request.
+	// ListMergeRequestDiffs returns a tool for listing diffs of the files changed in a merge request.
 	ListMergeRequestDiffs() server.ServerTool
 
 	// GetMergeRequestParticipants returns a tool for fetching all participants of a specific merge request.
@@ -386,7 +386,7 @@ func (m *MergeRequestsService) ListMergeRequestDiffs() server.ServerTool {
 	return server.ServerTool{
 		Handler: m.listMergeRequestDiffs,
 		Tool: mcpargs.NewTool("list_merge_request_diffs", listMergeRequestDiffsArgs{},
-			mcp.WithDescription("Get a list of merge request diff versions"),
+			mcp.WithDescription("Returns the changes made to files by the merge request. Diffs are presented in the unified diff format."),
 		),
 	}
 }
@@ -402,6 +402,7 @@ func (m *MergeRequestsService) listMergeRequestDiffs(ctx context.Context, reques
 			ListOptions: gitlab.ListOptions{
 				PerPage: maxPerPage,
 			},
+			Unidiff: gitlab.Ptr(true),
 		}
 		diffs []*gitlab.MergeRequestDiff
 	)
