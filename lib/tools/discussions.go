@@ -47,7 +47,7 @@ func (d *DiscussionService) AddTo(srv *server.MCPServer) {
 	)
 }
 
-// discussionResourceType represents the type of GitLab resource for discussions
+// discussionResourceType represents the type of GitLab resource for discussions.
 type discussionResourceType string
 
 const (
@@ -58,86 +58,28 @@ const (
 	discussionResourceTypeCommit       discussionResourceType = "commit"
 )
 
-// discussionManager returns the appropriate discussion manager based on resource type
+// discussionManager returns the appropriate discussion manager based on resource type.
+//
+//nolint:ireturn,wrapcheck
 func (d *DiscussionService) discussionManager(resourceType discussionResourceType, parentID mcpargs.ID, resourceID mcpargs.ID) (discussions.Manager, error) {
 	switch resourceType {
 	case discussionResourceTypeIssue:
-		if parentID.IsZero() {
-			return nil, fmt.Errorf("parent_id (project ID) is required for issue discussions")
-		}
-		if resourceID.IsZero() {
-			return nil, fmt.Errorf("resource_id (issue IID) is required for issue discussions")
-		}
-
-		// Ensure resource_id is an integer
-		if resourceID.Integer == 0 && resourceID.String != "" {
-			return nil, fmt.Errorf("resource_id must be a number for issue discussions")
-		}
-
-		return discussions.NewIssueDiscussion(d.client, parentID.Value(), resourceID.Integer)
+		return discussions.NewIssueDiscussion(d.client, parentID, resourceID.Integer)
 
 	case discussionResourceTypeMergeRequest:
-		if parentID.IsZero() {
-			return nil, fmt.Errorf("parent_id (project ID) is required for merge request discussions")
-		}
-		if resourceID.IsZero() {
-			return nil, fmt.Errorf("resource_id (merge request IID) is required for merge request discussions")
-		}
-
-		// Ensure resource_id is an integer
-		if resourceID.Integer == 0 && resourceID.String != "" {
-			return nil, fmt.Errorf("resource_id must be a number for merge request discussions")
-		}
-
-		return discussions.NewMergeRequestDiscussion(d.client, parentID.Value(), resourceID.Integer)
+		return discussions.NewMergeRequestDiscussion(d.client, parentID, resourceID.Integer)
 
 	case discussionResourceTypeEpic:
-		if parentID.IsZero() {
-			return nil, fmt.Errorf("parent_id (group ID) is required for epic discussions")
-		}
-		if resourceID.IsZero() {
-			return nil, fmt.Errorf("resource_id (epic IID) is required for epic discussions")
-		}
-
-		// Ensure resource_id is an integer
-		if resourceID.Integer == 0 && resourceID.String != "" {
-			return nil, fmt.Errorf("resource_id must be a number for epic discussions")
-		}
-
-		return discussions.NewEpicDiscussion(d.client, parentID.Value(), resourceID.Integer)
+		return discussions.NewEpicDiscussion(d.client, parentID, resourceID.Integer)
 
 	case discussionResourceTypeSnippet:
-		if parentID.IsZero() {
-			return nil, fmt.Errorf("parent_id (project ID) is required for snippet discussions")
-		}
-		if resourceID.IsZero() {
-			return nil, fmt.Errorf("resource_id (snippet ID) is required for snippet discussions")
-		}
-
-		// Ensure resource_id is an integer
-		if resourceID.Integer == 0 && resourceID.String != "" {
-			return nil, fmt.Errorf("resource_id must be a number for snippet discussions")
-		}
-
-		return discussions.NewSnippetDiscussion(d.client, parentID.Value(), resourceID.Integer)
+		return discussions.NewSnippetDiscussion(d.client, parentID, resourceID.Integer)
 
 	case discussionResourceTypeCommit:
-		if parentID.IsZero() {
-			return nil, fmt.Errorf("parent_id (project ID) is required for commit discussions")
-		}
-		if resourceID.IsZero() {
-			return nil, fmt.Errorf("resource_id (commit SHA) is required for commit discussions")
-		}
-
-		// Commit ID should be a string, not a number
-		if resourceID.Integer != 0 {
-			return nil, fmt.Errorf("resource_id must be a commit SHA, not a number")
-		}
-
-		return discussions.NewCommitDiscussion(d.client, parentID.Value(), resourceID.String)
+		return discussions.NewCommitDiscussion(d.client, parentID, resourceID.String)
 
 	default:
-		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
+		return nil, fmt.Errorf("%w: unsupported resource type: %s", ErrArgumentType, resourceType)
 	}
 }
 
@@ -350,7 +292,7 @@ func (d *DiscussionService) resolveDiscussion(ctx context.Context, request mcp.C
 	// Type assertion is needed here as Resolve is not part of the common interface
 	resolvableMgr, ok := manager.(discussions.ResolvableManager)
 	if !ok {
-		return nil, fmt.Errorf("expected merge request discussion manager, got another type")
+		return nil, fmt.Errorf("%w: expected merge request discussion manager, got another type", ErrArgumentType)
 	}
 
 	discussion, err := resolvableMgr.ResolveDiscussion(ctx, args.DiscussionID, args.Resolved)
@@ -366,6 +308,7 @@ func resolveActionText(resolved bool) string {
 	if resolved {
 		return "resolve"
 	}
+
 	return "unresolve"
 }
 
@@ -408,7 +351,7 @@ func (d *DiscussionService) newDiffDiscussion(ctx context.Context, request mcp.C
 
 	positionManager, ok := manager.(discussions.PositionedManager)
 	if !ok {
-		return nil, fmt.Errorf("expected positioned discussion manager, got another type")
+		return nil, fmt.Errorf("%w: expected positioned discussion manager, got another type", ErrArgumentType)
 	}
 
 	// Create position object
@@ -425,6 +368,7 @@ func (d *DiscussionService) newDiffDiscussion(ctx context.Context, request mcp.C
 	if args.OldLine != 0 {
 		position.OldLine = gitlab.Ptr(args.OldLine)
 	}
+
 	if args.NewLine != 0 {
 		position.NewLine = gitlab.Ptr(args.NewLine)
 	}

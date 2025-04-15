@@ -5,23 +5,29 @@ import (
 	"fmt"
 
 	gitlab "gitlab.com/gitlab-org/api/client-go"
+
+	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
 
 // CommitDiscussion provides methods for managing discussions on GitLab commits.
 type CommitDiscussion struct {
 	client    *gitlab.Client
-	projectID interface{}
+	projectID mcpargs.ID
 	commitID  string
 }
 
 // NewCommitDiscussion creates a new instance for managing discussions on a specific GitLab commit.
-func NewCommitDiscussion(client *gitlab.Client, projectID interface{}, commitID string) (*CommitDiscussion, error) {
+func NewCommitDiscussion(client *gitlab.Client, projectID mcpargs.ID, commitID string) (*CommitDiscussion, error) {
 	if client == nil {
-		return nil, fmt.Errorf("client cannot be nil")
+		return nil, fmt.Errorf("%w: client cannot be nil", ErrInvalidArgument)
+	}
+
+	if projectID.IsZero() {
+		return nil, fmt.Errorf("%w: projectID cannot be zero", ErrInvalidArgument)
 	}
 
 	if commitID == "" {
-		return nil, fmt.Errorf("commitID cannot be empty")
+		return nil, fmt.Errorf("%w: commitID cannot be empty", ErrInvalidArgument)
 	}
 
 	return &CommitDiscussion{
@@ -41,8 +47,7 @@ func (d *CommitDiscussion) List(ctx context.Context) ([]*gitlab.Discussion, erro
 	)
 
 	for {
-		discussions, resp, err := d.client.Discussions.ListCommitDiscussions(
-			d.projectID, d.commitID, opt, gitlab.WithContext(ctx))
+		discussions, resp, err := d.client.Discussions.ListCommitDiscussions(d.projectID.Value(), d.commitID, opt, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("failed to list commit discussions: %w", err)
 		}
@@ -65,8 +70,7 @@ func (d *CommitDiscussion) NewDiscussion(ctx context.Context, body string) (*git
 		Body: gitlab.Ptr(body),
 	}
 
-	discussion, _, err := d.client.Discussions.CreateCommitDiscussion(
-		d.projectID, d.commitID, opt, gitlab.WithContext(ctx))
+	discussion, _, err := d.client.Discussions.CreateCommitDiscussion(d.projectID.Value(), d.commitID, opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create commit discussion: %w", err)
 	}
@@ -78,14 +82,12 @@ var _ PositionedManager = (*CommitDiscussion)(nil)
 
 // NewPositionDiscussion creates a new discussion on a specific position in the merge request diff.
 func (d *CommitDiscussion) NewPositionDiscussion(ctx context.Context, body string, pos *gitlab.PositionOptions, commitID string) (*gitlab.Discussion, error) {
-
 	opt := &gitlab.CreateCommitDiscussionOptions{
 		Body:     gitlab.Ptr(body),
 		Position: toNotePosition(pos),
 	}
 
-	discussion, _, err := d.client.Discussions.CreateCommitDiscussion(
-		d.projectID, d.commitID, opt, gitlab.WithContext(ctx))
+	discussion, _, err := d.client.Discussions.CreateCommitDiscussion(d.projectID.Value(), d.commitID, opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create diff discussion: %w", err)
 	}
@@ -107,6 +109,7 @@ func toNotePosition(pOpts *gitlab.PositionOptions) *gitlab.NotePosition {
 	}
 }
 
+//nolint:ireturn
 func derefOptionalField[T any](p *T) T {
 	var zero T
 
@@ -124,8 +127,7 @@ func (d *CommitDiscussion) NewDiffDiscussion(ctx context.Context, body string, p
 		Position: position,
 	}
 
-	discussion, _, err := d.client.Discussions.CreateCommitDiscussion(
-		d.projectID, d.commitID, opt, gitlab.WithContext(ctx))
+	discussion, _, err := d.client.Discussions.CreateCommitDiscussion(d.projectID.Value(), d.commitID, opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create diff discussion: %w", err)
 	}
@@ -139,8 +141,7 @@ func (d *CommitDiscussion) AddNote(ctx context.Context, discussionID string, bod
 		Body: gitlab.Ptr(body),
 	}
 
-	note, _, err := d.client.Discussions.AddCommitDiscussionNote(
-		d.projectID, d.commitID, discussionID, opt, gitlab.WithContext(ctx))
+	note, _, err := d.client.Discussions.AddCommitDiscussionNote(d.projectID.Value(), d.commitID, discussionID, opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to add note to commit discussion: %w", err)
 	}
@@ -154,8 +155,7 @@ func (d *CommitDiscussion) ModifyNote(ctx context.Context, discussionID string, 
 		Body: gitlab.Ptr(body),
 	}
 
-	note, _, err := d.client.Discussions.UpdateCommitDiscussionNote(
-		d.projectID, d.commitID, discussionID, noteID, opt, gitlab.WithContext(ctx))
+	note, _, err := d.client.Discussions.UpdateCommitDiscussionNote(d.projectID.Value(), d.commitID, discussionID, noteID, opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to modify commit note: %w", err)
 	}
@@ -165,8 +165,7 @@ func (d *CommitDiscussion) ModifyNote(ctx context.Context, discussionID string, 
 
 // DeleteNote removes a note from a discussion thread.
 func (d *CommitDiscussion) DeleteNote(ctx context.Context, discussionID string, noteID int) error {
-	_, err := d.client.Discussions.DeleteCommitDiscussionNote(
-		d.projectID, d.commitID, discussionID, noteID, gitlab.WithContext(ctx))
+	_, err := d.client.Discussions.DeleteCommitDiscussionNote(d.projectID.Value(), d.commitID, discussionID, noteID, gitlab.WithContext(ctx))
 	if err != nil {
 		return fmt.Errorf("failed to delete commit note: %w", err)
 	}

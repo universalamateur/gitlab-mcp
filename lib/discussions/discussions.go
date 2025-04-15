@@ -24,7 +24,7 @@
 //	}
 //
 //	// Add a note to the discussion
-//	note, err := issueDiscussions.AddNote(ctx, discussion.ID, "This is a reply")
+//	n, err := issueDiscussions.AddNote(ctx, discussion.ID, "This is a reply")
 //	if err != nil {
 //	    log.Fatal(err)
 //	}
@@ -35,11 +35,14 @@ package discussions
 
 import (
 	"context"
+	"errors"
 
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 const maxPerPage = 100
+
+var ErrInvalidArgument = errors.New("invalid argument")
 
 // Manager is an interface that defines common methods for managing discussions
 // across different GitLab resources (issues, merge requests, epics, snippets, commits).

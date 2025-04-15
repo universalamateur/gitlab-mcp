@@ -5,19 +5,29 @@ import (
 	"fmt"
 
 	gitlab "gitlab.com/gitlab-org/api/client-go"
+
+	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
 
 // SnippetDiscussion provides methods for managing discussions on GitLab snippets.
 type SnippetDiscussion struct {
 	client    *gitlab.Client
-	projectID interface{}
+	projectID mcpargs.ID
 	snippetID int
 }
 
 // NewSnippetDiscussion creates a new instance for managing discussions on a specific GitLab snippet.
-func NewSnippetDiscussion(client *gitlab.Client, projectID interface{}, snippetID int) (*SnippetDiscussion, error) {
+func NewSnippetDiscussion(client *gitlab.Client, projectID mcpargs.ID, snippetID int) (*SnippetDiscussion, error) {
 	if client == nil {
-		return nil, fmt.Errorf("client cannot be nil")
+		return nil, fmt.Errorf("%w: client cannot be nil", ErrInvalidArgument)
+	}
+
+	if projectID.IsZero() {
+		return nil, fmt.Errorf("%w: projectID cannot be zero", ErrInvalidArgument)
+	}
+
+	if snippetID == 0 {
+		return nil, fmt.Errorf("%w: snippetID cannot be zero", ErrInvalidArgument)
 	}
 
 	return &SnippetDiscussion{
@@ -37,8 +47,7 @@ func (d *SnippetDiscussion) List(ctx context.Context) ([]*gitlab.Discussion, err
 	)
 
 	for {
-		discussions, resp, err := d.client.Discussions.ListSnippetDiscussions(
-			d.projectID, d.snippetID, opt, gitlab.WithContext(ctx))
+		discussions, resp, err := d.client.Discussions.ListSnippetDiscussions(d.projectID.Value(), d.snippetID, opt, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("failed to list snippet discussions: %w", err)
 		}
@@ -61,8 +70,7 @@ func (d *SnippetDiscussion) NewDiscussion(ctx context.Context, body string) (*gi
 		Body: gitlab.Ptr(body),
 	}
 
-	discussion, _, err := d.client.Discussions.CreateSnippetDiscussion(
-		d.projectID, d.snippetID, opt, gitlab.WithContext(ctx))
+	discussion, _, err := d.client.Discussions.CreateSnippetDiscussion(d.projectID.Value(), d.snippetID, opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create snippet discussion: %w", err)
 	}
@@ -76,8 +84,7 @@ func (d *SnippetDiscussion) AddNote(ctx context.Context, discussionID string, bo
 		Body: gitlab.Ptr(body),
 	}
 
-	note, _, err := d.client.Discussions.AddSnippetDiscussionNote(
-		d.projectID, d.snippetID, discussionID, opt, gitlab.WithContext(ctx))
+	note, _, err := d.client.Discussions.AddSnippetDiscussionNote(d.projectID.Value(), d.snippetID, discussionID, opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to add note to snippet discussion: %w", err)
 	}
@@ -91,8 +98,7 @@ func (d *SnippetDiscussion) ModifyNote(ctx context.Context, discussionID string,
 		Body: gitlab.Ptr(body),
 	}
 
-	note, _, err := d.client.Discussions.UpdateSnippetDiscussionNote(
-		d.projectID, d.snippetID, discussionID, noteID, opt, gitlab.WithContext(ctx))
+	note, _, err := d.client.Discussions.UpdateSnippetDiscussionNote(d.projectID.Value(), d.snippetID, discussionID, noteID, opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to modify snippet note: %w", err)
 	}
@@ -102,8 +108,7 @@ func (d *SnippetDiscussion) ModifyNote(ctx context.Context, discussionID string,
 
 // DeleteNote removes a note from a discussion thread.
 func (d *SnippetDiscussion) DeleteNote(ctx context.Context, discussionID string, noteID int) error {
-	_, err := d.client.Discussions.DeleteSnippetDiscussionNote(
-		d.projectID, d.snippetID, discussionID, noteID, gitlab.WithContext(ctx))
+	_, err := d.client.Discussions.DeleteSnippetDiscussionNote(d.projectID.Value(), d.snippetID, discussionID, noteID, gitlab.WithContext(ctx))
 	if err != nil {
 		return fmt.Errorf("failed to delete snippet note: %w", err)
 	}

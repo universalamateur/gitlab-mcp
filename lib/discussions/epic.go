@@ -5,19 +5,29 @@ import (
 	"fmt"
 
 	gitlab "gitlab.com/gitlab-org/api/client-go"
+
+	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
 
 // EpicDiscussion provides methods for managing discussions on GitLab epics.
 type EpicDiscussion struct {
 	client  *gitlab.Client
-	groupID interface{}
+	groupID mcpargs.ID
 	epicIID int
 }
 
 // NewEpicDiscussion creates a new instance for managing discussions on a specific GitLab epic.
-func NewEpicDiscussion(client *gitlab.Client, groupID interface{}, epicIID int) (*EpicDiscussion, error) {
+func NewEpicDiscussion(client *gitlab.Client, groupID mcpargs.ID, epicIID int) (*EpicDiscussion, error) {
 	if client == nil {
-		return nil, fmt.Errorf("client cannot be nil")
+		return nil, fmt.Errorf("%w: client cannot be nil", ErrInvalidArgument)
+	}
+
+	if groupID.IsZero() {
+		return nil, fmt.Errorf("%w: groupID cannot be zero", ErrInvalidArgument)
+	}
+
+	if epicIID == 0 {
+		return nil, fmt.Errorf("%w: epicIID cannot be zero", ErrInvalidArgument)
 	}
 
 	return &EpicDiscussion{
@@ -37,8 +47,7 @@ func (d *EpicDiscussion) List(ctx context.Context) ([]*gitlab.Discussion, error)
 	)
 
 	for {
-		discussions, resp, err := d.client.Discussions.ListGroupEpicDiscussions(
-			d.groupID, d.epicIID, opt, gitlab.WithContext(ctx))
+		discussions, resp, err := d.client.Discussions.ListGroupEpicDiscussions(d.groupID.Value(), d.epicIID, opt, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("failed to list epic discussions: %w", err)
 		}
@@ -61,8 +70,7 @@ func (d *EpicDiscussion) NewDiscussion(ctx context.Context, body string) (*gitla
 		Body: gitlab.Ptr(body),
 	}
 
-	discussion, _, err := d.client.Discussions.CreateEpicDiscussion(
-		d.groupID, d.epicIID, opt, gitlab.WithContext(ctx))
+	discussion, _, err := d.client.Discussions.CreateEpicDiscussion(d.groupID.Value(), d.epicIID, opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create epic discussion: %w", err)
 	}
@@ -76,8 +84,7 @@ func (d *EpicDiscussion) AddNote(ctx context.Context, discussionID string, body 
 		Body: gitlab.Ptr(body),
 	}
 
-	note, _, err := d.client.Discussions.AddEpicDiscussionNote(
-		d.groupID, d.epicIID, discussionID, opt, gitlab.WithContext(ctx))
+	note, _, err := d.client.Discussions.AddEpicDiscussionNote(d.groupID.Value(), d.epicIID, discussionID, opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to add note to epic discussion: %w", err)
 	}
@@ -91,8 +98,7 @@ func (d *EpicDiscussion) ModifyNote(ctx context.Context, discussionID string, no
 		Body: gitlab.Ptr(body),
 	}
 
-	note, _, err := d.client.Discussions.UpdateEpicDiscussionNote(
-		d.groupID, d.epicIID, discussionID, noteID, opt, gitlab.WithContext(ctx))
+	note, _, err := d.client.Discussions.UpdateEpicDiscussionNote(d.groupID.Value(), d.epicIID, discussionID, noteID, opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to modify epic note: %w", err)
 	}
@@ -102,8 +108,7 @@ func (d *EpicDiscussion) ModifyNote(ctx context.Context, discussionID string, no
 
 // DeleteNote removes a note from a discussion thread.
 func (d *EpicDiscussion) DeleteNote(ctx context.Context, discussionID string, noteID int) error {
-	_, err := d.client.Discussions.DeleteEpicDiscussionNote(
-		d.groupID, d.epicIID, discussionID, noteID, gitlab.WithContext(ctx))
+	_, err := d.client.Discussions.DeleteEpicDiscussionNote(d.groupID.Value(), d.epicIID, discussionID, noteID, gitlab.WithContext(ctx))
 	if err != nil {
 		return fmt.Errorf("failed to delete epic note: %w", err)
 	}

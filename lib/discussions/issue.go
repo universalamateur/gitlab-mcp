@@ -5,19 +5,29 @@ import (
 	"fmt"
 
 	gitlab "gitlab.com/gitlab-org/api/client-go"
+
+	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
 
 // IssueDiscussion provides methods for managing discussions on GitLab issues.
 type IssueDiscussion struct {
 	client    *gitlab.Client
-	projectID interface{}
+	projectID mcpargs.ID
 	issueIID  int
 }
 
 // NewIssueDiscussion creates a new instance for managing discussions on a specific GitLab issue.
-func NewIssueDiscussion(client *gitlab.Client, projectID interface{}, issueIID int) (*IssueDiscussion, error) {
+func NewIssueDiscussion(client *gitlab.Client, projectID mcpargs.ID, issueIID int) (*IssueDiscussion, error) {
 	if client == nil {
-		return nil, fmt.Errorf("client cannot be nil")
+		return nil, fmt.Errorf("%w: client cannot be nil", ErrInvalidArgument)
+	}
+
+	if projectID.IsZero() {
+		return nil, fmt.Errorf("%w: projectID cannot be zero", ErrInvalidArgument)
+	}
+
+	if issueIID == 0 {
+		return nil, fmt.Errorf("%w: issueIID cannot be zero", ErrInvalidArgument)
 	}
 
 	return &IssueDiscussion{
@@ -37,8 +47,7 @@ func (d *IssueDiscussion) List(ctx context.Context) ([]*gitlab.Discussion, error
 	)
 
 	for {
-		discussions, resp, err := d.client.Discussions.ListIssueDiscussions(
-			d.projectID, d.issueIID, opt, gitlab.WithContext(ctx))
+		discussions, resp, err := d.client.Discussions.ListIssueDiscussions(d.projectID.Value(), d.issueIID, opt, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("failed to list discussions: %w", err)
 		}
@@ -61,8 +70,7 @@ func (d *IssueDiscussion) NewDiscussion(ctx context.Context, body string) (*gitl
 		Body: gitlab.Ptr(body),
 	}
 
-	discussion, _, err := d.client.Discussions.CreateIssueDiscussion(
-		d.projectID, d.issueIID, opt, gitlab.WithContext(ctx))
+	discussion, _, err := d.client.Discussions.CreateIssueDiscussion(d.projectID.Value(), d.issueIID, opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create discussion: %w", err)
 	}
@@ -76,8 +84,7 @@ func (d *IssueDiscussion) AddNote(ctx context.Context, discussionID string, body
 		Body: gitlab.Ptr(body),
 	}
 
-	note, _, err := d.client.Discussions.AddIssueDiscussionNote(
-		d.projectID, d.issueIID, discussionID, opt, gitlab.WithContext(ctx))
+	note, _, err := d.client.Discussions.AddIssueDiscussionNote(d.projectID.Value(), d.issueIID, discussionID, opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to add note to discussion: %w", err)
 	}
@@ -91,8 +98,7 @@ func (d *IssueDiscussion) ModifyNote(ctx context.Context, discussionID string, n
 		Body: gitlab.Ptr(body),
 	}
 
-	note, _, err := d.client.Discussions.UpdateIssueDiscussionNote(
-		d.projectID, d.issueIID, discussionID, noteID, opt, gitlab.WithContext(ctx))
+	note, _, err := d.client.Discussions.UpdateIssueDiscussionNote(d.projectID.Value(), d.issueIID, discussionID, noteID, opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to modify note: %w", err)
 	}
@@ -102,8 +108,7 @@ func (d *IssueDiscussion) ModifyNote(ctx context.Context, discussionID string, n
 
 // DeleteNote removes a note from a discussion thread.
 func (d *IssueDiscussion) DeleteNote(ctx context.Context, discussionID string, noteID int) error {
-	_, err := d.client.Discussions.DeleteIssueDiscussionNote(
-		d.projectID, d.issueIID, discussionID, noteID, gitlab.WithContext(ctx))
+	_, err := d.client.Discussions.DeleteIssueDiscussionNote(d.projectID.Value(), d.issueIID, discussionID, noteID, gitlab.WithContext(ctx))
 	if err != nil {
 		return fmt.Errorf("failed to delete note: %w", err)
 	}

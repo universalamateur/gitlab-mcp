@@ -5,19 +5,21 @@ import (
 	"fmt"
 
 	gitlab "gitlab.com/gitlab-org/api/client-go"
+
+	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
 
 // MergeRequestDiscussion provides methods for managing discussions on GitLab merge requests.
 type MergeRequestDiscussion struct {
 	client          *gitlab.Client
-	projectID       interface{}
+	projectID       mcpargs.ID
 	mergeRequestIID int
 }
 
 // NewMergeRequestDiscussion creates a new instance for managing discussions on a specific GitLab merge request.
-func NewMergeRequestDiscussion(client *gitlab.Client, projectID interface{}, mergeRequestIID int) (*MergeRequestDiscussion, error) {
+func NewMergeRequestDiscussion(client *gitlab.Client, projectID mcpargs.ID, mergeRequestIID int) (*MergeRequestDiscussion, error) {
 	if client == nil {
-		return nil, fmt.Errorf("client cannot be nil")
+		return nil, fmt.Errorf("%w: client cannot be nil", ErrInvalidArgument)
 	}
 
 	return &MergeRequestDiscussion{
@@ -37,8 +39,7 @@ func (d *MergeRequestDiscussion) List(ctx context.Context) ([]*gitlab.Discussion
 	)
 
 	for {
-		discussions, resp, err := d.client.Discussions.ListMergeRequestDiscussions(
-			d.projectID, d.mergeRequestIID, opt, gitlab.WithContext(ctx))
+		discussions, resp, err := d.client.Discussions.ListMergeRequestDiscussions(d.projectID.Value(), d.mergeRequestIID, opt, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("failed to list merge request discussions: %w", err)
 		}
@@ -61,8 +62,7 @@ func (d *MergeRequestDiscussion) NewDiscussion(ctx context.Context, body string)
 		Body: gitlab.Ptr(body),
 	}
 
-	discussion, _, err := d.client.Discussions.CreateMergeRequestDiscussion(
-		d.projectID, d.mergeRequestIID, opt, gitlab.WithContext(ctx))
+	discussion, _, err := d.client.Discussions.CreateMergeRequestDiscussion(d.projectID.Value(), d.mergeRequestIID, opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create merge request discussion: %w", err)
 	}
@@ -83,8 +83,7 @@ func (d *MergeRequestDiscussion) NewPositionDiscussion(ctx context.Context, body
 		opt.CommitID = gitlab.Ptr(commitID)
 	}
 
-	discussion, _, err := d.client.Discussions.CreateMergeRequestDiscussion(
-		d.projectID, d.mergeRequestIID, opt, gitlab.WithContext(ctx))
+	discussion, _, err := d.client.Discussions.CreateMergeRequestDiscussion(d.projectID.Value(), d.mergeRequestIID, opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create diff discussion: %w", err)
 	}
@@ -98,8 +97,7 @@ func (d *MergeRequestDiscussion) AddNote(ctx context.Context, discussionID strin
 		Body: gitlab.Ptr(body),
 	}
 
-	note, _, err := d.client.Discussions.AddMergeRequestDiscussionNote(
-		d.projectID, d.mergeRequestIID, discussionID, opt, gitlab.WithContext(ctx))
+	note, _, err := d.client.Discussions.AddMergeRequestDiscussionNote(d.projectID.Value(), d.mergeRequestIID, discussionID, opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to add note to merge request discussion: %w", err)
 	}
@@ -113,8 +111,7 @@ func (d *MergeRequestDiscussion) ModifyNote(ctx context.Context, discussionID st
 		Body: gitlab.Ptr(body),
 	}
 
-	note, _, err := d.client.Discussions.UpdateMergeRequestDiscussionNote(
-		d.projectID, d.mergeRequestIID, discussionID, noteID, opt, gitlab.WithContext(ctx))
+	note, _, err := d.client.Discussions.UpdateMergeRequestDiscussionNote(d.projectID.Value(), d.mergeRequestIID, discussionID, noteID, opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to modify merge request note: %w", err)
 	}
@@ -124,8 +121,7 @@ func (d *MergeRequestDiscussion) ModifyNote(ctx context.Context, discussionID st
 
 // DeleteNote removes a note from a discussion thread.
 func (d *MergeRequestDiscussion) DeleteNote(ctx context.Context, discussionID string, noteID int) error {
-	_, err := d.client.Discussions.DeleteMergeRequestDiscussionNote(
-		d.projectID, d.mergeRequestIID, discussionID, noteID, gitlab.WithContext(ctx))
+	_, err := d.client.Discussions.DeleteMergeRequestDiscussionNote(d.projectID.Value(), d.mergeRequestIID, discussionID, noteID, gitlab.WithContext(ctx))
 	if err != nil {
 		return fmt.Errorf("failed to delete merge request note: %w", err)
 	}
@@ -139,8 +135,7 @@ func (d *MergeRequestDiscussion) ResolveDiscussion(ctx context.Context, discussi
 		Resolved: gitlab.Ptr(resolved),
 	}
 
-	discussion, _, err := d.client.Discussions.ResolveMergeRequestDiscussion(
-		d.projectID, d.mergeRequestIID, discussionID, opt, gitlab.WithContext(ctx))
+	discussion, _, err := d.client.Discussions.ResolveMergeRequestDiscussion(d.projectID.Value(), d.mergeRequestIID, discussionID, opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("failed to %s discussion: %w",
 			resolveActionText(resolved), err)
@@ -154,5 +149,6 @@ func resolveActionText(resolved bool) string {
 	if resolved {
 		return "resolve"
 	}
+
 	return "unresolve"
 }
