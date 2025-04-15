@@ -61,18 +61,18 @@ type Manager interface {
 	DeleteNote(ctx context.Context, discussionID string, noteID int) error
 }
 
-// ResolvableDiscussionManager extends DiscussionManager with methods for resolving discussions,
+// ResolvableManager extends Manager with methods for resolving discussions,
 // which is only applicable to merge request discussions.
-type ResolvableDiscussionManager interface {
+type ResolvableManager interface {
 	Manager
 
 	// ResolveDiscussion resolves or unresolves a thread of discussion.
 	ResolveDiscussion(ctx context.Context, discussionID string, resolved bool) (*gitlab.Discussion, error)
 }
 
-// PositionedDiscussionManager extends DiscussionManager with methods for working with discussion
+// PositionedManager extends Manager with methods for working with discussion
 // threads that have a specific position reference, such as diff discussions on merge requests.
-type PositionedDiscussionManager interface {
+type PositionedManager interface {
 	Manager
 
 	NewPositionDiscussion(ctx context.Context, body string, position *gitlab.PositionOptions, commitID string) (*gitlab.Discussion, error)

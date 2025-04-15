@@ -348,7 +348,7 @@ func (d *DiscussionService) resolveDiscussion(ctx context.Context, request mcp.C
 	}
 
 	// Type assertion is needed here as Resolve is not part of the common interface
-	resolvableMgr, ok := manager.(discussions.ResolvableDiscussionManager)
+	resolvableMgr, ok := manager.(discussions.ResolvableManager)
 	if !ok {
 		return nil, fmt.Errorf("expected merge request discussion manager, got another type")
 	}
@@ -406,7 +406,7 @@ func (d *DiscussionService) newDiffDiscussion(ctx context.Context, request mcp.C
 		return nil, err
 	}
 
-	positionManager, ok := manager.(discussions.PositionedDiscussionManager)
+	positionManager, ok := manager.(discussions.PositionedManager)
 	if !ok {
 		return nil, fmt.Errorf("expected positioned discussion manager, got another type")
 	}

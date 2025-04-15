@@ -70,7 +70,7 @@ func (d *MergeRequestDiscussion) NewDiscussion(ctx context.Context, body string)
 	return discussion, nil
 }
 
-var _ PositionedDiscussionManager = (*MergeRequestDiscussion)(nil)
+var _ PositionedManager = (*MergeRequestDiscussion)(nil)
 
 // NewPositionDiscussion creates a new discussion on a specific position in the merge request diff.
 func (d *MergeRequestDiscussion) NewPositionDiscussion(ctx context.Context, body string, pos *gitlab.PositionOptions, commitID string) (*gitlab.Discussion, error) {
