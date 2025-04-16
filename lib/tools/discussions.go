@@ -86,7 +86,7 @@ func (d *DiscussionService) discussionManager(resourceType discussionResourceTyp
 type newDiscussionArgs struct {
 	ResourceType discussionResourceType `mcp_desc:"Type of GitLab resource (issue, merge_request, epic, snippet, commit)" mcp_required:"true" mcp_enum:"issue,merge_request,epic,snippet,commit"`
 	ParentID     mcpargs.ID             `mcp_desc:"ID of the parent resource (project ID for issue/MR/snippet/commit, group ID for epic)" mcp_required:"true"`
-	ResourceID   mcpargs.ID             `mcp_desc:"ID of the resource (IID for issue/MR/epic, ID for snippet, SHA for commit)" mcp_required:"true"`
+	ResourceID   mcpargs.ID             `mcp_desc:"ID of the resource (IID for issue/MR, ID for epic/snippet, SHA for commit)" mcp_required:"true"`
 	Body         string                 `mcp_desc:"The content of the discussion" mcp_required:"true"`
 }
 
@@ -121,7 +121,7 @@ func (d *DiscussionService) newDiscussion(ctx context.Context, request mcp.CallT
 type listDiscussionsArgs struct {
 	ResourceType discussionResourceType `mcp_desc:"Type of GitLab resource (issue, merge_request, epic, snippet, commit)" mcp_required:"true" mcp_enum:"issue,merge_request,epic,snippet,commit"`
 	ParentID     mcpargs.ID             `mcp_desc:"ID of the parent resource (project ID for issue/MR/snippet/commit, group ID for epic)" mcp_required:"true"`
-	ResourceID   mcpargs.ID             `mcp_desc:"ID of the resource (IID for issue/MR/epic, ID for snippet, SHA for commit)" mcp_required:"true"`
+	ResourceID   mcpargs.ID             `mcp_desc:"ID of the resource (IID for issue/MR, ID for epic/snippet, SHA for commit)" mcp_required:"true"`
 }
 
 func (d *DiscussionService) ListDiscussions() server.ServerTool {
@@ -155,7 +155,7 @@ func (d *DiscussionService) listDiscussions(ctx context.Context, request mcp.Cal
 type addDiscussionNoteArgs struct {
 	ResourceType discussionResourceType `mcp_desc:"Type of GitLab resource (issue, merge_request, epic, snippet, commit)" mcp_required:"true" mcp_enum:"issue,merge_request,epic,snippet,commit"`
 	ParentID     mcpargs.ID             `mcp_desc:"ID of the parent resource (project ID for issue/MR/snippet/commit, group ID for epic)" mcp_required:"true"`
-	ResourceID   mcpargs.ID             `mcp_desc:"ID of the resource (IID for issue/MR/epic, ID for snippet, SHA for commit)" mcp_required:"true"`
+	ResourceID   mcpargs.ID             `mcp_desc:"ID of the resource (IID for issue/MR, ID for epic/snippet, SHA for commit)" mcp_required:"true"`
 	DiscussionID string                 `mcp_desc:"The ID of the discussion thread" mcp_required:"true"`
 	Body         string                 `mcp_desc:"The content of the note" mcp_required:"true"`
 }
@@ -164,7 +164,7 @@ func (d *DiscussionService) AddDiscussionNote() server.ServerTool {
 	return server.ServerTool{
 		Handler: d.addDiscussionNote,
 		Tool: mcpargs.NewTool("discussion_add_note", addDiscussionNoteArgs{},
-			mcp.WithDescription("Adds a new note to an existing discussion thread"),
+			mcp.WithDescription("Adds a new note (i.e. a reply) to an existing discussion thread"),
 		),
 	}
 }
@@ -191,7 +191,7 @@ func (d *DiscussionService) addDiscussionNote(ctx context.Context, request mcp.C
 type modifyDiscussionNoteArgs struct {
 	ResourceType discussionResourceType `mcp_desc:"Type of GitLab resource (issue, merge_request, epic, snippet, commit)" mcp_required:"true" mcp_enum:"issue,merge_request,epic,snippet,commit"`
 	ParentID     mcpargs.ID             `mcp_desc:"ID of the parent resource (project ID for issue/MR/snippet/commit, group ID for epic)" mcp_required:"true"`
-	ResourceID   mcpargs.ID             `mcp_desc:"ID of the resource (IID for issue/MR/epic, ID for snippet, SHA for commit)" mcp_required:"true"`
+	ResourceID   mcpargs.ID             `mcp_desc:"ID of the resource (IID for issue/MR, ID for epic/snippet, SHA for commit)" mcp_required:"true"`
 	DiscussionID string                 `mcp_desc:"The ID of the discussion thread" mcp_required:"true"`
 	NoteID       int                    `mcp_desc:"The ID of the note to modify" mcp_required:"true"`
 	Body         string                 `mcp_desc:"The updated content of the note" mcp_required:"true"`
@@ -228,7 +228,7 @@ func (d *DiscussionService) modifyDiscussionNote(ctx context.Context, request mc
 type deleteDiscussionNoteArgs struct {
 	ResourceType discussionResourceType `mcp_desc:"Type of GitLab resource (issue, merge_request, epic, snippet, commit)" mcp_required:"true" mcp_enum:"issue,merge_request,epic,snippet,commit"`
 	ParentID     mcpargs.ID             `mcp_desc:"ID of the parent resource (project ID for issue/MR/snippet/commit, group ID for epic)" mcp_required:"true"`
-	ResourceID   mcpargs.ID             `mcp_desc:"ID of the resource (IID for issue/MR/epic, ID for snippet, SHA for commit)" mcp_required:"true"`
+	ResourceID   mcpargs.ID             `mcp_desc:"ID of the resource (IID for issue/MR, ID for epic/snippet, SHA for commit)" mcp_required:"true"`
 	DiscussionID string                 `mcp_desc:"The ID of the discussion thread" mcp_required:"true"`
 	NoteID       int                    `mcp_desc:"The ID of the note to delete" mcp_required:"true"`
 }
