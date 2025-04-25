@@ -105,45 +105,45 @@ You can provide the GitLab token in one of two ways:
 
 | Tool Name | Description |
 |-----------|-------------|
-| `get_user` | Get information about a specific user or the current user. In particular, this tool can be used to resolve a username to an ID. |
-| `get_user_status` | Get a user's status |
-| `set_user_status` | Set the current user's status |
-| `list_group_epics` | Get all epics for a specific group |
-| `get_epic` | Fetches information about an epic by ID |
-| `get_epic_links` | GetEpicLinks gets all child epics of an epic |
-| `list_epic_issues` | Returns a list of issues assigned to the provided epic |
-| `list_user_issues` | Lists all issues assigned to a user |
-| `list_group_issues` | Get a list of a group's issues |
-| `list_project_issues` | Get a list of a project's issues |
-| `get_issue` | Get a single project issue |
-| `list_merge_requests_related_to_issue` | Get all merge requests that are related to the specified issue |
-| `list_user_merge_requests` | Get all merge requests authored by or assigned to a user for review |
-| `list_project_merge_requests` | Get all merge requests for this project |
-| `list_group_merge_requests` | Get all merge requests for this group |
-| `get_merge_request` | Get a single merge request |
-| `get_merge_request_approvals` | Get approvals for a merge request |
-| `get_merge_request_commits` | Get all commits associated with a merge request |
-| `get_merge_request_changes` | Get information about the merge request including its files and changes |
-| `list_merge_request_diffs` | Get a list of merge request diff versions |
-| `get_merge_request_participants` | Get a list of merge request participants |
-| `get_merge_request_reviewers` | Get a list of merge request reviewers |
-| `list_merge_request_pipelines` | Get a list of merge request pipelines |
-| `get_issues_closed_on_merge` | Get all the issues that would be closed by merging the provided merge request |
-| `get_merge_request_dependencies` | Get merge request dependencies |
-| `list_user_snippets` | List snippets owned by the current user |
-| `list_all_snippets` | List all snippets the user has access to |
-| `get_snippet` | Returns the metadata of a snippet, such as title and description. File content is not returned |
-| `get_snippet_content` | Get the raw content of a snippet |
 | `create_snippet` | Create a new snippet |
-| `update_snippet` | Update an existing snippet |
 | `delete_snippet` | Delete a snippet |
-| `list_pipeline_jobs` | Get a list of jobs for a pipeline |
-| `list_downstream_pipelines` | Get a list of downstream pipeline triggers for a pipeline |
-| `get_job` | Get a single job of a project |
 | `download_job_artifacts_file` | Download a single artifact file from a job |
 | `download_job_log` | Download a log file for a specific job |
+| `get_epic_links` | GetEpicLinks gets all child epics of an epic |
+| `get_epic` | Fetches information about an epic by ID |
+| `get_issue` | Get a single project issue |
+| `get_issues_closed_on_merge` | Get all the issues that would be closed by merging the provided merge request |
+| `get_job` | Get a single job of a project |
+| `get_merge_request_approvals` | Get approvals for a merge request |
+| `get_merge_request_changes` | Get information about the merge request including its files and changes |
+| `get_merge_request_commits` | Get all commits associated with a merge request |
+| `get_merge_request_dependencies` | Get merge request dependencies |
+| `get_merge_request_participants` | Get a list of merge request participants |
+| `get_merge_request_reviewers` | Get a list of merge request reviewers |
+| `get_merge_request` | Get a single merge request |
+| `get_snippet_content` | Get the raw content of a snippet |
+| `get_snippet` | Returns the metadata of a snippet, such as title and description. File content is not returned |
+| `get_user_status` | Get a user's status |
+| `get_user` | Get information about a specific user or the current user. In particular, this tool can be used to resolve a username to an ID. |
+| `list_all_snippets` | List all snippets the user has access to |
+| `list_downstream_pipelines` | Get a list of downstream pipeline triggers for a pipeline |
+| `list_epic_issues` | Returns a list of issues assigned to the provided epic |
+| `list_group_epics` | Get all epics for a specific group |
+| `list_group_issues` | Get a list of a group's issues |
+| `list_group_merge_requests` | Get all merge requests for this group |
+| `list_merge_request_diffs` | Get a list of merge request diff versions |
+| `list_merge_request_pipelines` | Get a list of merge request pipelines |
+| `list_merge_requests_related_to_issue` | Get all merge requests that are related to the specified issue |
+| `list_pipeline_jobs` | Get a list of jobs for a pipeline |
+| `list_project_issues` | Get a list of a project's issues |
+| `list_project_merge_requests` | Get all merge requests for this project |
+| `list_user_issues` | Lists all issues assigned to a user |
+| `list_user_merge_requests` | Get all merge requests authored by or assigned to a user for review |
+| `list_user_snippets` | List snippets owned by the current user |
 | `retry_job` | Retry a single job of a project |
+| `set_user_status` | Set the current user's status |
 | `trigger_manual_job` | Trigger a manual job for a project |
+| `update_snippet` | Update an existing snippet |
 
 ## Example Usage
 
