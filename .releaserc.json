@@ -3,18 +3,8 @@
     "main"
   ],
   "plugins": [
-    [
-      "@semantic-release/commit-analyzer",
-      {
-        "preset": "conventionalcommits"
-      }
-    ],
-    [
-      "@semantic-release/release-notes-generator",
-      {
-        "preset": "conventionalcommits"
-      }
-    ],
+    "@gitlab/semantic-release-merge-request-analyzer",
+    "@gitlab/truncated-tags",
     "@semantic-release/gitlab"
   ]
 }
