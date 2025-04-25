@@ -149,11 +149,12 @@ You can provide the GitLab token in one of two ways:
 
 Once configured, you can ask Claude to interact with your GitLab instance:
 
-- "Show me open issues assigned to me"
-- "List the merge requests I need to review"
-- "Show me the details of issue #123 in the my-project project"
-- "Create a new snippet with the code I just shared"
-- "What epics are currently open in the my-group group?"
+- "Prioritize the open issues assigned to me."
+- "List the merge requests I need to review."
+- "Summarize the discussion of issue #123 in the `my-project` project."
+- "Create a new snippet with the code I just shared."
+- "What epics are currently open in the `my-group` group?"
+- "Please explain why the pipeline of merge request !456 failed."
 
 ## License
 
