@@ -264,7 +264,12 @@ func (s *SnippetsService) CreateSnippet() server.ServerTool {
 	return server.ServerTool{
 		Handler: s.createSnippet,
 		Tool: mcpargs.NewTool("create_snippet", createSnippetArgs{},
-			mcp.WithDescription("Create a new snippet"),
+			mcp.WithDescription("Creates a new snippet with a single file. "+
+				"Creating snippets with multiple files is a multi-step process: "+
+				"create a snippet with one file using 'create_snippet', "+
+				"then add additional files using 'update_snippet' "+
+				"with a different file name and 'file_action' set to 'create'. "+
+				"When creating a snippet, include its 'web_url' in your response."),
 		),
 	}
 }
@@ -323,7 +328,7 @@ type updateSnippetArgs struct {
 	Title       string `mcp_desc:"The title of the snippet"`
 	Description string `mcp_desc:"The description of the snippet"`
 	Visibility  string `mcp_desc:"The visibility level of the snippet" mcp_enum:"private,internal,public"`
-	FileAction  string `mcp_desc:"The action to perform on the file. Default is 'replace'" mcp_enum:"create,update,delete,move" mcp_required:"true"`
+	FileAction  string `mcp_desc:"The action to perform on the file. Default is 'update'" mcp_enum:"create,update,delete"`
 	FileName    string `mcp_desc:"The name of the snippet file" mcp_required:"true"`
 	Content     string `mcp_desc:"The content of the snippet" mcp_required:"true"`
 }
@@ -334,7 +339,7 @@ func (s *SnippetsService) UpdateSnippet() server.ServerTool {
 	return server.ServerTool{
 		Handler: s.updateSnippet,
 		Tool: mcpargs.NewTool("update_snippet", updateSnippetArgs{},
-			mcp.WithDescription("Update an existing snippet"),
+			mcp.WithDescription("Update an existing snippet. This tool can create, update, or delete a file in the snippet, as well as update snippet metadata."),
 		),
 	}
 }
@@ -352,12 +357,10 @@ func (s *SnippetsService) updateSnippet(ctx context.Context, request mcp.CallToo
 	switch args.FileAction {
 	case "create":
 		fileActionValue = gitlab.FileCreate
-	case "update":
+	case "update", "":
 		fileActionValue = gitlab.FileUpdate
 	case "delete":
 		fileActionValue = gitlab.FileDelete
-	case "move":
-		fileActionValue = gitlab.FileMove
 	default:
 		return nil, fmt.Errorf("%w: invalid file action: %q", ErrArgumentType, args.FileAction)
 	}
@@ -391,7 +394,7 @@ func (s *SnippetsService) updateSnippet(ctx context.Context, request mcp.CallToo
 			return nil, fmt.Errorf("%w: invalid visibility level: %q", ErrArgumentType, args.Visibility)
 		}
 
-		opt.Visibility = &visibilityLevel
+		opt.Visibility = gitlab.Ptr(visibilityLevel)
 	}
 
 	snippet, _, err := s.client.Snippets.UpdateSnippet(args.SnippetID, opt, gitlab.WithContext(ctx))
