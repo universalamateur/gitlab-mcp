@@ -6,9 +6,10 @@ A Model Context Protocol (MCP) server for GitLab, enabling Claude to interact di
 
 GitLab MCP implements the [Model Context Protocol](https://github.com/anthropics/model-context-protocol) for GitLab, allowing AI assistants like Claude to access and manipulate GitLab resources. This integration enables Claude to work with:
 
-- Issues
-- Merge Requests
 - Epics
+- Issues
+- Jobs
+- Merge Requests
 - Snippets
 - User information
 
@@ -136,6 +137,13 @@ You can provide the GitLab token in one of two ways:
 | `create_snippet` | Create a new snippet |
 | `update_snippet` | Update an existing snippet |
 | `delete_snippet` | Delete a snippet |
+| `list_pipeline_jobs` | Get a list of jobs for a pipeline |
+| `list_downstream_pipelines` | Get a list of downstream pipeline triggers for a pipeline |
+| `get_job` | Get a single job of a project |
+| `download_job_artifacts_file` | Download a single artifact file from a job |
+| `download_job_log` | Download a log file for a specific job |
+| `retry_job` | Retry a single job of a project |
+| `trigger_manual_job` | Trigger a manual job for a project |
 
 ## Example Usage
 
