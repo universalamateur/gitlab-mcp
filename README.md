@@ -6,6 +6,7 @@ A Model Context Protocol (MCP) server for GitLab, enabling Claude to interact di
 
 GitLab MCP implements the [Model Context Protocol](https://github.com/anthropics/model-context-protocol) for GitLab, allowing AI assistants like Claude to access and manipulate GitLab resources. This integration enables Claude to work with:
 
+- Discussions and Notes
 - Epics
 - Issues
 - Jobs
@@ -107,6 +108,12 @@ You can provide the GitLab token in one of two ways:
 |-----------|-------------|
 | `create_snippet` | Create a new snippet |
 | `delete_snippet` | Delete a snippet |
+| `discussion_add_note` | Adds a new note (i.e. a reply) to an existing discussion thread |
+| `discussion_delete_note` | Deletes a note from a discussion thread |
+| `discussion_list` | Lists all discussions for a GitLab resource |
+| `discussion_modify_note` | Modifies an existing note in a discussion thread |
+| `discussion_new` | Creates a new discussion thread on a GitLab resource |
+| `discussion_resolve` | Resolves or unresolves a discussion thread in a merge request |
 | `download_job_artifacts_file` | Download a single artifact file from a job |
 | `download_job_log` | Download a log file for a specific job |
 | `get_epic_links` | GetEpicLinks gets all child epics of an epic |
@@ -151,6 +158,7 @@ Once configured, you can ask Claude to interact with your GitLab instance:
 
 - "Prioritize the open issues assigned to me."
 - "List the merge requests I need to review."
+- "Add a comment to issue #42 suggesting a possible solution."
 - "Summarize the discussion of issue #123 in the `my-project` project."
 - "Create a new snippet with the code I just shared."
 - "What epics are currently open in the `my-group` group?"
