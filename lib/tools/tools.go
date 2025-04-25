@@ -36,6 +36,9 @@ type Tools struct {
 	// Issues provides access to GitLab issue-related operations.
 	Issues IssuesServiceInterface
 
+	// Jobs provides access to pipeline job-related operations.
+	Jobs JobsServiceInterface
+
 	// MergeRequests provides access to GitLab merge request-related operations.
 	MergeRequests MergeRequestsServiceInterface
 
@@ -53,6 +56,7 @@ func New(client *gitlab.Client, currentUser string) *Tools {
 		Discussions:   NewDiscussionTools(client),
 		Epics:         NewEpicTools(client),
 		Issues:        NewIssuesTools(client, currentUser),
+		Jobs:          NewJobsTools(client),
 		MergeRequests: NewMergeRequestsTools(client, currentUser),
 		Snippets:      NewSnippetsTools(client, currentUser),
 		Users:         NewUsersTools(client, currentUser),
@@ -65,6 +69,7 @@ func (s *Tools) AddTo(srv *server.MCPServer) {
 	s.Discussions.AddTo(srv)
 	s.Epics.AddTo(srv)
 	s.Issues.AddTo(srv)
+	s.Jobs.AddTo(srv)
 	s.MergeRequests.AddTo(srv)
 	s.Snippets.AddTo(srv)
 	s.Users.AddTo(srv)
