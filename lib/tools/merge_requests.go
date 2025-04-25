@@ -114,6 +114,7 @@ func (m *MergeRequestsService) listUserMergeRequests(ctx context.Context, reques
 
 	var (
 		opt = gitlab.ListMergeRequestsOptions{
+			Scope: gitlab.Ptr("all"),
 			ListOptions: gitlab.ListOptions{
 				PerPage: maxPerPage,
 			},
