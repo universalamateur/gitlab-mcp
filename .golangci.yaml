@@ -22,6 +22,7 @@ linters:
     - paralleltest
     - perfsprint
     - prealloc
+    - staticcheck
     - tagalign
     - tagliatelle
     - testpackage
