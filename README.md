@@ -106,6 +106,7 @@ You can provide the GitLab token in one of two ways:
 
 | Tool Name | Description |
 |-----------|-------------|
+| `create_issue` | Creates a new GitLab issue |
 | `create_snippet` | Create a new snippet |
 | `delete_snippet` | Delete a snippet |
 | `discussion_add_note` | Adds a new note (i.e. a reply) to an existing discussion thread |
@@ -116,6 +117,7 @@ You can provide the GitLab token in one of two ways:
 | `discussion_resolve` | Resolves or unresolves a discussion thread in a merge request |
 | `download_job_artifacts_file` | Download a single artifact file from a job |
 | `download_job_log` | Download a log file for a specific job |
+| `edit_issue` | Updates an existing GitLab issue. You can modify the issue's title, description, and metadata, and close/reopen issues. |
 | `get_epic_links` | GetEpicLinks gets all child epics of an epic |
 | `get_epic` | Fetches information about an epic by ID |
 | `get_issue` | Get a single project issue |
