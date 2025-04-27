@@ -3,6 +3,9 @@ package tools
 import (
 	"context"
 	"fmt"
+	"log"
+	"strconv"
+	"strings"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -31,6 +34,12 @@ type IssuesServiceInterface interface {
 
 	// ListMergeRequestsRelatedToIssue returns a tool for listing all merge requests related to a specific issue.
 	ListMergeRequestsRelatedToIssue() server.ServerTool
+
+	// CreateIssue returns a tool for creating a new issue in a project.
+	CreateIssue() server.ServerTool
+
+	// EditIssue returns a tool for updating an existing issue.
+	EditIssue() server.ServerTool
 }
 
 // NewIssuesTools creates a new instance of IssuesServiceInterface with the provided GitLab client
@@ -56,6 +65,8 @@ func (i *IssuesService) AddTo(srv *server.MCPServer) {
 		i.ListProjectIssues(),
 		i.GetIssue(),
 		i.ListMergeRequestsRelatedToIssue(),
+		i.CreateIssue(),
+		i.EditIssue(),
 	)
 }
 
@@ -303,4 +314,193 @@ func (i *IssuesService) listMergeRequestsRelatedToIssue(ctx context.Context, req
 	}
 
 	return newToolResultJSON(mergeRequests)
+}
+
+type createIssueArgs struct {
+	ProjectID    mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
+	Title        string     `mcp_desc:"The title of the issue to create" mcp_required:"true"`
+	Description  string     `mcp_desc:"The description of the issue in GitLab Flavored Markdown"`
+	AssigneeIDs  string     `mcp_desc:"Comma-separated list of user IDs to assign the issue to"`
+	MilestoneID  int        `mcp_desc:"The ID of a milestone to assign the issue to"`
+	EpicID       int        `mcp_desc:"The global ID of an epic to assign the issue to"`
+	Labels       string     `mcp_desc:"Comma-separated label names to assign to the new issue"`
+	Confidential bool       `mcp_desc:"Set to true to make the issue confidential"`
+}
+
+// CreateIssue returns a ServerTool for creating a new issue.
+// The tool accepts project ID, title, and other optional issue parameters.
+func (i *IssuesService) CreateIssue() server.ServerTool {
+	return server.ServerTool{
+		Handler: i.createIssue,
+		Tool: mcpargs.NewTool("create_issue", createIssueArgs{},
+			mcp.WithDescription("Creates a new GitLab issue"),
+		),
+	}
+}
+
+func (i *IssuesService) createIssue(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	var args createIssueArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, err //nolint:wrapcheck
+	}
+
+	opt := &gitlab.CreateIssueOptions{
+		Title: gitlab.Ptr(args.Title),
+	}
+
+	// Set optional parameters
+	if args.Description != "" {
+		opt.Description = gitlab.Ptr(args.Description)
+	}
+
+	if args.MilestoneID != 0 {
+		opt.MilestoneID = gitlab.Ptr(args.MilestoneID)
+	}
+
+	if args.EpicID != 0 {
+		opt.EpicID = gitlab.Ptr(args.EpicID)
+	}
+
+	opt.AssigneeIDs = parseUserIDs(args.AssigneeIDs)
+	opt.Labels = newLabelOptions(args.Labels)
+
+	if _, ok := request.Params.Arguments["confidential"]; ok {
+		opt.Confidential = gitlab.Ptr(args.Confidential)
+	}
+
+	issue, _, err := i.client.Issues.CreateIssue(args.ProjectID.Value(), opt, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("CreateIssue(%q): %w", args.ProjectID.Value(), err)
+	}
+
+	return newToolResultJSON(issue)
+}
+
+type editIssueArgs struct {
+	ProjectID        mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
+	IssueIID         int        `mcp_desc:"The internal ID of the project issue" mcp_required:"true"`
+	Title            string     `mcp_desc:"Changes the title of the issue"`
+	Description      string     `mcp_desc:"Changes the description of the issue. The description uses GitLab Flavored Markdown"`
+	AssigneeIDs      string     `mcp_desc:"Comma-separated list of user IDs to assign the issue to. Pass a single hyphen ('-') to clear all assignees. Omit the parameter to leave assignees unchanged"`
+	MilestoneID      int        `mcp_desc:"The ID of a milestone to assign the issue to. Set to 0 to remove the milestone"`
+	EpicID           int        `mcp_desc:"The global ID of an epic to assign the issue to"`
+	AddLabels        string     `mcp_desc:"Comma-separated label names to add to the issue"`
+	RemoveLabels     string     `mcp_desc:"Comma-separated label names to remove from the issue"`
+	StateEvent       string     `mcp_desc:"The state of the issue. Use 'close' to close the issue or 'reopen' to reopen a closed issue. Omit to keep the issue state unchanged" mcp_enum:"close,reopen"`
+	Confidential     bool       `mcp_desc:"Makes the issue confidential"`
+	DiscussionLocked bool       `mcp_desc:"Flag indicating if the issue's discussion is locked. If true, only project members can add or edit comments"`
+}
+
+// EditIssue returns a ServerTool for updating an existing issue.
+// The tool accepts project ID, issue IID, and other parameters to update the issue.
+func (i *IssuesService) EditIssue() server.ServerTool {
+	return server.ServerTool{
+		Handler: i.editIssue,
+		Tool: mcpargs.NewTool("edit_issue", editIssueArgs{},
+			mcp.WithDescription("Updates an existing GitLab issue. You can modify the issue's title and description, add or remove labels, assign or unassign users, change the milestone, close or reopen the issue, and control confidentiality and discussion settings."),
+		),
+	}
+}
+
+func (i *IssuesService) editIssue(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	var args editIssueArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, err //nolint:wrapcheck
+	}
+
+	opt := &gitlab.UpdateIssueOptions{}
+
+	// Build update options based on provided arguments
+	if args.Title != "" {
+		opt.Title = gitlab.Ptr(args.Title)
+	}
+
+	if args.Description != "" {
+		opt.Description = gitlab.Ptr(args.Description)
+	}
+
+	if args.StateEvent != "" {
+		opt.StateEvent = gitlab.Ptr(args.StateEvent)
+	}
+
+	if args.MilestoneID != 0 {
+		opt.MilestoneID = gitlab.Ptr(args.MilestoneID)
+	}
+
+	if args.EpicID != 0 {
+		opt.EpicID = gitlab.Ptr(args.EpicID)
+	}
+
+	opt.AssigneeIDs = parseUserIDs(args.AssigneeIDs)
+	opt.AddLabels = newLabelOptions(args.AddLabels)
+	opt.RemoveLabels = newLabelOptions(args.RemoveLabels)
+
+	// Only set these if explicitly provided
+	if _, ok := request.Params.Arguments["confidential"]; ok {
+		opt.Confidential = gitlab.Ptr(args.Confidential)
+	}
+
+	if _, ok := request.Params.Arguments["discussion_locked"]; ok {
+		opt.DiscussionLocked = gitlab.Ptr(args.DiscussionLocked)
+	}
+
+	issue, _, err := i.client.Issues.UpdateIssue(args.ProjectID.Value(), args.IssueIID, opt, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("UpdateIssue(%q, %d): %w", args.ProjectID.Value(), args.IssueIID, err)
+	}
+
+	return newToolResultJSON(issue)
+}
+
+// parseUserIDs parses a comma-separated string of user IDs.
+// Returns nil for "no change to assignees" and an empty slice for "clear assignees field".
+func parseUserIDs(s string) *[]int {
+	if s == "-" {
+		clearAll := []int{}
+		return &clearAll
+	}
+
+	var userIDs []int
+
+	for _, idStr := range strings.Split(s, ",") {
+		idStr = strings.TrimSpace(idStr)
+
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			log.Printf("Skipping invalid user ID: %q\n", idStr)
+			continue
+		}
+
+		userIDs = append(userIDs, id)
+	}
+
+	if len(userIDs) == 0 {
+		return nil
+	}
+
+	return &userIDs
+}
+
+// newLabelOptions converts a comma-separated string of label names into an array of LabelOptions.
+// Returns nil if the labels string is empty.
+func newLabelOptions(labels string) *gitlab.LabelOptions {
+	if labels == "" {
+		return nil
+	}
+
+	var labelOpts gitlab.LabelOptions
+
+	for _, label := range strings.Split(labels, ",") {
+		label = strings.TrimSpace(label)
+
+		if label != "" {
+			labelOpts = append(labelOpts, label)
+		}
+	}
+
+	if len(labelOpts) == 0 {
+		return nil
+	}
+
+	return &labelOpts
 }
