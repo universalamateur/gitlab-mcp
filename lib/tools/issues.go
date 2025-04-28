@@ -71,8 +71,9 @@ func (i *IssuesService) AddTo(srv *server.MCPServer) {
 }
 
 type listUserIssuesArgs struct {
-	Assignee string `mcp_desc:"Filter issues by the assignee. If left blank, returns all issues assigned to the authenticated user"`
-	State    string `mcp_desc:"Return all issues or just those that are opened or closed" mcp_enum:"all,opened,closed"`
+	Assignee     string `mcp_desc:"Filter issues by the assignee. If left blank, returns all issues assigned to the authenticated user"`
+	State        string `mcp_desc:"Return all issues or just those that are opened or closed" mcp_enum:"all,opened,closed"`
+	Confidential bool   `mcp_desc:"If true, includes confidential issues. Default is false, which excludes confidential issues"`
 }
 
 // ListUserIssues returns a ServerTool for listing all issues assigned to a user.
@@ -113,6 +114,13 @@ func (i *IssuesService) listUserIssues(ctx context.Context, request mcp.CallTool
 		opt.State = gitlab.Ptr(args.State)
 	}
 
+	// If confidential issues are disabled, explicitly set "Confidential" to false.
+	// Otherwise, the default behaviour is to include confidential issues (since it is
+	// just not filtering on this property).
+	if !args.Confidential {
+		opt.Confidential = gitlab.Ptr(false)
+	}
+
 	for {
 		is, resp, err := i.client.Issues.ListIssues(&opt, gitlab.WithContext(ctx))
 		if err != nil {
@@ -132,8 +140,9 @@ func (i *IssuesService) listUserIssues(ctx context.Context, request mcp.CallTool
 }
 
 type listGroupIssuesArgs struct {
-	GroupID mcpargs.ID `mcp_desc:"ID of the group either in owner/namespace format or the numeric group ID" mcp_required:"true"`
-	State   string     `mcp_desc:"Return all issues or just those that are opened or closed" mcp_enum:"all,opened,closed"`
+	GroupID      mcpargs.ID `mcp_desc:"ID of the group either in owner/namespace format or the numeric group ID" mcp_required:"true"`
+	State        string     `mcp_desc:"Return all issues or just those that are opened or closed" mcp_enum:"all,opened,closed"`
+	Confidential bool       `mcp_desc:"If true, includes confidential issues. Default is false, which excludes confidential issues"`
 }
 
 // ListGroupIssues returns a ServerTool for listing all issues within a specific group.
@@ -155,6 +164,8 @@ func (i *IssuesService) listGroupIssues(ctx context.Context, request mcp.CallToo
 
 	var (
 		opt = gitlab.ListGroupIssuesOptions{
+			// TODO: use server-side filtering once supported by the Go package.
+			// Confidential: gitlab.Ptr(args.Confidential),
 			ListOptions: gitlab.ListOptions{
 				PerPage: maxPerPage,
 			},
@@ -166,6 +177,14 @@ func (i *IssuesService) listGroupIssues(ctx context.Context, request mcp.CallToo
 	if args.State != "" {
 		opt.State = gitlab.Ptr(args.State)
 	}
+
+	// If confidential issues are disabled, explicitly set "Confidential" to false.
+	// Otherwise, the default behaviour is to include confidential issues (since it is
+	// just not filtering on this property).
+	// TODO: use server-side filtering once supported by the Go package.
+	// if !args.Confidential {
+	// 	opt.Confidential = gitlab.Ptr(false)
+	// }
 
 	for {
 		is, resp, err := i.client.Issues.ListGroupIssues(args.GroupID.Value(), &opt, gitlab.WithContext(ctx))
@@ -182,12 +201,29 @@ func (i *IssuesService) listGroupIssues(ctx context.Context, request mcp.CallToo
 		opt.Page = resp.NextPage
 	}
 
+	// TODO: remove client-side filtering once server-side filtering is supported.
+	issues = filterIssues(issues, args.Confidential)
+
 	return newToolResultJSON(issues)
 }
 
+// filterIssues filters a list of issues based on whether confidential issues should be included.
+func filterIssues(issues []*gitlab.Issue, includeConfidential bool) []*gitlab.Issue {
+	var filteredIssues []*gitlab.Issue
+
+	for _, issue := range issues {
+		if includeConfidential || !issue.Confidential {
+			filteredIssues = append(filteredIssues, issue)
+		}
+	}
+
+	return filteredIssues
+}
+
 type listProjectIssuesArgs struct {
-	ProjectID mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	State     string     `mcp_desc:"Return all issues or just those that are opened or closed" mcp_enum:"all,opened,closed"`
+	ProjectID    mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
+	State        string     `mcp_desc:"Return all issues or just those that are opened or closed" mcp_enum:"all,opened,closed"`
+	Confidential bool       `mcp_desc:"If true, includes confidential issues. Default is false, which excludes confidential issues"`
 }
 
 // ListProjectIssues returns a ServerTool for listing all issues within a specific project.
@@ -221,6 +257,13 @@ func (i *IssuesService) listProjectIssues(ctx context.Context, request mcp.CallT
 		opt.State = gitlab.Ptr(args.State)
 	}
 
+	// If confidential issues are disabled, explicitly set "Confidential" to false.
+	// Otherwise, the default behaviour is to include confidential issues (since it is
+	// just not filtering on this property).
+	if !args.Confidential {
+		opt.Confidential = gitlab.Ptr(false)
+	}
+
 	for {
 		is, resp, err := i.client.Issues.ListProjectIssues(args.ProjectID.Value(), opt, gitlab.WithContext(ctx))
 		if err != nil {
@@ -240,8 +283,9 @@ func (i *IssuesService) listProjectIssues(ctx context.Context, request mcp.CallT
 }
 
 type getIssueArgs struct {
-	ProjectID mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	IssueIID  int        `mcp_desc:"The internal ID of the project issue" mcp_required:"true"`
+	ProjectID    mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
+	IssueIID     int        `mcp_desc:"The internal ID of the project issue" mcp_required:"true"`
+	Confidential bool       `mcp_desc:"If true, allows access to confidential issues. Default is false, which will return an error for confidential issues"`
 }
 
 // GetIssue returns a ServerTool for fetching information about a specific issue.
@@ -264,6 +308,10 @@ func (i *IssuesService) getIssue(ctx context.Context, request mcp.CallToolReques
 	issue, _, err := i.client.Issues.GetIssue(args.ProjectID.Value(), args.IssueIID, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("GetIssue(%q, %d): %w", args.ProjectID.Value(), args.IssueIID, err)
+	}
+
+	if issue.Confidential && !args.Confidential {
+		return mcp.NewToolResultError(fmt.Sprintf("issue %d is confidential, ensure it is safe to be shared with the model, then set confidential=true to access it", args.IssueIID)), nil
 	}
 
 	return newToolResultJSON(issue)
@@ -387,7 +435,7 @@ type editIssueArgs struct {
 	AddLabels        string     `mcp_desc:"Comma-separated label names to add to the issue"`
 	RemoveLabels     string     `mcp_desc:"Comma-separated label names to remove from the issue"`
 	StateEvent       string     `mcp_desc:"The state of the issue. Use 'close' to close the issue or 'reopen' to reopen a closed issue. Omit to keep the issue state unchanged" mcp_enum:"close,reopen"`
-	Confidential     bool       `mcp_desc:"Makes the issue confidential"`
+	Confidential     bool       `mcp_desc:"If true, enables editing confidential issues or makes a public issue confidential. Default is false. Note: By design, specifying 'false' explicitly does not make confidential issues public - this is a security measure."`
 	DiscussionLocked bool       `mcp_desc:"Flag indicating if the issue's discussion is locked. If true, only project members can add or edit comments"`
 }
 
@@ -406,6 +454,16 @@ func (i *IssuesService) editIssue(ctx context.Context, request mcp.CallToolReque
 	var args editIssueArgs
 	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
 		return nil, err //nolint:wrapcheck
+	}
+
+	// First, fetch the issue to check if it's confidential
+	issue, _, err := i.client.Issues.GetIssue(args.ProjectID.Value(), args.IssueIID, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("GetIssue(%q, %d): %w", args.ProjectID.Value(), args.IssueIID, err)
+	}
+
+	if issue.Confidential && !args.Confidential {
+		return mcp.NewToolResultError(fmt.Sprintf("cannot edit issue %d as it is confidential. Ensure it is safe to be shared with the model, then set confidential=true to edit", args.IssueIID)), nil
 	}
 
 	opt := &gitlab.UpdateIssueOptions{}
@@ -435,16 +493,16 @@ func (i *IssuesService) editIssue(ctx context.Context, request mcp.CallToolReque
 	opt.AddLabels = newLabelOptions(args.AddLabels)
 	opt.RemoveLabels = newLabelOptions(args.RemoveLabels)
 
-	// Only set these if explicitly provided
-	if _, ok := request.Params.Arguments["confidential"]; ok {
+	if args.Confidential {
 		opt.Confidential = gitlab.Ptr(args.Confidential)
 	}
 
+	// Only set these if explicitly provided
 	if _, ok := request.Params.Arguments["discussion_locked"]; ok {
 		opt.DiscussionLocked = gitlab.Ptr(args.DiscussionLocked)
 	}
 
-	issue, _, err := i.client.Issues.UpdateIssue(args.ProjectID.Value(), args.IssueIID, opt, gitlab.WithContext(ctx))
+	issue, _, err = i.client.Issues.UpdateIssue(args.ProjectID.Value(), args.IssueIID, opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("UpdateIssue(%q, %d): %w", args.ProjectID.Value(), args.IssueIID, err)
 	}
