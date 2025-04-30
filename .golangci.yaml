@@ -11,6 +11,7 @@ linters:
     - depguard
     - dupl
     - exhaustruct
+    - funcorder
     - gochecknoglobals
     - gochecknoinits
     - gocritic
@@ -22,6 +23,7 @@ linters:
     - paralleltest
     - perfsprint
     - prealloc
+    - staticcheck
     - tagalign
     - tagliatelle
     - testpackage
