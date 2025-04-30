@@ -11,6 +11,7 @@ linters:
     - depguard
     - dupl
     - exhaustruct
+    - funcorder
     - gochecknoglobals
     - gochecknoinits
     - gocritic
