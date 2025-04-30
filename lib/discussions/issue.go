@@ -16,6 +16,8 @@ type IssueDiscussion struct {
 	issueIID  int
 }
 
+var _ Manager = (*IssueDiscussion)(nil)
+
 // NewIssueDiscussion creates a new instance for managing discussions on a specific GitLab issue.
 func NewIssueDiscussion(client *gitlab.Client, projectID mcpargs.ID, issueIID int) (*IssueDiscussion, error) {
 	if client == nil {
@@ -38,7 +40,7 @@ func NewIssueDiscussion(client *gitlab.Client, projectID mcpargs.ID, issueIID in
 }
 
 // List returns all discussions for the issue.
-func (d *IssueDiscussion) List(ctx context.Context) ([]*gitlab.Discussion, error) {
+func (d *IssueDiscussion) List(ctx context.Context, confidential bool) ([]*gitlab.Discussion, error) {
 	var (
 		opt = &gitlab.ListIssueDiscussionsOptions{
 			PerPage: maxPerPage,
@@ -61,7 +63,7 @@ func (d *IssueDiscussion) List(ctx context.Context) ([]*gitlab.Discussion, error
 		opt.Page = resp.NextPage
 	}
 
-	return allDiscussions, nil
+	return filterDiscussions(allDiscussions, confidential), nil
 }
 
 // NewDiscussion creates a new discussion thread on the issue.

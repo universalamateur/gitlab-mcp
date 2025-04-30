@@ -49,7 +49,7 @@ var ErrInvalidArgument = errors.New("invalid argument")
 // This interface allows for consistent handling of discussions regardless of the resource type.
 type Manager interface {
 	// List returns all discussions for a specific resource.
-	List(ctx context.Context) ([]*gitlab.Discussion, error)
+	List(ctx context.Context, confidential bool) ([]*gitlab.Discussion, error)
 
 	// NewDiscussion creates a new discussion thread on a resource.
 	NewDiscussion(ctx context.Context, body string) (*gitlab.Discussion, error)
@@ -79,4 +79,37 @@ type PositionedManager interface {
 	Manager
 
 	NewPositionDiscussion(ctx context.Context, body string, position *gitlab.PositionOptions, commitID string) (*gitlab.Discussion, error)
+}
+
+// filterDiscussions filters discussions and their notes based on the 'includeConfidential' flag.
+func filterDiscussions(discussions []*gitlab.Discussion, includeConfidential bool) []*gitlab.Discussion {
+	if includeConfidential {
+		return discussions
+	}
+
+	var ret []*gitlab.Discussion
+
+	for _, discussion := range discussions {
+		d := *discussion
+		d.Notes = filterNotes(d.Notes)
+
+		if len(d.Notes) > 0 {
+			ret = append(ret, &d)
+		}
+	}
+
+	return ret
+}
+
+// filterNotes filters out internal notes from a list of notes.
+func filterNotes(notes []*gitlab.Note) []*gitlab.Note {
+	var ret []*gitlab.Note
+
+	for _, note := range notes {
+		if !note.Internal {
+			ret = append(ret, note)
+		}
+	}
+
+	return ret
 }

@@ -95,7 +95,7 @@ func testManager(t *testing.T, mgr discussions.Manager) {
 	}
 
 	// List
-	got, err := mgr.List(t.Context())
+	got, err := mgr.List(t.Context(), false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,9 +119,7 @@ func testManager(t *testing.T, mgr discussions.Manager) {
 		Body: "First reply",
 	})
 
-	if diff := cmp.Diff(want, got, cmpopts.IgnoreUnexported(gitlab.Discussion{})); diff != "" {
-		t.Errorf("List issue discussion differs (-want/+got):\n%s", diff)
-	}
+	checkDiscussion(t, mgr, want)
 
 	// ModifyNote
 	note, err = mgr.ModifyNote(t.Context(), discussion.ID, 1, "Updated reply")
@@ -138,9 +136,7 @@ func testManager(t *testing.T, mgr discussions.Manager) {
 		Body: "Updated reply",
 	}
 
-	if diff := cmp.Diff(want, got, cmpopts.IgnoreUnexported(gitlab.Discussion{})); diff != "" {
-		t.Errorf("List issue discussion differs (-want/+got):\n%s", diff)
-	}
+	checkDiscussion(t, mgr, want)
 
 	// DeleteNote
 	err = mgr.DeleteNote(t.Context(), discussion.ID, 1)
@@ -150,8 +146,21 @@ func testManager(t *testing.T, mgr discussions.Manager) {
 
 	want[0].Notes = want[0].Notes[:1]
 
+	checkDiscussion(t, mgr, want)
+}
+
+func checkDiscussion(t *testing.T, mgr discussions.Manager, want []*gitlab.Discussion) {
+	t.Helper()
+
+	// Get current discussions from manager
+	got, err := mgr.List(t.Context(), false)
+	if err != nil {
+		t.Fatalf("List discussions failed: %v", err)
+	}
+
+	// Compare discussions using cmp.Diff
 	if diff := cmp.Diff(want, got, cmpopts.IgnoreUnexported(gitlab.Discussion{})); diff != "" {
-		t.Errorf("List issue discussion differs (-want/+got):\n%s", diff)
+		t.Errorf("List discussions differs (-want/+got):\n%s", diff)
 	}
 }
 

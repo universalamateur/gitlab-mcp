@@ -122,6 +122,7 @@ type listDiscussionsArgs struct {
 	ResourceType discussionResourceType `mcp_desc:"Type of GitLab resource (issue, merge_request, epic, snippet, commit)" mcp_required:"true" mcp_enum:"issue,merge_request,epic,snippet,commit"`
 	ParentID     mcpargs.ID             `mcp_desc:"ID of the parent resource (project ID for issue/MR/snippet/commit, group ID for epic)" mcp_required:"true"`
 	ResourceID   mcpargs.ID             `mcp_desc:"ID of the resource (IID for issue/MR, ID for epic/snippet, SHA for commit)" mcp_required:"true"`
+	Confidential bool                   `mcp_desc:"Whether to include confidential discussions in the response. Only access confidential information when explicitly prompted. Defaults to 'false'."`
 }
 
 func (d *DiscussionService) ListDiscussions() server.ServerTool {
@@ -144,7 +145,7 @@ func (d *DiscussionService) listDiscussions(ctx context.Context, request mcp.Cal
 		return nil, err
 	}
 
-	discussions, err := manager.List(ctx)
+	discussions, err := manager.List(ctx, args.Confidential)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list discussions: %w", err)
 	}

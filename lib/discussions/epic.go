@@ -16,6 +16,8 @@ type EpicDiscussion struct {
 	epicID  int
 }
 
+var _ Manager = (*EpicDiscussion)(nil)
+
 // NewEpicDiscussion creates a new instance for managing discussions on a specific GitLab epic.
 func NewEpicDiscussion(client *gitlab.Client, groupID mcpargs.ID, epicID int) (*EpicDiscussion, error) {
 	if client == nil {
@@ -38,7 +40,7 @@ func NewEpicDiscussion(client *gitlab.Client, groupID mcpargs.ID, epicID int) (*
 }
 
 // List returns all discussions for the epic.
-func (d *EpicDiscussion) List(ctx context.Context) ([]*gitlab.Discussion, error) {
+func (d *EpicDiscussion) List(ctx context.Context, confidential bool) ([]*gitlab.Discussion, error) {
 	var (
 		opt = &gitlab.ListGroupEpicDiscussionsOptions{
 			PerPage: maxPerPage,
@@ -61,7 +63,7 @@ func (d *EpicDiscussion) List(ctx context.Context) ([]*gitlab.Discussion, error)
 		opt.Page = resp.NextPage
 	}
 
-	return allDiscussions, nil
+	return filterDiscussions(allDiscussions, confidential), nil
 }
 
 // NewDiscussion creates a new discussion thread on the epic.
