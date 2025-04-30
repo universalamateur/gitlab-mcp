@@ -3,22 +3,7 @@
     "main"
   ],
   "plugins": [
-<<<<<<< before updating
     "@gitlab/semantic-release-merge-request-analyzer",
-=======
-    [
-      "@semantic-release/commit-analyzer",
-      {
-        "preset": "conventionalcommits"
-      }
-    ],
-    [
-      "@semantic-release/release-notes-generator",
-      {
-        "preset": "conventionalcommits"
-      }
-    ],
->>>>>>> after updating
     "@gitlab/truncated-tags",
     "@semantic-release/gitlab"
   ]
