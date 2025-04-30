@@ -42,6 +42,9 @@ type Tools struct {
 	// MergeRequests provides access to GitLab merge request-related operations.
 	MergeRequests MergeRequestsServiceInterface
 
+	// Repositories provides access to GitLab repository-related operations.
+	Repositories RepositoryServiceInterface
+
 	// Snippets provides access to GitLab snippet-related operations.
 	Snippets SnippetsServiceInterface
 
@@ -58,6 +61,7 @@ func New(client *gitlab.Client, currentUser string) *Tools {
 		Issues:        NewIssuesTools(client, currentUser),
 		Jobs:          NewJobsTools(client),
 		MergeRequests: NewMergeRequestsTools(client, currentUser),
+		Repositories:  NewRepositoryTools(client),
 		Snippets:      NewSnippetsTools(client, currentUser),
 		Users:         NewUsersTools(client, currentUser),
 	}
@@ -71,6 +75,7 @@ func (s *Tools) AddTo(srv *server.MCPServer) {
 	s.Issues.AddTo(srv)
 	s.Jobs.AddTo(srv)
 	s.MergeRequests.AddTo(srv)
+	s.Repositories.AddTo(srv)
 	s.Snippets.AddTo(srv)
 	s.Users.AddTo(srv)
 }
