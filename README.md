@@ -15,6 +15,7 @@ GitLab MCP implements the [Model Context Protocol](https://github.com/anthropics
 - Issues
 - Jobs
 - Merge Requests
+- Repository Files and Directories
 - Snippets
 - User information
 
@@ -134,6 +135,7 @@ You can provide the GitLab token in one of two ways:
 | `get_merge_request_participants` | Get a list of merge request participants |
 | `get_merge_request_reviewers` | Get a list of merge request reviewers |
 | `get_merge_request` | Get a single merge request |
+| `get_repository_file_contents` | Get the contents of a single file from the repository |
 | `get_snippet_content` | Get the raw content of a snippet |
 | `get_snippet` | Returns the metadata of a snippet, such as title and description. File content is not returned |
 | `get_user_status` | Get a user's status |
@@ -150,6 +152,7 @@ You can provide the GitLab token in one of two ways:
 | `list_pipeline_jobs` | Get a list of jobs for a pipeline |
 | `list_project_issues` | Get a list of a project's issues |
 | `list_project_merge_requests` | Get all merge requests for this project |
+| `list_repository_directory` | Get a list of repository files and directories in a project |
 | `list_user_issues` | Lists all issues assigned to a user |
 | `list_user_merge_requests` | Get all merge requests authored by or assigned to a user for review |
 | `list_user_snippets` | List snippets owned by the current user |
@@ -169,6 +172,7 @@ Once configured, you can ask Claude to interact with your GitLab instance:
 - "Create a new snippet with the code I just shared."
 - "What epics are currently open in the `my-group` group?"
 - "Please explain why the pipeline of merge request !456 failed."
+- "How do I use the MCP server according to the `README.md` file in the `fforster/gitlab-mcp` GitLab project."
 
 ## License
 
