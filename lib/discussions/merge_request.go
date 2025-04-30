@@ -16,6 +16,9 @@ type MergeRequestDiscussion struct {
 	mergeRequestIID int
 }
 
+var _ ResolvableManager = (*MergeRequestDiscussion)(nil)
+var _ PositionedManager = (*MergeRequestDiscussion)(nil)
+
 // NewMergeRequestDiscussion creates a new instance for managing discussions on a specific GitLab merge request.
 func NewMergeRequestDiscussion(client *gitlab.Client, projectID mcpargs.ID, mergeRequestIID int) (*MergeRequestDiscussion, error) {
 	if client == nil {
@@ -30,7 +33,7 @@ func NewMergeRequestDiscussion(client *gitlab.Client, projectID mcpargs.ID, merg
 }
 
 // List returns all discussions for the merge request.
-func (d *MergeRequestDiscussion) List(ctx context.Context) ([]*gitlab.Discussion, error) {
+func (d *MergeRequestDiscussion) List(ctx context.Context, confidential bool) ([]*gitlab.Discussion, error) {
 	var (
 		opt = &gitlab.ListMergeRequestDiscussionsOptions{
 			PerPage: maxPerPage,
@@ -53,7 +56,7 @@ func (d *MergeRequestDiscussion) List(ctx context.Context) ([]*gitlab.Discussion
 		opt.Page = resp.NextPage
 	}
 
-	return allDiscussions, nil
+	return filterDiscussions(allDiscussions, confidential), nil
 }
 
 // NewDiscussion creates a new discussion thread on the merge request.

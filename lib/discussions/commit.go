@@ -16,6 +16,8 @@ type CommitDiscussion struct {
 	commitID  string
 }
 
+var _ PositionedManager = (*CommitDiscussion)(nil)
+
 // NewCommitDiscussion creates a new instance for managing discussions on a specific GitLab commit.
 func NewCommitDiscussion(client *gitlab.Client, projectID mcpargs.ID, commitID string) (*CommitDiscussion, error) {
 	if client == nil {
@@ -38,7 +40,7 @@ func NewCommitDiscussion(client *gitlab.Client, projectID mcpargs.ID, commitID s
 }
 
 // List returns all discussions for the commit.
-func (d *CommitDiscussion) List(ctx context.Context) ([]*gitlab.Discussion, error) {
+func (d *CommitDiscussion) List(ctx context.Context, confidential bool) ([]*gitlab.Discussion, error) {
 	var (
 		opt = &gitlab.ListCommitDiscussionsOptions{
 			PerPage: maxPerPage,
@@ -61,7 +63,7 @@ func (d *CommitDiscussion) List(ctx context.Context) ([]*gitlab.Discussion, erro
 		opt.Page = resp.NextPage
 	}
 
-	return allDiscussions, nil
+	return filterDiscussions(allDiscussions, confidential), nil
 }
 
 // NewDiscussion creates a new discussion thread on the commit.

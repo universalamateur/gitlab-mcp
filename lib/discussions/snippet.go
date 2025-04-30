@@ -16,6 +16,8 @@ type SnippetDiscussion struct {
 	snippetID int
 }
 
+var _ Manager = (*SnippetDiscussion)(nil)
+
 // NewSnippetDiscussion creates a new instance for managing discussions on a specific GitLab snippet.
 func NewSnippetDiscussion(client *gitlab.Client, projectID mcpargs.ID, snippetID int) (*SnippetDiscussion, error) {
 	if client == nil {
@@ -38,7 +40,7 @@ func NewSnippetDiscussion(client *gitlab.Client, projectID mcpargs.ID, snippetID
 }
 
 // List returns all discussions for the snippet.
-func (d *SnippetDiscussion) List(ctx context.Context) ([]*gitlab.Discussion, error) {
+func (d *SnippetDiscussion) List(ctx context.Context, confidential bool) ([]*gitlab.Discussion, error) {
 	var (
 		opt = &gitlab.ListSnippetDiscussionsOptions{
 			PerPage: maxPerPage,
@@ -61,7 +63,7 @@ func (d *SnippetDiscussion) List(ctx context.Context) ([]*gitlab.Discussion, err
 		opt.Page = resp.NextPage
 	}
 
-	return allDiscussions, nil
+	return filterDiscussions(allDiscussions, confidential), nil
 }
 
 // NewDiscussion creates a new discussion thread on the snippet.
