@@ -2,6 +2,10 @@
 
 A Model Context Protocol (MCP) server for GitLab, enabling Claude to interact directly with your GitLab instance.
 
+## :speech_baloon: Feedback
+
+Please provide feedback in https://gitlab.com/gitlab-org/ux-research/-/issues/3495, or (if you don't have access) open a new issue at https://gitlab.com/fforster/gitlab-mcp/-/issues.
+
 ## Overview
 
 GitLab MCP implements the [Model Context Protocol](https://github.com/anthropics/model-context-protocol) for GitLab, allowing AI assistants like Claude to access and manipulate GitLab resources. This integration enables Claude to work with:
