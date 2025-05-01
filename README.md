@@ -153,6 +153,7 @@ You can provide the GitLab token in one of two ways:
 | `list_project_issues` | Get a list of a project's issues |
 | `list_project_merge_requests` | Get all merge requests for this project |
 | `list_repository_directory` | Get a list of repository files and directories in a project |
+| `list_user_events`  | Get events for users between |
 | `list_user_issues` | Lists all issues assigned to a user |
 | `list_user_merge_requests` | Get all merge requests authored by or assigned to a user for review |
 | `list_user_snippets` | List snippets owned by the current user |
@@ -173,6 +174,8 @@ Once configured, you can ask Claude to interact with your GitLab instance:
 - "What epics are currently open in the `my-group` group?"
 - "Please explain why the pipeline of merge request !456 failed."
 - "How do I use the MCP server according to the `README.md` file in the `fforster/gitlab-mcp` GitLab project."
+- "On GitLab, what have reprazent and ffoster been working on between 2025-04-28
+  and 2025-05-02?"
 
 ## License
 
