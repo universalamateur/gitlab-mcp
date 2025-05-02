@@ -87,7 +87,7 @@ type newDiscussionArgs struct {
 	ResourceType discussionResourceType `mcp_desc:"Type of GitLab resource (issue, merge_request, epic, snippet, commit)" mcp_required:"true" mcp_enum:"issue,merge_request,epic,snippet,commit"`
 	ParentID     mcpargs.ID             `mcp_desc:"ID of the parent resource (project ID for issue/MR/snippet/commit, group ID for epic)" mcp_required:"true"`
 	ResourceID   mcpargs.ID             `mcp_desc:"ID of the resource (IID for issue/MR, ID for epic/snippet, SHA for commit)" mcp_required:"true"`
-	Body         string                 `mcp_desc:"The content of the discussion" mcp_required:"true"`
+	Body         string                 `mcp_desc:"The content of the discussion in GitLab Flavored Markdown" mcp_required:"true"`
 }
 
 func (d *DiscussionService) NewDiscussion() server.ServerTool {
@@ -158,7 +158,7 @@ type addDiscussionNoteArgs struct {
 	ParentID     mcpargs.ID             `mcp_desc:"ID of the parent resource (project ID for issue/MR/snippet/commit, group ID for epic)" mcp_required:"true"`
 	ResourceID   mcpargs.ID             `mcp_desc:"ID of the resource (IID for issue/MR, ID for epic/snippet, SHA for commit)" mcp_required:"true"`
 	DiscussionID string                 `mcp_desc:"The ID of the discussion thread" mcp_required:"true"`
-	Body         string                 `mcp_desc:"The content of the note" mcp_required:"true"`
+	Body         string                 `mcp_desc:"The content of the note in GitLab Flavored Markdown" mcp_required:"true"`
 }
 
 func (d *DiscussionService) AddDiscussionNote() server.ServerTool {
@@ -195,7 +195,7 @@ type modifyDiscussionNoteArgs struct {
 	ResourceID   mcpargs.ID             `mcp_desc:"ID of the resource (IID for issue/MR, ID for epic/snippet, SHA for commit)" mcp_required:"true"`
 	DiscussionID string                 `mcp_desc:"The ID of the discussion thread" mcp_required:"true"`
 	NoteID       int                    `mcp_desc:"The ID of the note to modify" mcp_required:"true"`
-	Body         string                 `mcp_desc:"The updated content of the note" mcp_required:"true"`
+	Body         string                 `mcp_desc:"The updated content of the note in GitLab Flavored Markdown" mcp_required:"true"`
 }
 
 func (d *DiscussionService) ModifyDiscussionNote() server.ServerTool {
@@ -317,7 +317,7 @@ type newPositionDiscussionArgs struct {
 	ResourceType discussionResourceType `mcp_desc:"Type of GitLab resource (merge_request, commit)" mcp_required:"true" mcp_enum:"merge_request,commit"`
 	ProjectID    mcpargs.ID             `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
 	ResourceID   mcpargs.ID             `mcp_desc:"ID of the resource (IID for MR, SHA for commit)" mcp_required:"true"`
-	Body         string                 `mcp_desc:"The content of the discussion" mcp_required:"true"`
+	Body         string                 `mcp_desc:"The content of the discussion in GitLab Flavored Markdown" mcp_required:"true"`
 	BaseSHA      string                 `mcp_desc:"Base commit SHA in the source branch" mcp_required:"true"`
 	HeadSHA      string                 `mcp_desc:"SHA referencing HEAD of this merge request" mcp_required:"true"`
 	StartSHA     string                 `mcp_desc:"SHA referencing commit in target branch" mcp_required:"true"`
