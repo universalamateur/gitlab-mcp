@@ -27,11 +27,47 @@ archives:
 
 dockers:
   - image_templates:
-      - "{{ .Env.CI_REGISTRY_IMAGE }}:latest"
-      - "{{ .Env.CI_REGISTRY_IMAGE }}:{{ .Tag }}"
-      - "{{ .Env.CI_REGISTRY_IMAGE }}:v{{ .Major }}.{{ .Minor }}"
+      - "{{ .Env.CI_REGISTRY_IMAGE }}:latest-amd64"
+      - "{{ .Env.CI_REGISTRY_IMAGE }}:{{ .Tag }}-amd64"
+      - "{{ .Env.CI_REGISTRY_IMAGE }}:v{{ .Major }}.{{ .Minor }}-amd64"
     goos: linux
     goarch: amd64
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+
+  - image_templates:
+      - "{{ .Env.CI_REGISTRY_IMAGE }}:latest-arm64"
+      - "{{ .Env.CI_REGISTRY_IMAGE }}:{{ .Tag }}-arm64"
+      - "{{ .Env.CI_REGISTRY_IMAGE }}:v{{ .Major }}.{{ .Minor }}-arm64"
+    goos: linux
+    goarch: arm64
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+
+# Create multi-architecture manifests
+docker_manifests:
+  - name_template: "{{ .Env.CI_REGISTRY_IMAGE }}:latest"
+    image_templates:
+      - "{{ .Env.CI_REGISTRY_IMAGE }}:{{ .Tag }}-amd64"
+      - "{{ .Env.CI_REGISTRY_IMAGE }}:{{ .Tag }}-arm64"
+  - name_template: "{{ .Env.CI_REGISTRY_IMAGE }}:{{ .Tag }}"
+    image_templates:
+      - "{{ .Env.CI_REGISTRY_IMAGE }}:{{ .Tag }}-amd64"
+      - "{{ .Env.CI_REGISTRY_IMAGE }}:{{ .Tag }}-arm64"
+  - name_template: "{{ .Env.CI_REGISTRY_IMAGE }}:v{{ .Major }}.{{ .Minor }}"
+    image_templates:
+      - "{{ .Env.CI_REGISTRY_IMAGE }}:{{ .Tag }}-amd64"
+      - "{{ .Env.CI_REGISTRY_IMAGE }}:{{ .Tag }}-arm64"
 
 release:
   gitlab:
