@@ -16,6 +16,9 @@ import (
 	"gitlab.com/fforster/gitlab-mcp/lib/testing/gitlabtest"
 )
 
+// ErrContentNotText is returned when content cannot be converted to text.
+var ErrContentNotText = errors.New("content is not text")
+
 func fakeGitlabClient() *gitlab.Client {
 	epics := []*gitlab.Epic{
 		{
@@ -121,6 +124,7 @@ func TestListGroupEpics(t *testing.T) {
 		wantIDs = []int{1001, 1002}
 		gotIDs  = epicIDs(epics)
 	)
+
 	if !cmp.Equal(gotIDs, wantIDs) {
 		t.Errorf("got epics with ids %v, wanted %v", gotIDs, wantIDs)
 	}
@@ -197,6 +201,7 @@ func TestGetEpicLinks(t *testing.T) {
 		wantIDs = []int{1002, 1005}
 		gotIDs  = epicIDs(epics)
 	)
+
 	if !cmp.Equal(gotIDs, wantIDs) {
 		t.Errorf("got epics with ids %v, wanted %v", gotIDs, wantIDs)
 	}
@@ -237,6 +242,7 @@ func TestListEpicIssues(t *testing.T) {
 	for _, issue := range issues {
 		gotIDs = append(gotIDs, issue.ID)
 	}
+
 	sort.Ints(gotIDs)
 
 	wantIDs := []int{101, 102}
@@ -251,7 +257,9 @@ func epicIDs(epics []*gitlab.Epic) []int {
 	for _, epic := range epics {
 		ids = append(ids, epic.ID)
 	}
+
 	sort.Ints(ids)
+
 	return ids
 }
 
@@ -261,7 +269,11 @@ func unmarshalResult(res *mcp.CallToolResult, v any) error {
 		return err
 	}
 
-	return json.Unmarshal([]byte(s), v)
+	if err := json.Unmarshal([]byte(s), v); err != nil {
+		return fmt.Errorf("failed to unmarshal JSON: %w", err)
+	}
+
+	return nil
 }
 
 func resultToString(res *mcp.CallToolResult) (string, error) {
@@ -270,14 +282,14 @@ func resultToString(res *mcp.CallToolResult) (string, error) {
 	for _, c := range res.Content {
 		tc, ok := mcp.AsTextContent(c)
 		if !ok {
-			return "", fmt.Errorf("content is not text: %T", c)
+			return "", fmt.Errorf("%w: %T", ErrContentNotText, c)
 		}
 
 		b.WriteString(tc.Text)
 	}
 
 	if res.IsError {
-		return "", errors.New(b.String())
+		return "", fmt.Errorf("tool returned error: %s", b.String()) //nolint:err113
 	}
 
 	return b.String(), nil
