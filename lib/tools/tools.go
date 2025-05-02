@@ -33,6 +33,9 @@ type Tools struct {
 	// Epics provides access to GitLab epic-related operations.
 	Epics EpicServiceInterface
 
+	// Events provides tools to look up events
+	Events EventsServiceInterface
+
 	// Issues provides access to GitLab issue-related operations.
 	Issues IssuesServiceInterface
 
@@ -58,6 +61,7 @@ func New(client *gitlab.Client, currentUser string) *Tools {
 	return &Tools{
 		Discussions:   NewDiscussionTools(client),
 		Epics:         NewEpicTools(client),
+		Events:        NewEventsTools(client, currentUser),
 		Issues:        NewIssuesTools(client, currentUser),
 		Jobs:          NewJobsTools(client),
 		MergeRequests: NewMergeRequestsTools(client, currentUser),
@@ -72,6 +76,7 @@ func New(client *gitlab.Client, currentUser string) *Tools {
 func (s *Tools) AddTo(srv *server.MCPServer) {
 	s.Discussions.AddTo(srv)
 	s.Epics.AddTo(srv)
+	s.Events.AddTo(srv)
 	s.Issues.AddTo(srv)
 	s.Jobs.AddTo(srv)
 	s.MergeRequests.AddTo(srv)
