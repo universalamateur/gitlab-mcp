@@ -35,7 +35,7 @@ GitLab MCP implements the [Model Context Protocol](https://github.com/anthropics
 A pre-built Docker image is available:
 
 ```bash
-docker run -e GITLAB_TOKEN=your_gitlab_token registry.gitlab.com/fforster/gitlab-mcp:latest
+docker run -i -e GITLAB_TOKEN=your_gitlab_token registry.gitlab.com/fforster/gitlab-mcp:latest
 ```
 
 The Docker image contains the compiled GitLab MCP server and is the simplest way to get started.
@@ -67,7 +67,7 @@ To use the GitLab MCP server with Claude Desktop, add the following to your Clau
     "GitLab": {
       "command": "docker",
       "args": [
-        "run",
+        "run", "-i",
         "-e", "GITLAB_TOKEN",
         "registry.gitlab.com/fforster/gitlab-mcp:latest"
       ],
@@ -101,7 +101,7 @@ You can provide the GitLab token in one of two ways:
          "args": [
            "-c",
            "/path/to/gitlab-mcp"
-         ],
+         ]
        }
      }
    }
