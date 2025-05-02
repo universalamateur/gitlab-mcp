@@ -67,7 +67,10 @@ To use the GitLab MCP server with Claude Desktop, add the following to your Clau
     "GitLab": {
       "command": "docker",
       "args": [
-        "run", "-i",
+        "run",
+        "-i",
+        "--rm",
+        "--pull=always",
         "-e", "GITLAB_TOKEN",
         "registry.gitlab.com/fforster/gitlab-mcp:latest"
       ],
@@ -78,6 +81,13 @@ To use the GitLab MCP server with Claude Desktop, add the following to your Clau
   }
 }
 ```
+
+**Explanation:**
+
+* `-i` is required so Docker keeps `STDIN` open.
+* `--rm` cleans up the container when *gitlab-mcp* exits.
+* `--pull=always` ensures that Docker downloads the latest version of *gitlab-mcp* before running.
+* `-e GITLAB_TOKEN` exports the `GITLAB_TOKEN` environment variable to *gitlab-mcp*.
 
 ### Config file location
 
