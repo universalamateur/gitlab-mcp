@@ -21,7 +21,17 @@ GitLab MCP implements the [Model Context Protocol](https://github.com/anthropics
 
 ## Installation
 
-### Option 1: Build from source
+### Option 1: Install from Homebrew
+
+```sh
+# Add the gitlab-mcp tap repository
+brew tap fforster/gitlab-mcp https://gitlab.com/fforster/homebrew-gitlab-mcp.git
+
+# Install gitlab-mcp
+brew install gitlab-mcp
+```
+
+### Option 2: Build from source
 
 1. Clone this repository
 2. Build the binary with `go build`
@@ -30,7 +40,7 @@ GitLab MCP implements the [Model Context Protocol](https://github.com/anthropics
    export GITLAB_TOKEN=your_gitlab_token
    ```
 
-### Option 2: Docker
+### Option 3: Docker
 
 A pre-built Docker image is available:
 
@@ -50,7 +60,7 @@ To use the GitLab MCP server with Claude Desktop, add the following to your Clau
 {
   "mcpServers": {
     "GitLab": {
-      "command": "/path/to/gitlab-mcp",
+      "command": "/opt/homebrew/bin/gitlab-mcp",
       "env": {
         "GITLAB_TOKEN": "your_gitlab_token"
       }
@@ -110,7 +120,7 @@ You can provide the GitLab token in one of two ways:
          "command": "/bin/bash",
          "args": [
            "-c",
-           "/path/to/gitlab-mcp"
+           "/opt/homebrew/bin/gitlab-mcp"
          ]
        }
      }
