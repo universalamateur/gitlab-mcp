@@ -13,7 +13,7 @@ workflow:
     - if: $CI_COMMIT_TAG
 
 variables:
-  GORELEASER_DOCKER_EXTRA_ARGS: '-e GORELEASER_DEPLOY_TOKEN'
+  GORELEASER_DOCKER_EXTRA_ARGS: '-e GORELEASER_HOMEBREW_TOKEN'
 
 include:
   - local: .gitlab-ci-asdf-versions.yml

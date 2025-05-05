@@ -136,7 +136,7 @@ brews:
       owner: fforster
       name: homebrew-gitlab-mcp
       branch: main
-      token: "{{ .Env.GORELEASER_DEPLOY_TOKEN }}"
+      token: "{{ .Env.GORELEASER_HOMEBREW_TOKEN }}"
 
     # Directory inside the repository to store the formula
     directory: Formula
