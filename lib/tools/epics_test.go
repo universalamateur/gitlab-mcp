@@ -2,7 +2,6 @@ package tools
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -15,9 +14,6 @@ import (
 
 	"gitlab.com/fforster/gitlab-mcp/lib/testing/gitlabtest"
 )
-
-// ErrContentNotText is returned when content cannot be converted to text.
-var ErrContentNotText = errors.New("content is not text")
 
 func fakeGitlabClient() *gitlab.Client {
 	epics := []*gitlab.Epic{
@@ -282,14 +278,14 @@ func resultToString(res *mcp.CallToolResult) (string, error) {
 	for _, c := range res.Content {
 		tc, ok := mcp.AsTextContent(c)
 		if !ok {
-			return "", fmt.Errorf("%w: %T", ErrContentNotText, c)
+			return "", fmt.Errorf("content is not text: %T", c)
 		}
 
 		b.WriteString(tc.Text)
 	}
 
 	if res.IsError {
-		return "", fmt.Errorf("tool returned error: %s", b.String()) //nolint:err113
+		return "", fmt.Errorf("tool returned error: %s", b.String())
 	}
 
 	return b.String(), nil

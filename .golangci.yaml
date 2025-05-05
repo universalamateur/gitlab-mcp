@@ -205,6 +205,9 @@ linters:
           - gocognit
         path: _test.go$
         source: ^func (Benchmark|Example|Fuzz|Test)[A-Z]
+      - path: _test.go$
+        linters:
+          - err113
       - path: (.+)\.go$
         text: Error return value of .((os\.)?std(out|err)\..*|.*Close|.*Flush|os\.Remove(All)?|.*print(f|ln)?|os\.(Un)?Setenv). is not checked
       - path: (.+)\.go$
