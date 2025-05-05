@@ -23,6 +23,8 @@ GitLab MCP implements the [Model Context Protocol](https://github.com/anthropics
 
 ### Option 1: Install from Homebrew
 
+This is the simplest way to install *gitlab-mcp* when you're on Mac.
+
 ```sh
 # Add the gitlab-mcp tap repository
 brew tap fforster/gitlab-mcp https://gitlab.com/fforster/homebrew-gitlab-mcp.git
@@ -33,12 +35,11 @@ brew install gitlab-mcp
 
 ### Option 2: Build from source
 
+This is recommended if you plan on contributing features or bug fixes to *gitlab-mcp*.
+
 1. Clone this repository
-2. Build the binary with `go build`
-3. Set up your GitLab token as an environment variable:
-   ```bash
-   export GITLAB_TOKEN=your_gitlab_token
-   ```
+2. Build the binary with `go build`, this creates `gitlab-mcp` in the current directory.
+   Use `-o <path>` to chose a different filename (or directory).
 
 ### Option 3: Docker
 
@@ -47,8 +48,6 @@ A pre-built Docker image is available:
 ```bash
 docker run -i -e GITLAB_TOKEN=your_gitlab_token registry.gitlab.com/fforster/gitlab-mcp:latest
 ```
-
-The Docker image contains the compiled GitLab MCP server and is the simplest way to get started.
 
 ## Usage with Claude Desktop
 
