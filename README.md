@@ -176,6 +176,7 @@ You can provide the GitLab token in one of two ways:
 | `list_user_issues` | Lists all issues assigned to a user |
 | `list_user_merge_requests` | Get all merge requests authored by or assigned to a user for review |
 | `list_user_snippets` | List snippets owned by the current user |
+| `list_user_todos` | Get all todos for the current user, with optional filtering by state (pending, done) and a limit on the number returned (default 100). |
 | `retry_job` | Retry a single job of a project |
 | `set_user_status` | Set the current user's status |
 | `trigger_manual_job` | Trigger a manual job for a project |
@@ -195,6 +196,8 @@ Once configured, you can ask Claude to interact with your GitLab instance:
 - "How do I use the MCP server according to the `README.md` file in the `fforster/gitlab-mcp` GitLab project."
 - "On GitLab, what have reprazent and ffoster been working on between 2025-04-28
   and 2025-05-02?"
+- "List all of my pending todos."
+- "List the latest 100 completed todos."
 
 ## License
 
