@@ -63,12 +63,6 @@ func (t *TodosService) listUserTodos(ctx context.Context, request mcp.CallToolRe
 		return nil, err //nolint:wrapcheck
 	}
 
-	// Only allow 'pending' or 'done', default to 'pending' if not set or invalid
-	state := args.State
-	if state != "pending" && state != "done" {
-		state = "pending"
-	}
-
 	limit := args.Limit
 	if limit <= 0 {
 		limit = defaultTodosLimit
@@ -82,6 +76,7 @@ func (t *TodosService) listUserTodos(ctx context.Context, request mcp.CallToolRe
 
 	// Parse optional parameters
 	opt.Action = todoActions[args.Action]
+	opt.State = todoStates[args.State]
 
 	if args.AuthorID != 0 {
 		opt.AuthorID = gitlab.Ptr(args.AuthorID)
@@ -89,10 +84,6 @@ func (t *TodosService) listUserTodos(ctx context.Context, request mcp.CallToolRe
 
 	if args.ProjectID != 0 {
 		opt.ProjectID = gitlab.Ptr(args.ProjectID)
-	}
-
-	if args.State != "" {
-		opt.State = gitlab.Ptr(state)
 	}
 
 	if args.Type != "" {
@@ -121,6 +112,12 @@ func (t *TodosService) listUserTodos(ctx context.Context, request mcp.CallToolRe
 	}
 
 	return newToolResultJSON(todos)
+}
+
+var todoStates = map[string]*string{
+	"pending": gitlab.Ptr("pending"),
+	"done":    gitlab.Ptr("done"),
+	"":        gitlab.Ptr("pending"), // Default value
 }
 
 // todoActions is a map of all possible todo actions.

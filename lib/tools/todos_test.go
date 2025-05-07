@@ -30,6 +30,7 @@ func TestListUserTodos(t *testing.T) {
 						if *opts.State != "pending" {
 							t.Errorf("expected state 'pending', got %q", *opts.State)
 						}
+
 						return []*gitlab.Todo{{ID: 1}, {ID: 2}}, &gitlab.Response{
 							Response: &http.Response{StatusCode: http.StatusOK},
 						}, nil
@@ -49,6 +50,7 @@ func TestListUserTodos(t *testing.T) {
 						if opts.Action == nil || string(*opts.Action) != "assigned" {
 							t.Errorf("expected action 'assigned', got %v", opts.Action)
 						}
+
 						return []*gitlab.Todo{{ID: 3}, {ID: 4}}, &gitlab.Response{
 							Response: &http.Response{StatusCode: http.StatusOK},
 						}, nil
@@ -68,6 +70,7 @@ func TestListUserTodos(t *testing.T) {
 						if opts.AuthorID == nil || *opts.AuthorID != 123 {
 							t.Errorf("expected author_id 123, got %v", opts.AuthorID)
 						}
+
 						return []*gitlab.Todo{{ID: 5}}, &gitlab.Response{
 							Response: &http.Response{StatusCode: http.StatusOK},
 						}, nil
@@ -87,6 +90,7 @@ func TestListUserTodos(t *testing.T) {
 						if opts.ProjectID == nil || *opts.ProjectID != 456 {
 							t.Errorf("expected project_id 456, got %v", opts.ProjectID)
 						}
+
 						return []*gitlab.Todo{{ID: 6}}, &gitlab.Response{
 							Response: &http.Response{StatusCode: http.StatusOK},
 						}, nil
@@ -106,6 +110,7 @@ func TestListUserTodos(t *testing.T) {
 						if opts.Type == nil || *opts.Type != "MergeRequest" {
 							t.Errorf("expected type 'MergeRequest', got %v", opts.Type)
 						}
+
 						return []*gitlab.Todo{{ID: 7}}, &gitlab.Response{
 							Response: &http.Response{StatusCode: http.StatusOK},
 						}, nil
@@ -133,6 +138,7 @@ func TestListUserTodos(t *testing.T) {
 						if opts.ProjectID == nil || *opts.ProjectID != 789 {
 							t.Errorf("expected project_id 789, got %v", opts.ProjectID)
 						}
+
 						return []*gitlab.Todo{{ID: 8}, {ID: 9}}, &gitlab.Response{
 							Response: &http.Response{StatusCode: http.StatusOK},
 						}, nil
@@ -176,6 +182,7 @@ func TestListUserTodos(t *testing.T) {
 						if opts.Page != 2 {
 							t.Errorf("expected Page 2, got %d", opts.Page)
 						}
+
 						return []*gitlab.Todo{{ID: 15}}, &gitlab.Response{
 							Response: &http.Response{StatusCode: http.StatusOK},
 							NextPage: 0,
@@ -188,9 +195,6 @@ func TestListUserTodos(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
-
 			gitlabClient := glabtest.NewTestClient(t)
 			tt.setupMock(gitlabClient.MockTodos)
 
