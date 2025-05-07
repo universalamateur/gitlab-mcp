@@ -201,8 +201,11 @@ linters:
           - dupl
         path: ^itests/.*
       - linters:
+          - cyclop
           - funlen
           - gocognit
+          - gocyclo
+          - maintidx
         path: _test.go$
         source: ^func (Benchmark|Example|Fuzz|Test)[A-Z]
       - path: _test.go$
