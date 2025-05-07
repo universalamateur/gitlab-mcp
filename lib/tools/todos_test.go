@@ -7,6 +7,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/google/go-cmp/cmp"
 	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/mark3labs/mcp-go/mcptest"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	glabtest "gitlab.com/gitlab-org/api/client-go/testing"
 )
@@ -223,5 +224,89 @@ func TestListUserTodos(t *testing.T) {
 				t.Errorf("IDs mismatch (-want/+got):\n%s", diff)
 			}
 		})
+	}
+}
+
+func TestCompleteTodoItem(t *testing.T) {
+	mockClient := glabtest.NewTestClient(t)
+
+	// Expect MarkTodoAsDone to be called with the todo ID
+	mockClient.MockTodos.EXPECT().
+		MarkTodoAsDone(gomock.Eq(1), gomock.Any()).
+		Return(&gitlab.Response{
+			Response: &http.Response{
+				StatusCode: http.StatusOK,
+			},
+		}, nil)
+
+	todoTools := NewTodosTools(mockClient.Client)
+
+	srv, err := mcptest.NewServer(t, todoTools.CompleteTodoItem())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer srv.Close()
+
+	client := srv.Client()
+
+	var req mcp.CallToolRequest
+	req.Params.Name = "complete_todo_item"
+	req.Params.Arguments = map[string]any{
+		"id": 1,
+	}
+
+	result, err := client.CallTool(t.Context(), req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := resultToString(result)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if want := "success"; got != want {
+		t.Errorf("got %q, wanted %q", got, want)
+	}
+}
+
+func TestCompleteAllTodoItems(t *testing.T) {
+	mockClient := glabtest.NewTestClient(t)
+
+	// Expect MarkAllTodosAsDone to be called
+	mockClient.MockTodos.EXPECT().
+		MarkAllTodosAsDone(gomock.Any()).
+		Return(&gitlab.Response{
+			Response: &http.Response{
+				StatusCode: http.StatusNoContent,
+			},
+		}, nil)
+
+	todoTools := NewTodosTools(mockClient.Client)
+
+	srv, err := mcptest.NewServer(t, todoTools.CompleteAllTodoItems())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer srv.Close()
+
+	client := srv.Client()
+
+	var req mcp.CallToolRequest
+	req.Params.Name = "complete_all_todo_items"
+	req.Params.Arguments = map[string]any{}
+
+	result, err := client.CallTool(t.Context(), req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := resultToString(result)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if want := "success"; got != want {
+		t.Errorf("got %q, wanted %q", got, want)
 	}
 }

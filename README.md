@@ -130,6 +130,8 @@ You can provide the GitLab token in one of two ways:
 
 | Tool Name | Description |
 |-----------|-------------|
+| `complete_all_todo_items` | Marks all pending todo items for the current user as done |
+| `complete_todo_item` | Marks a single pending todo item as done |
 | `create_issue` | Creates a new GitLab issue |
 | `create_snippet` | Create a new snippet |
 | `delete_snippet` | Delete a snippet |

@@ -35,6 +35,8 @@ type TodosService struct {
 func (t *TodosService) AddTo(srv *server.MCPServer) {
 	srv.AddTools(
 		t.ListUserTodos(),
+		t.CompleteTodoItem(),
+		t.CompleteAllTodoItems(),
 	)
 }
 
@@ -128,4 +130,53 @@ var todoActions = map[string]*gitlab.TodoAction{
 	string(gitlab.TodoMarked):            gitlab.Ptr(gitlab.TodoMarked),
 	string(gitlab.TodoApprovalRequired):  gitlab.Ptr(gitlab.TodoApprovalRequired),
 	string(gitlab.TodoDirectlyAddressed): gitlab.Ptr(gitlab.TodoDirectlyAddressed),
+}
+
+type completeTodoItemArgs struct {
+	ID int `mcp_desc:"The ID of the todo item to mark as done" mcp_required:"true"`
+}
+
+// CompleteTodoItem returns a ServerTool for marking a single todo item as done.
+// The tool accepts the ID of the todo item to be marked as done.
+func (t *TodosService) CompleteTodoItem() server.ServerTool {
+	return server.ServerTool{
+		Handler: t.completeTodoItem,
+		Tool: mcpargs.NewTool("complete_todo_item", completeTodoItemArgs{},
+			mcp.WithDescription("Marks a single pending todo item as done"),
+		),
+	}
+}
+
+func (t *TodosService) completeTodoItem(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	var args completeTodoItemArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, err //nolint:wrapcheck
+	}
+
+	_, err := t.client.Todos.MarkTodoAsDone(args.ID, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("MarkTodoAsDone(%d): %w", args.ID, err)
+	}
+
+	return mcp.NewToolResultText("success"), nil
+}
+
+// CompleteAllTodoItems returns a ServerTool for marking all pending todo items as done.
+// This tool takes no parameters as it affects all pending todo items.
+func (t *TodosService) CompleteAllTodoItems() server.ServerTool {
+	return server.ServerTool{
+		Handler: t.completeAllTodoItems,
+		Tool: mcp.NewTool("complete_all_todo_items",
+			mcp.WithDescription("Marks all pending todo items for the current user as done. Only perform this action when explicitly requested by the user."),
+		),
+	}
+}
+
+func (t *TodosService) completeAllTodoItems(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	_, err := t.client.Todos.MarkAllTodosAsDone(gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("MarkAllTodosAsDone: %w", err)
+	}
+
+	return mcp.NewToolResultText("success"), nil
 }
