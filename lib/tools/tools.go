@@ -53,6 +53,9 @@ type Tools struct {
 
 	// Users provides tools for looking up user IDs, a user's activity and status, etc.
 	Users UsersServiceInterface
+
+	// Todos provides access to GitLab todo-related operations.
+	Todos TodosServiceInterface
 }
 
 // New creates a new instance of Tools with the provided GitLab client and current user.
@@ -68,6 +71,7 @@ func New(client *gitlab.Client, currentUser string) *Tools {
 		Repositories:  NewRepositoryTools(client),
 		Snippets:      NewSnippetsTools(client, currentUser),
 		Users:         NewUsersTools(client, currentUser),
+		Todos:         NewTodosTools(client),
 	}
 }
 
@@ -83,6 +87,7 @@ func (s *Tools) AddTo(srv *server.MCPServer) {
 	s.Repositories.AddTo(srv)
 	s.Snippets.AddTo(srv)
 	s.Users.AddTo(srv)
+	s.Todos.AddTo(srv)
 }
 
 // newToolResultJSON encodes the provided value as JSON and returns it as a tool result.
