@@ -51,11 +51,11 @@ type Tools struct {
 	// Snippets provides access to GitLab snippet-related operations.
 	Snippets SnippetsServiceInterface
 
-	// Users provides tools for looking up user IDs, a user's activity and status, etc.
-	Users UsersServiceInterface
-
 	// Todos provides access to GitLab todo-related operations.
 	Todos TodosServiceInterface
+
+	// Users provides tools for looking up user IDs, a user's activity and status, etc.
+	Users UsersServiceInterface
 }
 
 // New creates a new instance of Tools with the provided GitLab client and current user.
@@ -70,8 +70,8 @@ func New(client *gitlab.Client, currentUser string) *Tools {
 		MergeRequests: NewMergeRequestsTools(client, currentUser),
 		Repositories:  NewRepositoryTools(client),
 		Snippets:      NewSnippetsTools(client, currentUser),
-		Users:         NewUsersTools(client, currentUser),
 		Todos:         NewTodosTools(client),
+		Users:         NewUsersTools(client, currentUser),
 	}
 }
 
@@ -86,8 +86,8 @@ func (s *Tools) AddTo(srv *server.MCPServer) {
 	s.MergeRequests.AddTo(srv)
 	s.Repositories.AddTo(srv)
 	s.Snippets.AddTo(srv)
-	s.Users.AddTo(srv)
 	s.Todos.AddTo(srv)
+	s.Users.AddTo(srv)
 }
 
 // newToolResultJSON encodes the provided value as JSON and returns it as a tool result.
