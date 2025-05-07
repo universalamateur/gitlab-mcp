@@ -9,11 +9,13 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.7 // indirect
 	github.com/spf13/cast v1.7.1 // indirect
+	go.uber.org/mock v0.5.0 // indirect
 	golang.org/x/oauth2 v0.25.0 // indirect
 	golang.org/x/time v0.10.0 // indirect
 )
 
 require (
+	github.com/golang/mock v1.6.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect

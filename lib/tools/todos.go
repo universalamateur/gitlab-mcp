@@ -39,8 +39,12 @@ func (t *TodosService) AddTo(srv *server.MCPServer) {
 }
 
 type listUserTodosArgs struct {
-	State string `mcp_desc:"Return all todos that are pending or done" mcp_enum:"pending,done"`
-	Limit int    `mcp_desc:"Maximum number of todos to return. If not set or zero, defaults to 100."`
+	Action    string `mcp_desc:"Filter by the action that caused the todo item" mcp_enum:"assigned,mentioned,build_failed,marked,approval_required,unmergeable,directly_addressed,merge_train_removed,member_access_requested"`
+	AuthorID  int    `mcp_desc:"Filter by the ID of the author who created the todo item"`
+	ProjectID int    `mcp_desc:"Filter by the ID of the project the todo item belongs to"`
+	State     string `mcp_desc:"Filter by the state of the todo item, defaults to 'pending'" mcp_enum:"pending,done"`
+	Type      string `mcp_desc:"Filter by the type of resource the todo item is associated with" mcp_enum:"Issue,MergeRequest,Commit,Epic,DesignManagement::Design,AlertManagement::Alert,Project,Namespace,Vulnerability,WikiPage::Meta"`
+	Limit     int    `mcp_desc:"Maximum number of todos to return. If not set or zero, defaults to 100."`
 }
 
 // ListUserTodos returns a ServerTool for listing all todos for the current user.
@@ -48,7 +52,7 @@ func (t *TodosService) ListUserTodos() server.ServerTool {
 	return server.ServerTool{
 		Handler: t.listUserTodos,
 		Tool: mcpargs.NewTool("list_user_todos", listUserTodosArgs{},
-			mcp.WithDescription("Get all todos for the current user, with optional filtering by state (pending, done) and a limit on the number returned (default 100)."),
+			mcp.WithDescription("Get all todos for the current user, with optional filtering."),
 		),
 	}
 }
@@ -72,9 +76,27 @@ func (t *TodosService) listUserTodos(ctx context.Context, request mcp.CallToolRe
 
 	opt := &gitlab.ListTodosOptions{
 		ListOptions: gitlab.ListOptions{
-			PerPage: maxPerPage,
+			PerPage: min(limit, maxPerPage),
 		},
-		State: gitlab.Ptr(state),
+	}
+
+	// Parse optional parameters
+	opt.Action = todoActions[args.Action]
+
+	if args.AuthorID != 0 {
+		opt.AuthorID = gitlab.Ptr(args.AuthorID)
+	}
+
+	if args.ProjectID != 0 {
+		opt.ProjectID = gitlab.Ptr(args.ProjectID)
+	}
+
+	if args.State != "" {
+		opt.State = gitlab.Ptr(state)
+	}
+
+	if args.Type != "" {
+		opt.Type = gitlab.Ptr(args.Type)
 	}
 
 	var todos []*gitlab.Todo
@@ -87,7 +109,7 @@ func (t *TodosService) listUserTodos(ctx context.Context, request mcp.CallToolRe
 
 		todos = append(todos, ts...)
 		if limit > 0 && len(todos) >= limit {
-			todos = todos[:limit] // Ensure we don't exceed the limit
+			todos = todos[:limit]
 			break
 		}
 
@@ -99,4 +121,14 @@ func (t *TodosService) listUserTodos(ctx context.Context, request mcp.CallToolRe
 	}
 
 	return newToolResultJSON(todos)
+}
+
+// todoActions is a map of all possible todo actions.
+var todoActions = map[string]*gitlab.TodoAction{
+	string(gitlab.TodoAssigned):          gitlab.Ptr(gitlab.TodoAssigned),
+	string(gitlab.TodoMentioned):         gitlab.Ptr(gitlab.TodoMentioned),
+	string(gitlab.TodoBuildFailed):       gitlab.Ptr(gitlab.TodoBuildFailed),
+	string(gitlab.TodoMarked):            gitlab.Ptr(gitlab.TodoMarked),
+	string(gitlab.TodoApprovalRequired):  gitlab.Ptr(gitlab.TodoApprovalRequired),
+	string(gitlab.TodoDirectlyAddressed): gitlab.Ptr(gitlab.TodoDirectlyAddressed),
 }
