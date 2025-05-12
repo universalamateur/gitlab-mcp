@@ -1,6 +1,6 @@
 module gitlab.com/fforster/gitlab-mcp
 
-go 1.24.2
+go 1.24.3
 
 require github.com/mark3labs/mcp-go v0.25.0
 
