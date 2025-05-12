@@ -2,7 +2,7 @@ module gitlab.com/fforster/gitlab-mcp
 
 go 1.24.3
 
-require github.com/mark3labs/mcp-go v0.25.0
+require github.com/mark3labs/mcp-go v0.27.0
 
 require (
 	github.com/google/go-querystring v1.1.0 // indirect
