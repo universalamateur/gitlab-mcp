@@ -1,0 +1,280 @@
+package tools
+
+import (
+	"fmt"
+	"net/http"
+	"testing"
+
+	"github.com/golang/mock/gomock"
+	"github.com/google/go-cmp/cmp"
+	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/mark3labs/mcp-go/mcptest"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
+	glabtest "gitlab.com/gitlab-org/api/client-go/testing"
+)
+
+func TestGetIssue(t *testing.T) {
+	tests := []struct {
+		name              string
+		args              map[string]any
+		setupMock         func(*glabtest.MockIssuesServiceInterface, *glabtest.MockDiscussionsServiceInterface)
+		wantError         bool
+		wantErrorResponse bool
+		want              *detailedIssue
+	}{
+		{
+			name: "successful fetch of issue with discussions",
+			args: map[string]any{
+				"project_id": "test/project",
+				"issue_iid":  123,
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, mockDisc *glabtest.MockDiscussionsServiceInterface) {
+				// Mock GetIssue
+				mockIssues.EXPECT().
+					GetIssue(gomock.Eq("test/project"), gomock.Eq(123), gomock.Any()).
+					Return(&gitlab.Issue{
+						ID:           12345,
+						IID:          123,
+						ProjectID:    54321,
+						Title:        "Test issue",
+						Description:  "Test description",
+						State:        "opened",
+						Confidential: false,
+					}, &gitlab.Response{
+						Response: &http.Response{StatusCode: http.StatusOK},
+					}, nil)
+
+				// Mock ListIssueDiscussions
+				mockDisc.EXPECT().
+					ListIssueDiscussions("test/project", gomock.Eq(123), gomock.Any(), gomock.Any()).
+					Return([]*gitlab.Discussion{
+						{
+							ID: "discussion1",
+							Notes: []*gitlab.Note{
+								{
+									ID:     1,
+									Body:   "Test comment",
+									Author: gitlab.NoteAuthor{ID: 1, Username: "user1"},
+								},
+							},
+						},
+					}, &gitlab.Response{
+						Response: &http.Response{StatusCode: http.StatusOK},
+						NextPage: 0,
+					}, nil)
+			},
+			want: &detailedIssue{
+				Issue: &gitlab.Issue{
+					ID:           12345,
+					IID:          123,
+					ProjectID:    54321,
+					Title:        "Test issue",
+					Description:  "Test description",
+					State:        "opened",
+					Confidential: false,
+				},
+				Discussions: []*gitlab.Discussion{
+					{
+						ID: "discussion1",
+						Notes: []*gitlab.Note{
+							{
+								ID:     1,
+								Body:   "Test comment",
+								Author: gitlab.NoteAuthor{ID: 1, Username: "user1"},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "error in fetching issue",
+			args: map[string]any{
+				"project_id": "test/project",
+				"issue_iid":  456,
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, mockDisc *glabtest.MockDiscussionsServiceInterface) {
+				// Mock GetIssue with error
+				mockIssues.EXPECT().
+					GetIssue(gomock.Any(), gomock.Eq(456), gomock.Any()).
+					Return(nil, nil, fmt.Errorf("issue not found"))
+
+				// This won't be called due to the error, but we need to set expectations
+				// for all concurrent fetches to avoid test flakiness
+				mockDisc.EXPECT().
+					ListIssueDiscussions(gomock.Any(), gomock.Eq(456), gomock.Any(), gomock.Any()).
+					Return([]*gitlab.Discussion{}, &gitlab.Response{
+						Response: &http.Response{StatusCode: http.StatusOK},
+					}, nil).AnyTimes()
+			},
+			wantError: true,
+		},
+		{
+			name: "error in fetching discussions",
+			args: map[string]any{
+				"project_id": "test/project",
+				"issue_iid":  789,
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, mockDisc *glabtest.MockDiscussionsServiceInterface) {
+				// Mock GetIssue
+				mockIssues.EXPECT().
+					GetIssue(gomock.Any(), gomock.Eq(789), gomock.Any()).
+					Return(&gitlab.Issue{
+						ID:           78901,
+						IID:          789,
+						Title:        "Test issue with discussion error",
+						Confidential: false,
+					}, &gitlab.Response{
+						Response: &http.Response{StatusCode: http.StatusOK},
+					}, nil)
+
+				// Mock ListIssueDiscussions with error
+				mockDisc.EXPECT().
+					ListIssueDiscussions(gomock.Any(), gomock.Eq(789), gomock.Any(), gomock.Any()).
+					Return(nil, nil, fmt.Errorf("discussions not available"))
+			},
+			wantError: true,
+		},
+		{
+			name: "confidential issue without confidential flag",
+			args: map[string]any{
+				"project_id":   "test/project",
+				"issue_iid":    101,
+				"confidential": false,
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, mockDisc *glabtest.MockDiscussionsServiceInterface) {
+				// Mock GetIssue with confidential flag set to true
+				mockIssues.EXPECT().
+					GetIssue(gomock.Any(), gomock.Eq(101), gomock.Any()).
+					Return(&gitlab.Issue{
+						ID:           10101,
+						IID:          101,
+						Title:        "Confidential issue",
+						Confidential: true,
+					}, &gitlab.Response{
+						Response: &http.Response{StatusCode: http.StatusOK},
+					}, nil)
+
+				// Mock ListIssueDiscussions
+				mockDisc.EXPECT().
+					ListIssueDiscussions(gomock.Any(), gomock.Eq(101), gomock.Any(), gomock.Any()).
+					Return([]*gitlab.Discussion{}, &gitlab.Response{
+						Response: &http.Response{StatusCode: http.StatusOK},
+					}, nil)
+			},
+			wantErrorResponse: true,
+		},
+		{
+			name: "confidential issue with confidential flag",
+			args: map[string]any{
+				"project_id":   "test/project",
+				"issue_iid":    102,
+				"confidential": true,
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, mockDisc *glabtest.MockDiscussionsServiceInterface) {
+				// Mock GetIssue with confidential flag set to true
+				mockIssues.EXPECT().
+					GetIssue(gomock.Any(), gomock.Eq(102), gomock.Any()).
+					Return(&gitlab.Issue{
+						ID:           10202,
+						IID:          102,
+						Title:        "Confidential issue with access",
+						Confidential: true,
+					}, &gitlab.Response{
+						Response: &http.Response{StatusCode: http.StatusOK},
+					}, nil)
+
+				// Mock ListIssueDiscussions
+				mockDisc.EXPECT().
+					ListIssueDiscussions(gomock.Any(), gomock.Eq(102), gomock.Any(), gomock.Any()).
+					Return([]*gitlab.Discussion{
+						{
+							ID: "confidential-discussion",
+							Notes: []*gitlab.Note{
+								{
+									ID:     1,
+									Body:   "Confidential comment",
+									Author: gitlab.NoteAuthor{ID: 1, Username: "user1"},
+								},
+							},
+						},
+					}, &gitlab.Response{
+						Response: &http.Response{StatusCode: http.StatusOK},
+					}, nil)
+			},
+			wantError: false,
+			want: &detailedIssue{
+				Issue: &gitlab.Issue{
+					ID:           10202,
+					IID:          102,
+					Title:        "Confidential issue with access",
+					Confidential: true,
+				},
+				Discussions: []*gitlab.Discussion{
+					{
+						ID: "confidential-discussion",
+						Notes: []*gitlab.Note{
+							{
+								ID:     1,
+								Body:   "Confidential comment",
+								Author: gitlab.NoteAuthor{ID: 1, Username: "user1"},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gitlabClient := glabtest.NewTestClient(t)
+			tt.setupMock(gitlabClient.MockIssues, gitlabClient.MockDiscussions)
+
+			issuesService := NewIssuesTools(gitlabClient.Client, "test_user")
+
+			srv, err := mcptest.NewServer(t, issuesService.GetIssue())
+			if err != nil {
+				t.Fatalf("failed to create server: %v", err)
+			}
+			defer srv.Close()
+
+			var req mcp.CallToolRequest
+			req.Params.Name = "get_issue"
+			req.Params.Arguments = tt.args
+
+			result, err := srv.Client().CallTool(t.Context(), req)
+
+			if gotErr := err != nil; gotErr != tt.wantError {
+				t.Errorf("getIssue error mismatch, got: %v, want error: %v", err, tt.wantError)
+			}
+
+			if err != nil {
+				return
+			}
+
+			if result.IsError != tt.wantErrorResponse {
+				t.Errorf("unexpected inline error status, got: %v, want: %v", result.IsError, tt.wantErrorResponse)
+			}
+
+			if result.IsError {
+				return
+			}
+
+			var got detailedIssue
+			if err := unmarshalResult(result, &got); err != nil {
+				s, toStringErr := resultToString(result)
+				if toStringErr != nil {
+					t.Fatalf("resultToString: %v", toStringErr)
+				}
+
+				t.Logf("Raw JSON: %s", s)
+				t.Fatalf("decode error: %v", err)
+			}
+
+			if diff := cmp.Diff(tt.want, &got); diff != "" {
+				t.Errorf("issue mismatch (-want/+got):\n%s", diff)
+			}
+		})
+	}
+}
