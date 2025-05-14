@@ -298,6 +298,7 @@ func TestGetMergeRequest(t *testing.T) {
 				if err == nil {
 					t.Fatal("expected error, got none")
 				}
+
 				return
 			}
 

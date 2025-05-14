@@ -300,29 +300,26 @@ func (m *MergeRequestsService) getMergeRequest(ctx context.Context, request mcp.
 	}
 
 	var (
-		mr            *gitlab.MergeRequest
-		mrDiscussions []*gitlab.Discussion
-		mrDiffs       []*gitlab.MergeRequestDiff
-
+		ret   detailedMergeRequest
+		wg    sync.WaitGroup
 		errCh = make(chan error)
 	)
 
-	// Extracted once to avoid calling .Value() multiple times, especially if it involved computation.
-	projectID := args.ProjectID.Value()
-
-	var wg sync.WaitGroup
-	wg.Add(3) // For MR, discussions, diffs
+	// For MR, discussions, diffs
+	wg.Add(3)
 
 	// Goroutine to fetch Merge Request details
 	go func() {
 		defer wg.Done()
 
-		opts := gitlab.GetMergeRequestsOptions{}
-		var err error
+		var (
+			opts = gitlab.GetMergeRequestsOptions{}
+			err  error
+		)
 
-		mr, _, err = m.client.MergeRequests.GetMergeRequest(projectID, args.MergeRequestIID, &opts, gitlab.WithContext(ctx))
+		ret.MergeRequest, _, err = m.client.MergeRequests.GetMergeRequest(args.ProjectID.Value(), args.MergeRequestIID, &opts, gitlab.WithContext(ctx))
 		if err != nil {
-			errCh <- fmt.Errorf("getting merge request IID %d (project %v): %w", args.MergeRequestIID, projectID, err)
+			errCh <- fmt.Errorf("getting merge request IID %d (project %v): %w", args.MergeRequestIID, args.ProjectID.Value(), err)
 		}
 	}()
 
@@ -332,7 +329,7 @@ func (m *MergeRequestsService) getMergeRequest(ctx context.Context, request mcp.
 
 		discMgr, err := discussions.NewMergeRequestDiscussion(m.client, args.ProjectID, args.MergeRequestIID)
 		if err != nil {
-			errCh <- fmt.Errorf("creating discussion manager for MR IID %d (project %v): %w", args.MergeRequestIID, projectID, err)
+			errCh <- fmt.Errorf("creating discussion manager for MR IID %d (project %v): %w", args.MergeRequestIID, args.ProjectID.Value(), err)
 			return
 		}
 
@@ -340,9 +337,9 @@ func (m *MergeRequestsService) getMergeRequest(ctx context.Context, request mcp.
 		// A 'confidential' argument could be added to 'getMergeRequestArgs' if control over this is needed.
 		const confidential = false
 
-		mrDiscussions, err = discMgr.List(ctx, confidential)
+		ret.Discussions, err = discMgr.List(ctx, confidential)
 		if err != nil {
-			errCh <- fmt.Errorf("listing discussions for MR IID %d (project %v): %w", args.MergeRequestIID, projectID, err)
+			errCh <- fmt.Errorf("listing discussions for MR IID %d (project %v): %w", args.MergeRequestIID, args.ProjectID.Value(), err)
 		}
 	}()
 
@@ -352,9 +349,9 @@ func (m *MergeRequestsService) getMergeRequest(ctx context.Context, request mcp.
 
 		var err error
 
-		mrDiffs, err = m.listAllMergeRequestDiffs(ctx, projectID, args.MergeRequestIID)
+		ret.Diffs, err = m.listAllMergeRequestDiffs(ctx, args.ProjectID.Value(), args.MergeRequestIID)
 		if err != nil {
-			errCh <- fmt.Errorf("listing diffs for MR IID %d (project %v): %w", args.MergeRequestIID, projectID, err)
+			errCh <- fmt.Errorf("listing diffs for MR IID %d (project %v): %w", args.MergeRequestIID, args.ProjectID.Value(), err)
 		}
 	}()
 
@@ -372,11 +369,7 @@ func (m *MergeRequestsService) getMergeRequest(ctx context.Context, request mcp.
 		return nil, errs
 	}
 
-	return newToolResultJSON(detailedMergeRequest{
-		MergeRequest: mr,
-		Discussions:  mrDiscussions,
-		Diffs:        mrDiffs,
-	})
+	return newToolResultJSON(ret)
 }
 
 type getMergeRequestApprovalsArgs struct {
