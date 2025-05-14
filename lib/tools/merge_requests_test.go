@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/google/go-cmp/cmp"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/mcptest"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
@@ -256,7 +257,6 @@ func TestGetMergeRequest(t *testing.T) {
 						Title: "Test merge request with paginated diffs",
 					},
 				},
-				Discussions: []*gitlab.Discussion{},
 				Diffs: []*gitlab.MergeRequestDiff{
 					{
 						OldPath: "file1.go",
@@ -293,63 +293,21 @@ func TestGetMergeRequest(t *testing.T) {
 
 			result, err := srv.Client().CallTool(t.Context(), req)
 
-			if tt.want == nil {
-				// If we expect an error
-				if err == nil {
-					t.Fatal("expected error, got none")
-				}
-
-				return
+			if gotErr := err != nil; gotErr != tt.wantErr {
+				t.Errorf("getIssue error mismatch, got: %v, want error: %v", err, tt.wantErr)
 			}
 
 			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
+				return
 			}
 
 			var got detailedMergeRequest
 			if err := unmarshalResult(result, &got); err != nil {
-				s, toStringErr := resultToString(result)
-				if toStringErr != nil {
-					t.Fatalf("resultToString: %v", toStringErr)
-				}
-
-				t.Logf("Raw JSON: %s", s)
 				t.Fatalf("decode error: %v", err)
 			}
 
-			// Verify fields selectively, since direct comparison of entire structures can be brittle
-			if got.MergeRequest.ID != tt.want.MergeRequest.ID {
-				t.Errorf("MR ID mismatch: got %d, want %d", got.MergeRequest.ID, tt.want.MergeRequest.ID)
-			}
-
-			if got.MergeRequest.Title != tt.want.MergeRequest.Title {
-				t.Errorf("MR Title mismatch: got %q, want %q", got.MergeRequest.Title, tt.want.MergeRequest.Title)
-			}
-
-			if len(got.Discussions) != len(tt.want.Discussions) {
-				t.Errorf("Discussions count mismatch: got %d, want %d", len(got.Discussions), len(tt.want.Discussions))
-			}
-
-			if len(got.Diffs) != len(tt.want.Diffs) {
-				t.Errorf("Diffs count mismatch: got %d, want %d", len(got.Diffs), len(tt.want.Diffs))
-			}
-
-			// Check diff contents if present
-			if len(got.Diffs) > 0 && len(tt.want.Diffs) > 0 {
-				gotDiff := got.Diffs[0]
-				wantDiff := tt.want.Diffs[0]
-
-				if gotDiff.OldPath != wantDiff.OldPath {
-					t.Errorf("Diff OldPath mismatch: got %q, want %q", gotDiff.OldPath, wantDiff.OldPath)
-				}
-
-				if gotDiff.NewPath != wantDiff.NewPath {
-					t.Errorf("Diff NewPath mismatch: got %q, want %q", gotDiff.NewPath, wantDiff.NewPath)
-				}
-
-				if gotDiff.Diff != wantDiff.Diff {
-					t.Errorf("Diff content mismatch: got %q, want %q", gotDiff.Diff, wantDiff.Diff)
-				}
+			if diff := cmp.Diff(tt.want, &got); diff != "" {
+				t.Errorf("getIssue() mismatch (-want/+got):\n%s", diff)
 			}
 		})
 	}
