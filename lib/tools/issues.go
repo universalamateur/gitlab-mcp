@@ -86,6 +86,7 @@ func (i *IssuesService) ListUserIssues() server.ServerTool {
 		Handler: i.listUserIssues,
 		Tool: mcpargs.NewTool("list_user_issues", listUserIssuesArgs{},
 			mcp.WithDescription("Lists all issues assigned to a user"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -155,6 +156,7 @@ func (i *IssuesService) ListGroupIssues() server.ServerTool {
 		Handler: i.listGroupIssues,
 		Tool: mcpargs.NewTool("list_group_issues", listGroupIssuesArgs{},
 			mcp.WithDescription("Get a list of a group's issues"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -236,6 +238,7 @@ func (i *IssuesService) ListProjectIssues() server.ServerTool {
 		Handler: i.listProjectIssues,
 		Tool: mcpargs.NewTool("list_project_issues", listProjectIssuesArgs{},
 			mcp.WithDescription("Get a list of a project's issues"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -298,6 +301,7 @@ func (i *IssuesService) GetIssue() server.ServerTool {
 		Handler: i.getIssue,
 		Tool: mcpargs.NewTool("get_issue", getIssueArgs{},
 			mcp.WithDescription("Get a single project issue, including its discussions. Returns an error if any part fails."),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -386,6 +390,7 @@ func (i *IssuesService) ListMergeRequestsRelatedToIssue() server.ServerTool {
 		Handler: i.listMergeRequestsRelatedToIssue,
 		Tool: mcpargs.NewTool("list_merge_requests_related_to_issue", listMergeRequestsRelatedToIssueArgs{},
 			mcp.WithDescription("Get all merge requests that are related to the specified issue"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -439,6 +444,8 @@ func (i *IssuesService) CreateIssue() server.ServerTool {
 		Handler: i.createIssue,
 		Tool: mcpargs.NewTool("create_issue", createIssueArgs{},
 			mcp.WithDescription("Creates a new GitLab issue"),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithIdempotentHintAnnotation(false),
 		),
 	}
 }
@@ -503,6 +510,8 @@ func (i *IssuesService) EditIssue() server.ServerTool {
 		Handler: i.editIssue,
 		Tool: mcpargs.NewTool("edit_issue", editIssueArgs{},
 			mcp.WithDescription("Updates an existing GitLab issue. You can modify the issue's title and description, add or remove labels, assign or unassign users, change the milestone, close or reopen the issue, and control confidentiality and discussion settings."),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithIdempotentHintAnnotation(true),
 		),
 	}
 }

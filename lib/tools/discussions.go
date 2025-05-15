@@ -95,6 +95,8 @@ func (d *DiscussionService) NewDiscussion() server.ServerTool {
 		Handler: d.newDiscussion,
 		Tool: mcpargs.NewTool("discussion_new", newDiscussionArgs{},
 			mcp.WithDescription("Creates a new discussion thread on a GitLab resource"),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithIdempotentHintAnnotation(false),
 		),
 	}
 }
@@ -130,6 +132,7 @@ func (d *DiscussionService) ListDiscussions() server.ServerTool {
 		Handler: d.listDiscussions,
 		Tool: mcpargs.NewTool("discussion_list", listDiscussionsArgs{},
 			mcp.WithDescription("Lists all discussions for a GitLab resource"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -166,6 +169,8 @@ func (d *DiscussionService) AddDiscussionNote() server.ServerTool {
 		Handler: d.addDiscussionNote,
 		Tool: mcpargs.NewTool("discussion_add_note", addDiscussionNoteArgs{},
 			mcp.WithDescription("Adds a new note (i.e. a reply) to an existing discussion thread"),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithIdempotentHintAnnotation(false),
 		),
 	}
 }
@@ -203,6 +208,8 @@ func (d *DiscussionService) ModifyDiscussionNote() server.ServerTool {
 		Handler: d.modifyDiscussionNote,
 		Tool: mcpargs.NewTool("discussion_modify_note", modifyDiscussionNoteArgs{},
 			mcp.WithDescription("Modifies an existing note in a discussion thread"),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithIdempotentHintAnnotation(true),
 		),
 	}
 }
@@ -239,6 +246,8 @@ func (d *DiscussionService) DeleteDiscussionNote() server.ServerTool {
 		Handler: d.deleteDiscussionNote,
 		Tool: mcpargs.NewTool("discussion_delete_note", deleteDiscussionNoteArgs{},
 			mcp.WithDescription("Deletes a note from a discussion thread"),
+			mcp.WithDestructiveHintAnnotation(true),
+			mcp.WithIdempotentHintAnnotation(true),
 		),
 	}
 }
@@ -274,6 +283,8 @@ func (d *DiscussionService) ResolveDiscussion() server.ServerTool {
 		Handler: d.resolveDiscussion,
 		Tool: mcpargs.NewTool("discussion_resolve", resolveDiscussionArgs{},
 			mcp.WithDescription("Resolves or unresolves a discussion thread in a merge request"),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithIdempotentHintAnnotation(true),
 		),
 	}
 }
@@ -334,6 +345,8 @@ func (d *DiscussionService) NewPositionDiscussion() server.ServerTool {
 		Handler: d.newDiffDiscussion,
 		Tool: mcpargs.NewTool("discussion_new_with_position", newPositionDiscussionArgs{},
 			mcp.WithDescription("Creates a new discussion on a specific position in a merge request diff"),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithIdempotentHintAnnotation(false),
 		),
 	}
 }

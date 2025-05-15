@@ -63,6 +63,7 @@ func (e *EpicService) ListGroupEpics() server.ServerTool {
 		Handler: e.listGroupEpics,
 		Tool: mcpargs.NewTool("list_group_epics", listGroupEpicsArgs{},
 			mcp.WithDescription("Get all epics for a specific group"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -117,6 +118,7 @@ func (e *EpicService) GetEpic() server.ServerTool {
 		Handler: e.getEpic,
 		Tool: mcpargs.NewTool("get_epic", getEpicArgs{},
 			mcp.WithDescription("Fetches information about an epic by ID"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -147,6 +149,7 @@ func (e *EpicService) GetEpicLinks() server.ServerTool {
 		Handler: e.getEpicLinks,
 		Tool: mcpargs.NewTool("get_epic_links", getEpicLinksArgs{},
 			mcp.WithDescription("GetEpicLinks gets all child epics of an epic."),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -177,6 +180,7 @@ func (e *EpicService) ListEpicIssues() server.ServerTool {
 		Handler: e.listEpicIssues,
 		Tool: mcpargs.NewTool("list_epic_issues", listEpicIssuesArgs{},
 			mcp.WithDescription("Returns a list of issues assigned to the provided epic"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }

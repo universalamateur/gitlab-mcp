@@ -79,6 +79,7 @@ func (s *SnippetsService) ListUserSnippets() server.ServerTool {
 		Handler: s.listUserSnippets,
 		Tool: mcp.NewTool("list_user_snippets",
 			mcp.WithDescription("List snippets owned by the current user"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -120,6 +121,7 @@ func (s *SnippetsService) ListAllSnippets() server.ServerTool {
 		Handler: s.listAllSnippets,
 		Tool: mcpargs.NewTool("list_all_snippets", listAllSnippetsArgs{},
 			mcp.WithDescription("List all snippets the user has access to"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -203,6 +205,7 @@ func (s *SnippetsService) GetSnippet() server.ServerTool {
 		Handler: s.getSnippet,
 		Tool: mcpargs.NewTool("get_snippet", getSnippetArgs{},
 			mcp.WithDescription("Returns the metadata of a snippet, such as title and description. File content is not returned."),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -232,6 +235,7 @@ func (s *SnippetsService) GetSnippetContent() server.ServerTool {
 		Handler: s.getSnippetContent,
 		Tool: mcpargs.NewTool("get_snippet_content", getSnippetContentArgs{},
 			mcp.WithDescription("Get the raw content of a snippet"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -270,6 +274,8 @@ func (s *SnippetsService) CreateSnippet() server.ServerTool {
 				"then add additional files using 'update_snippet' "+
 				"with a different file name and 'file_action' set to 'create'. "+
 				"When creating a snippet, include its 'web_url' in your response."),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithIdempotentHintAnnotation(false),
 		),
 	}
 }
@@ -340,6 +346,8 @@ func (s *SnippetsService) UpdateSnippet() server.ServerTool {
 		Handler: s.updateSnippet,
 		Tool: mcpargs.NewTool("update_snippet", updateSnippetArgs{},
 			mcp.WithDescription("Update an existing snippet. This tool can create, update, or delete a file in the snippet, as well as update snippet metadata."),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithIdempotentHintAnnotation(true),
 		),
 	}
 }
@@ -416,6 +424,8 @@ func (s *SnippetsService) DeleteSnippet() server.ServerTool {
 		Handler: s.deleteSnippet,
 		Tool: mcpargs.NewTool("delete_snippet", deleteSnippetArgs{},
 			mcp.WithDescription("Delete a snippet"),
+			mcp.WithDestructiveHintAnnotation(true),
+			mcp.WithIdempotentHintAnnotation(true),
 		),
 	}
 }

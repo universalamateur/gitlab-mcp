@@ -55,6 +55,7 @@ func (t *TodosService) ListUserTodos() server.ServerTool {
 		Handler: t.listUserTodos,
 		Tool: mcpargs.NewTool("list_user_todos", listUserTodosArgs{},
 			mcp.WithDescription("Get all todos for the current user, with optional filtering."),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -143,6 +144,8 @@ func (t *TodosService) CompleteTodoItem() server.ServerTool {
 		Handler: t.completeTodoItem,
 		Tool: mcpargs.NewTool("complete_todo_item", completeTodoItemArgs{},
 			mcp.WithDescription("Marks a single pending todo item as done"),
+			mcp.WithDestructiveHintAnnotation(true),
+			mcp.WithIdempotentHintAnnotation(true),
 		),
 	}
 }
@@ -168,6 +171,8 @@ func (t *TodosService) CompleteAllTodoItems() server.ServerTool {
 		Handler: t.completeAllTodoItems,
 		Tool: mcp.NewTool("complete_all_todo_items",
 			mcp.WithDescription("Marks all pending todo items for the current user as done. Only perform this action when explicitly requested by the user."),
+			mcp.WithDestructiveHintAnnotation(true),
+			mcp.WithIdempotentHintAnnotation(false),
 		),
 	}
 }

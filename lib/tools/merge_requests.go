@@ -112,6 +112,7 @@ func (m *MergeRequestsService) ListUserMergeRequests() server.ServerTool {
 		Handler: m.listUserMergeRequests,
 		Tool: mcpargs.NewTool("list_user_merge_requests", listUserMergeRequestsArgs{},
 			mcp.WithDescription("Get all merge requests authored by or assigned to a user for review"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -181,6 +182,7 @@ func (m *MergeRequestsService) ListProjectMergeRequests() server.ServerTool {
 		Handler: m.listProjectMergeRequests,
 		Tool: mcpargs.NewTool("list_project_merge_requests", listProjectMergeRequestsArgs{},
 			mcp.WithDescription("Get all merge requests for this project"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -235,6 +237,7 @@ func (m *MergeRequestsService) ListGroupMergeRequests() server.ServerTool {
 		Handler: m.listGroupMergeRequests,
 		Tool: mcpargs.NewTool("list_group_merge_requests", listGroupMergeRequestsArgs{},
 			mcp.WithDescription("Get all merge requests for this group"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -289,6 +292,7 @@ func (m *MergeRequestsService) GetMergeRequest() server.ServerTool {
 		Handler: m.getMergeRequest,
 		Tool: mcpargs.NewTool("get_merge_request", getMergeRequestArgs{},
 			mcp.WithDescription("Get a single merge request, including its discussions and code changes (diffs)."),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -384,6 +388,7 @@ func (m *MergeRequestsService) GetMergeRequestApprovals() server.ServerTool {
 		Handler: m.getMergeRequestApprovals,
 		Tool: mcpargs.NewTool("get_merge_request_approvals", getMergeRequestApprovalsArgs{},
 			mcp.WithDescription("Get approvals for a merge request"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -414,6 +419,7 @@ func (m *MergeRequestsService) GetMergeRequestCommits() server.ServerTool {
 		Handler: m.getMergeRequestCommits,
 		Tool: mcpargs.NewTool("get_merge_request_commits", getMergeRequestCommitsArgs{},
 			mcp.WithDescription("Get all commits associated with a merge request"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -460,6 +466,7 @@ func (m *MergeRequestsService) ListMergeRequestDiffs() server.ServerTool {
 		Handler: m.listMergeRequestDiffs,
 		Tool: mcpargs.NewTool("list_merge_request_diffs", listMergeRequestDiffsArgs{},
 			mcp.WithDescription("Returns the changes made to files by the merge request. Diffs are presented in the unified diff format."),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -518,6 +525,7 @@ func (m *MergeRequestsService) GetMergeRequestParticipants() server.ServerTool {
 		Handler: m.getMergeRequestParticipants,
 		Tool: mcpargs.NewTool("get_merge_request_participants", getMergeRequestParticipantsArgs{},
 			mcp.WithDescription("Get a list of merge request participants"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -548,6 +556,7 @@ func (m *MergeRequestsService) GetMergeRequestReviewers() server.ServerTool {
 		Handler: m.getMergeRequestReviewers,
 		Tool: mcpargs.NewTool("get_merge_request_reviewers", getMergeRequestReviewersArgs{},
 			mcp.WithDescription("Get a list of merge request reviewers"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -578,6 +587,7 @@ func (m *MergeRequestsService) ListMergeRequestPipelines() server.ServerTool {
 		Handler: m.listMergeRequestPipelines,
 		Tool: mcpargs.NewTool("list_merge_request_pipelines", listMergeRequestPipelinesArgs{},
 			mcp.WithDescription("Get a list of merge request pipelines"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -608,6 +618,7 @@ func (m *MergeRequestsService) GetIssuesClosedOnMerge() server.ServerTool {
 		Handler: m.getIssuesClosedOnMerge,
 		Tool: mcpargs.NewTool("get_issues_closed_on_merge", getIssuesClosedOnMergeArgs{},
 			mcp.WithDescription("Get all the issues that would be closed by merging the provided merge request"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -655,6 +666,7 @@ func (m *MergeRequestsService) GetMergeRequestDependencies() server.ServerTool {
 		Handler: m.getMergeRequestDependencies,
 		Tool: mcpargs.NewTool("get_merge_request_dependencies", getMergeRequestDependenciesArgs{},
 			mcp.WithDescription("Get merge request dependencies"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }

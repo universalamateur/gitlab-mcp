@@ -63,6 +63,7 @@ func (u *UsersService) GetUser() server.ServerTool {
 		Handler: u.getUser,
 		Tool: mcpargs.NewTool("get_user", getUserArgs{},
 			mcp.WithDescription("Get information about a specific user or the current user. In particular, this tool can be used to resolve a username to an ID."),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -124,6 +125,7 @@ func (u *UsersService) GetUserStatus() server.ServerTool {
 		Handler: u.getUserStatus,
 		Tool: mcpargs.NewTool("get_user_status", getUserStatusArgs{},
 			mcp.WithDescription("Get a user's status"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -154,6 +156,8 @@ func (u *UsersService) SetUserStatus() server.ServerTool {
 		Handler: u.setUserStatus,
 		Tool: mcpargs.NewTool("set_user_status", setUserStatusArgs{},
 			mcp.WithDescription("Set the current user's status"),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithIdempotentHintAnnotation(true),
 		),
 	}
 }
