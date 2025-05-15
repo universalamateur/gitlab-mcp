@@ -57,6 +57,7 @@ func (r *RepositoryService) ListRepositoryDirectory() server.ServerTool {
 		Handler: r.listRepositoryDirectory,
 		Tool: mcpargs.NewTool("list_repository_directory", listRepositoryDirectoryArgs{},
 			mcp.WithDescription("Get a list of repository files and directories in a project. The returned JSON uses Git terminology, e.g. calling files 'blob' and directories 'tree'."),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -120,6 +121,7 @@ func (r *RepositoryService) GetRepositoryFileContents() server.ServerTool {
 		Handler: r.getRepositoryFileContents,
 		Tool: mcpargs.NewTool("get_repository_file_contents", getRepositoryFileContentsArgs{},
 			mcp.WithDescription("Get the contents of a single file from the repository."),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }

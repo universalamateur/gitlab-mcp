@@ -79,6 +79,7 @@ func (j *JobsService) ListPipelineJobs() server.ServerTool {
 		Handler: j.listPipelineJobs,
 		Tool: mcpargs.NewTool("list_pipeline_jobs", listPipelineJobsArgs{},
 			mcp.WithDescription("Get a list of jobs for a pipeline"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -133,6 +134,7 @@ func (j *JobsService) ListDownstreamPipelines() server.ServerTool {
 		Handler: j.listDownstreamPipelines,
 		Tool: mcpargs.NewTool("list_downstream_pipelines", listDownstreamPipelinesArgs{},
 			mcp.WithDescription("Get a list of downstream pipeline triggered by a pipeline. Downstream pipelines are represented by a 'trigger job'."),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -185,6 +187,7 @@ func (j *JobsService) GetJob() server.ServerTool {
 		Handler: j.getJob,
 		Tool: mcpargs.NewTool("get_job", getJobArgs{},
 			mcp.WithDescription("Get a single job of a project"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -216,6 +219,7 @@ func (j *JobsService) DownloadJobArtifactsFile() server.ServerTool {
 		Handler: j.downloadJobArtifactsFile,
 		Tool: mcpargs.NewTool("download_job_artifacts_file", downloadJobArtifactsFileArgs{},
 			mcp.WithDescription("Download a single artifact file from a job"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -252,6 +256,7 @@ func (j *JobsService) DownloadJobLog() server.ServerTool {
 		Handler: j.downloadJobLog,
 		Tool: mcpargs.NewTool("download_job_log", downloadJobLogArgs{},
 			mcp.WithDescription("Download a log file for a specific job"),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
@@ -288,6 +293,8 @@ func (j *JobsService) RetryJob() server.ServerTool {
 		Handler: j.retryJob,
 		Tool: mcpargs.NewTool("retry_job", retryJobArgs{},
 			mcp.WithDescription("Retry a single job of a project"),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithIdempotentHintAnnotation(false),
 		),
 	}
 }
@@ -318,6 +325,8 @@ func (j *JobsService) TriggerManualJob() server.ServerTool {
 		Handler: j.triggerManualJob,
 		Tool: mcpargs.NewTool("trigger_manual_job", triggerManualJobArgs{},
 			mcp.WithDescription("Trigger a manual job for a project"),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithIdempotentHintAnnotation(false),
 		),
 	}
 }

@@ -50,6 +50,7 @@ func (e *EventsService) ListUserEvents() server.ServerTool {
 			mcp.WithDescription("Use this tool to review event activity of a user."+
 				"Events can include a wide range of actions including things like joining projects, "+
 				"commenting on issues, pushing changes to merge requests. The events are returned from most recent to oldest."),
+			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
 }
