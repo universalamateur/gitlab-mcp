@@ -566,6 +566,10 @@ func (i *IssuesService) editIssue(ctx context.Context, request mcp.CallToolReque
 // parseUserIDs parses a comma-separated string of user IDs.
 // Returns nil for "no change to assignees" and an empty slice for "clear assignees field".
 func parseUserIDs(s string) *[]int {
+	if s == "" {
+		return nil
+	}
+
 	if s == "-" {
 		clearAll := []int{}
 		return &clearAll
