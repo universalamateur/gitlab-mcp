@@ -263,12 +263,6 @@ func TestGetIssue(t *testing.T) {
 
 			var got detailedIssue
 			if err := unmarshalResult(result, &got); err != nil {
-				s, toStringErr := resultToString(result)
-				if toStringErr != nil {
-					t.Fatalf("resultToString: %v", toStringErr)
-				}
-
-				t.Logf("Raw JSON: %s", s)
 				t.Fatalf("decode error: %v", err)
 			}
 
