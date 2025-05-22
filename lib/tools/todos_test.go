@@ -100,6 +100,26 @@ func TestListUserTodos(t *testing.T) {
 			wantIDs: []int{6},
 		},
 		{
+			name: "group filtering",
+			args: map[string]any{
+				"group_id": 789,
+			},
+			setupMock: func(mockTodos *glabtest.MockTodosServiceInterface) {
+				mockTodos.EXPECT().
+					ListTodos(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(opts *gitlab.ListTodosOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Todo, *gitlab.Response, error) {
+						if opts.GroupID == nil || *opts.GroupID != 789 {
+							t.Errorf("expected project_id 789, got %v", opts.GroupID)
+						}
+
+						return []*gitlab.Todo{{ID: 61}}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+						}, nil
+					})
+			},
+			wantIDs: []int{61},
+		},
+		{
 			name: "type filtering",
 			args: map[string]any{
 				"type": "MergeRequest",
