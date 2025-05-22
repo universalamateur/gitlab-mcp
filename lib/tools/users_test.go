@@ -230,9 +230,9 @@ func TestGetUserStatus(t *testing.T) {
 		want      *gitlab.UserStatus
 	}{
 		{
-			name: "get user status successfully",
+			name: "get user status by user ID",
 			args: map[string]any{
-				"user_id": 1,
+				"user_id": "1",
 			},
 			setupMock: func(mockUsers *glabtest.MockUsersServiceInterface) {
 				mockUsers.EXPECT().
@@ -254,9 +254,57 @@ func TestGetUserStatus(t *testing.T) {
 			},
 		},
 		{
+			name: "get user status by username",
+			args: map[string]any{
+				"user_id": "test_user",
+			},
+			setupMock: func(mockUsers *glabtest.MockUsersServiceInterface) {
+				mockUsers.EXPECT().
+					GetUserStatus(gomock.Eq("test_user"), gomock.Any()).
+					Return(&gitlab.UserStatus{
+						Emoji:        "coffee",
+						Message:      "May the code be with you",
+						MessageHTML:  "May the code be with you",
+						Availability: "not_set",
+					}, &gitlab.Response{
+						Response: &http.Response{StatusCode: http.StatusOK},
+					}, nil)
+			},
+			want: &gitlab.UserStatus{
+				Emoji:        "coffee",
+				Message:      "May the code be with you",
+				MessageHTML:  "May the code be with you",
+				Availability: "not_set",
+			},
+		},
+		{
+			name: "get user status by username with @ prefix",
+			args: map[string]any{
+				"user_id": "@prefixed_user",
+			},
+			setupMock: func(mockUsers *glabtest.MockUsersServiceInterface) {
+				mockUsers.EXPECT().
+					GetUserStatus(gomock.Eq("prefixed_user"), gomock.Any()).
+					Return(&gitlab.UserStatus{
+						Emoji:        "pizza",
+						Message:      "I'll be back... after lunch",
+						MessageHTML:  "I'll be back... after lunch",
+						Availability: "not_set",
+					}, &gitlab.Response{
+						Response: &http.Response{StatusCode: http.StatusOK},
+					}, nil)
+			},
+			want: &gitlab.UserStatus{
+				Emoji:        "pizza",
+				Message:      "I'll be back... after lunch",
+				MessageHTML:  "I'll be back... after lunch",
+				Availability: "not_set",
+			},
+		},
+		{
 			name: "get busy user status",
 			args: map[string]any{
-				"user_id": 2,
+				"user_id": "2",
 			},
 			setupMock: func(mockUsers *glabtest.MockUsersServiceInterface) {
 				mockUsers.EXPECT().
@@ -280,7 +328,7 @@ func TestGetUserStatus(t *testing.T) {
 		{
 			name: "user status not found",
 			args: map[string]any{
-				"user_id": 999,
+				"user_id": "999",
 			},
 			setupMock: func(mockUsers *glabtest.MockUsersServiceInterface) {
 				mockUsers.EXPECT().
