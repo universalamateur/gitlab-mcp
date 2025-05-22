@@ -59,6 +59,8 @@ type IssuesService struct {
 	currentUser string
 }
 
+const defaultIssueState = "opened"
+
 // AddTo registers all issue-related tools with the provided MCPServer.
 // It adds tools for listing, retrieving, and managing issues and their related merge requests.
 func (i *IssuesService) AddTo(srv *server.MCPServer) {
@@ -115,8 +117,9 @@ func (i *IssuesService) listUserIssues(ctx context.Context, request mcp.CallTool
 	opt.AssigneeUsername = gitlab.Ptr(assignee)
 
 	if args.State == "" {
-		args.State = "opened"
+		args.State = defaultIssueState
 	}
+
 	opt.State = gitlab.Ptr(args.State)
 
 	// If confidential issues are disabled, explicitly set "Confidential" to false.
@@ -178,8 +181,9 @@ func (i *IssuesService) listGroupIssues(ctx context.Context, request mcp.CallToo
 	)
 
 	if args.State == "" {
-		args.State = "opened"
+		args.State = defaultIssueState
 	}
+
 	opt.State = gitlab.Ptr(args.State)
 
 	// If confidential issues are disabled, explicitly set "Confidential" to false.
@@ -241,8 +245,9 @@ func (i *IssuesService) listProjectIssues(ctx context.Context, request mcp.CallT
 	)
 
 	if args.State == "" {
-		args.State = "opened"
+		args.State = defaultIssueState
 	}
+
 	opt.State = gitlab.Ptr(args.State)
 
 	// If confidential issues are disabled, explicitly set "Confidential" to false.

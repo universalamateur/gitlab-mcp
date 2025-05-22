@@ -297,6 +297,7 @@ func TestListGroupIssues(t *testing.T) {
 						if opts.Confidential == nil || *opts.Confidential {
 							t.Errorf("opts.Confidential = %v, want false", opts.Confidential)
 						}
+
 						return []*gitlab.Issue{
 								{
 									ID:          12345,
@@ -398,6 +399,7 @@ func TestListGroupIssues(t *testing.T) {
 						if opts.Confidential != nil {
 							t.Errorf("opts.Confidential = %v, want nil", opts.Confidential)
 						}
+
 						return []*gitlab.Issue{
 								{
 									ID:           2001,
@@ -433,6 +435,7 @@ func TestListGroupIssues(t *testing.T) {
 						if opts.State == nil || *opts.State != "all" {
 							t.Errorf("opts.State = %v, want 'all'", opts.State)
 						}
+
 						return []*gitlab.Issue{
 								{
 									ID:    3001,
