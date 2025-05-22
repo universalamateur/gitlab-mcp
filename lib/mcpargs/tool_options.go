@@ -170,6 +170,11 @@ type Marshaler interface {
 func toSnakeCase(s string) string {
 	var result strings.Builder
 
+	// Special case for "IDs", which we want to convert to "_ids", not "_i_ds".
+	if strings.HasSuffix(s, "IDs") {
+		s = s[:len(s)-3] + "Ids"
+	}
+
 	for i, r := range s {
 		// Check if current character is uppercase
 		if unicode.IsUpper(r) {

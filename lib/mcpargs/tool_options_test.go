@@ -218,6 +218,7 @@ func TestToSnakeCase(t *testing.T) {
 		{"FieldName", "field_name"},
 		{"HTTPServer", "http_server"},
 		{"ExportDNS", "export_dns"},
+		{"AssigneeIDs", "assignee_ids"},
 	}
 
 	for _, test := range tests {
