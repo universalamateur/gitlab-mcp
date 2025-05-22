@@ -291,6 +291,9 @@ func TestListGroupIssues(t *testing.T) {
 				mockIssues.EXPECT().
 					ListGroupIssues(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.ListGroupIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+						if opts.State == nil || *opts.State != "opened" {
+							t.Errorf("opts.State = %v, want 'opened'", opts.State)
+						}
 						if opts.Confidential == nil || *opts.Confidential {
 							t.Errorf("opts.Confidential = %v, want false", opts.Confidential)
 						}
