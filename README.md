@@ -49,6 +49,11 @@ A pre-built Docker image is available:
 docker run -i -e GITLAB_TOKEN=your_gitlab_token registry.gitlab.com/fforster/gitlab-mcp:latest
 ```
 
+## Personal Access Token
+
+_gitlab-mcp_ requires a personal access token for authentication.
+Generate one from your [GitLab User Settings](https://gitlab.com/-/user_settings/personal_access_tokens) with the `api` scope, or `read_api` for read-only access.
+
 ## Usage with Claude Desktop
 
 To use the GitLab MCP server with Claude Desktop, add the following to your Claude Desktop configuration file:
