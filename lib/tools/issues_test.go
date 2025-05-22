@@ -278,3 +278,223 @@ func TestGetIssue(t *testing.T) {
 		})
 	}
 }
+
+func TestListGroupIssues(t *testing.T) {
+	tests := []struct {
+		name      string
+		args      map[string]any
+		setupMock func(*glabtest.MockIssuesServiceInterface)
+		wantError bool
+		want      []*gitlab.Issue
+	}{
+		{
+			name: "successful fetch with default values",
+			args: map[string]any{
+				"group_id": "test-group",
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
+				// Mock ListGroupIssues
+				mockIssues.EXPECT().
+					ListGroupIssues(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, opts *gitlab.ListGroupIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+						if opts.Confidential == nil || *opts.Confidential {
+							t.Errorf("opts.Confidential = %v, want false", opts.Confidential)
+						}
+						return []*gitlab.Issue{
+								{
+									ID:          12345,
+									IID:         123,
+									ProjectID:   54321,
+									Title:       "Test group issue 1",
+									Description: "Test description 1",
+									State:       "opened",
+								},
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+								NextPage: 0,
+							}, nil
+					})
+			},
+			want: []*gitlab.Issue{
+				{
+					ID:          12345,
+					IID:         123,
+					ProjectID:   54321,
+					Title:       "Test group issue 1",
+					Description: "Test description 1",
+					State:       "opened",
+				},
+			},
+		},
+		{
+			name: "successful fetch with pagination",
+			args: map[string]any{
+				"group_id": "test-group",
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
+				// First page
+				firstCall := mockIssues.EXPECT().
+					ListGroupIssues(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
+					Return([]*gitlab.Issue{
+						{
+							ID:    1001,
+							IID:   101,
+							Title: "First page issue",
+						},
+					}, &gitlab.Response{
+						Response: &http.Response{StatusCode: http.StatusOK},
+						NextPage: 2,
+					}, nil)
+
+				// Second page (last)
+				mockIssues.EXPECT().
+					ListGroupIssues(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
+					After(firstCall.Call).
+					Return([]*gitlab.Issue{
+						{
+							ID:    1002,
+							IID:   102,
+							Title: "Second page issue",
+						},
+					}, &gitlab.Response{
+						Response: &http.Response{StatusCode: http.StatusOK},
+						NextPage: 0,
+					}, nil)
+			},
+			want: []*gitlab.Issue{
+				{
+					ID:    1001,
+					IID:   101,
+					Title: "First page issue",
+				},
+				{
+					ID:    1002,
+					IID:   102,
+					Title: "Second page issue",
+				},
+			},
+		},
+		{
+			name: "error in fetching group issues",
+			args: map[string]any{
+				"group_id": "nonexistent-group",
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
+				mockIssues.EXPECT().
+					ListGroupIssues(gomock.Eq("nonexistent-group"), gomock.Any(), gomock.Any()).
+					Return(nil, &gitlab.Response{
+						Response: &http.Response{StatusCode: http.StatusNotFound},
+					}, fmt.Errorf("group not found"))
+			},
+			wantError: true,
+		},
+		{
+			name: "fetch with confidential flag",
+			args: map[string]any{
+				"group_id":     "test-group",
+				"confidential": true,
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
+				mockIssues.EXPECT().
+					ListGroupIssues(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, opts *gitlab.ListGroupIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+						if opts.Confidential != nil {
+							t.Errorf("opts.Confidential = %v, want nil", opts.Confidential)
+						}
+						return []*gitlab.Issue{
+								{
+									ID:           2001,
+									IID:          201,
+									Title:        "Confidential issue",
+									Confidential: true,
+								},
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+								NextPage: 0,
+							}, nil
+					})
+			},
+			want: []*gitlab.Issue{
+				{
+					ID:           2001,
+					IID:          201,
+					Title:        "Confidential issue",
+					Confidential: true,
+				},
+			},
+		},
+		{
+			name: "fetch with state flag",
+			args: map[string]any{
+				"group_id": "test-group",
+				"state":    "all",
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
+				mockIssues.EXPECT().
+					ListGroupIssues(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, opts *gitlab.ListGroupIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+						if opts.State == nil || *opts.State != "all" {
+							t.Errorf("opts.State = %v, want 'all'", opts.State)
+						}
+						return []*gitlab.Issue{
+								{
+									ID:    3001,
+									IID:   301,
+									Title: "Closed issue",
+									State: "closed",
+								},
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+								NextPage: 0,
+							}, nil
+					})
+			},
+			want: []*gitlab.Issue{
+				{
+					ID:    3001,
+					IID:   301,
+					Title: "Closed issue",
+					State: "closed",
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gitlabClient := glabtest.NewTestClient(t)
+			tt.setupMock(gitlabClient.MockIssues)
+
+			issuesService := NewIssuesTools(gitlabClient.Client, "test_user")
+
+			srv, err := mcptest.NewServer(t, issuesService.ListGroupIssues())
+			if err != nil {
+				t.Fatalf("failed to create server: %v", err)
+			}
+			defer srv.Close()
+
+			var req mcp.CallToolRequest
+			req.Params.Name = "list_group_issues"
+			req.Params.Arguments = tt.args
+
+			result, err := srv.Client().CallTool(t.Context(), req)
+
+			if gotErr := err != nil; gotErr != tt.wantError {
+				t.Errorf("listGroupIssues error mismatch, got: %v, want error: %v", err, tt.wantError)
+			}
+
+			if err != nil {
+				return
+			}
+
+			var got []*gitlab.Issue
+			if err := unmarshalResult(result, &got); err != nil {
+				t.Fatalf("decode error: %v", err)
+			}
+
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Errorf("issues mismatch (-want/+got):\n%s", diff)
+			}
+		})
+	}
+}

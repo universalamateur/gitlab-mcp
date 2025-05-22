@@ -119,8 +119,8 @@ func (i *IssuesService) listUserIssues(ctx context.Context, request mcp.CallTool
 	}
 
 	// If confidential issues are disabled, explicitly set "Confidential" to false.
-	// Otherwise, the default behaviour is to include confidential issues (since it is
-	// just not filtering on this property).
+	// Otherwise, the default behaviour is to include public and confidential
+	// issues (since it is just not filtering on this property).
 	if !args.Confidential {
 		opt.Confidential = gitlab.Ptr(false)
 	}
@@ -169,8 +169,6 @@ func (i *IssuesService) listGroupIssues(ctx context.Context, request mcp.CallToo
 
 	var (
 		opt = gitlab.ListGroupIssuesOptions{
-			// TODO: use server-side filtering once supported by the Go package.
-			// Confidential: gitlab.Ptr(args.Confidential),
 			ListOptions: gitlab.ListOptions{
 				PerPage: maxPerPage,
 			},
@@ -184,12 +182,11 @@ func (i *IssuesService) listGroupIssues(ctx context.Context, request mcp.CallToo
 	}
 
 	// If confidential issues are disabled, explicitly set "Confidential" to false.
-	// Otherwise, the default behaviour is to include confidential issues (since it is
-	// just not filtering on this property).
-	// TODO: use server-side filtering once supported by the Go package.
-	// if !args.Confidential {
-	// 	opt.Confidential = gitlab.Ptr(false)
-	// }
+	// Otherwise, the default behaviour is to include public and confidential
+	// issues (since it is just not filtering on this property).
+	if !args.Confidential {
+		opt.Confidential = gitlab.Ptr(args.Confidential)
+	}
 
 	for {
 		is, resp, err := i.client.Issues.ListGroupIssues(args.GroupID.Value(), &opt, gitlab.WithContext(ctx))
@@ -206,23 +203,7 @@ func (i *IssuesService) listGroupIssues(ctx context.Context, request mcp.CallToo
 		opt.Page = resp.NextPage
 	}
 
-	// TODO: remove client-side filtering once server-side filtering is supported.
-	issues = filterIssues(issues, args.Confidential)
-
 	return newToolResultJSON(issues)
-}
-
-// filterIssues filters a list of issues based on whether confidential issues should be included.
-func filterIssues(issues []*gitlab.Issue, includeConfidential bool) []*gitlab.Issue {
-	var filteredIssues []*gitlab.Issue
-
-	for _, issue := range issues {
-		if includeConfidential || !issue.Confidential {
-			filteredIssues = append(filteredIssues, issue)
-		}
-	}
-
-	return filteredIssues
 }
 
 type listProjectIssuesArgs struct {
@@ -264,8 +245,8 @@ func (i *IssuesService) listProjectIssues(ctx context.Context, request mcp.CallT
 	}
 
 	// If confidential issues are disabled, explicitly set "Confidential" to false.
-	// Otherwise, the default behaviour is to include confidential issues (since it is
-	// just not filtering on this property).
+	// Otherwise, the default behaviour is to include public and confidential
+	// issues (since it is just not filtering on this property).
 	if !args.Confidential {
 		opt.Confidential = gitlab.Ptr(false)
 	}
