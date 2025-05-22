@@ -44,6 +44,7 @@ type listUserTodosArgs struct {
 	Action    string `mcp_desc:"Filter by the action that caused the todo item" mcp_enum:"assigned,mentioned,build_failed,marked,approval_required,unmergeable,directly_addressed,merge_train_removed,member_access_requested"`
 	AuthorID  int    `mcp_desc:"Filter by the ID of the author who created the todo item"`
 	ProjectID int    `mcp_desc:"Filter by the ID of the project the todo item belongs to"`
+	GroupID   int    `mcp_desc:"Filter by the ID of the group the todo item belongs to"`
 	State     string `mcp_desc:"Filter by the state of the todo item, defaults to 'pending'" mcp_enum:"pending,done"`
 	Type      string `mcp_desc:"Filter by the type of resource the todo item is associated with" mcp_enum:"Issue,MergeRequest,Commit,Epic,DesignManagement::Design,AlertManagement::Alert,Project,Namespace,Vulnerability,WikiPage::Meta"`
 	Limit     int    `mcp_desc:"Maximum number of todos to return. If not set or zero, defaults to 100."`
@@ -87,6 +88,10 @@ func (t *TodosService) listUserTodos(ctx context.Context, request mcp.CallToolRe
 
 	if args.ProjectID != 0 {
 		opt.ProjectID = gitlab.Ptr(args.ProjectID)
+	}
+
+	if args.GroupID != 0 {
+		opt.GroupID = gitlab.Ptr(args.GroupID)
 	}
 
 	if args.Type != "" {
