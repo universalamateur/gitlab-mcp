@@ -56,6 +56,9 @@ type MergeRequestsServiceInterface interface { //nolint:interfacebloat
 
 	// GetMergeRequestDependencies returns a tool for fetching all dependencies of a specific merge request.
 	GetMergeRequestDependencies() server.ServerTool
+
+	// EditMergeRequest returns a tool for updating an existing merge request.
+	EditMergeRequest() server.ServerTool
 }
 
 // NewMergeRequestsTools creates a new instance of MergeRequestsServiceInterface with the provided GitLab client
@@ -88,6 +91,7 @@ func (m *MergeRequestsService) AddTo(srv *server.MCPServer) {
 		m.ListMergeRequestPipelines(),
 		m.GetIssuesClosedOnMerge(),
 		m.GetMergeRequestDependencies(),
+		m.EditMergeRequest(),
 	)
 }
 
@@ -683,4 +687,92 @@ func (m *MergeRequestsService) getMergeRequestDependencies(ctx context.Context, 
 	}
 
 	return newToolResultJSON(dependencies)
+}
+
+type editMergeRequestArgs struct {
+	ProjectID          mcpargs.ID           `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
+	MergeRequestIID    int                  `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
+	Title              string               `mcp_desc:"Changes the title of the merge request"`
+	Description        string               `mcp_desc:"Changes the description of the merge request. The description uses GitLab Flavored Markdown"`
+	TargetBranch       string               `mcp_desc:"Changes the target branch of the merge request"`
+	AssigneeIDs        string               `mcp_desc:"Comma-separated list of user IDs to assign the merge request to. Pass '-' to clear all assignees. Omit the parameter to leave assignees unchanged"`
+	ReviewerIDs        string               `mcp_desc:"Comma-separated list of user IDs to set as reviewers for the merge request. Pass '-' to clear all reviewers. Omit the parameter to leave reviewers unchanged"`
+	MilestoneID        int                  `mcp_desc:"The ID of a milestone to assign the merge request to"`
+	AddLabels          string               `mcp_desc:"Comma-separated label names to add to the merge request"`
+	RemoveLabels       string               `mcp_desc:"Comma-separated label names to remove from the merge request"`
+	StateEvent         string               `mcp_desc:"The state of the merge request. Use 'close' to close the merge request or 'reopen' to reopen a closed merge request. Omit to keep the merge request state unchanged" mcp_enum:"close,reopen"`
+	RemoveSourceBranch mcpargs.OptionalBool `mcp_desc:"Flag indicating if the merge request should remove the source branch when merging"`
+	Squash             mcpargs.OptionalBool `mcp_desc:"If true, squash all commits into a single commit on merge"`
+	DiscussionLocked   mcpargs.OptionalBool `mcp_desc:"Flag indicating if the merge request's discussion is locked. If true, only project members can add or edit comments"`
+	AllowCollaboration mcpargs.OptionalBool `mcp_desc:"Allow commits from members who can merge to the target branch"`
+}
+
+// EditMergeRequest returns a ServerTool for updating an existing merge request.
+// The tool can modify various aspects of the merge request including title, description, assignees,
+// reviewers, labels, milestone, target branch, and state.
+func (m *MergeRequestsService) EditMergeRequest() server.ServerTool {
+	return server.ServerTool{
+		Handler: m.editMergeRequest,
+		Tool: mcpargs.NewTool("edit_merge_request", editMergeRequestArgs{},
+			mcp.WithDescription("Updates an existing GitLab merge request. You can modify the merge request's title and description, add or remove labels, assign or unassign users, change reviewers, change the milestone, close or reopen the merge request, and control discussion settings."),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithIdempotentHintAnnotation(true),
+		),
+	}
+}
+
+func (m *MergeRequestsService) editMergeRequest(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	var args editMergeRequestArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, err //nolint:wrapcheck
+	}
+
+	opts := gitlab.UpdateMergeRequestOptions{}
+
+	// Set basic fields if provided
+	if args.Title != "" {
+		opts.Title = gitlab.Ptr(args.Title)
+	}
+
+	if args.Description != "" {
+		opts.Description = gitlab.Ptr(args.Description)
+	}
+
+	if args.TargetBranch != "" {
+		opts.TargetBranch = gitlab.Ptr(args.TargetBranch)
+	}
+
+	if args.MilestoneID != 0 {
+		opts.MilestoneID = gitlab.Ptr(args.MilestoneID)
+	}
+
+	// Sets of user IDs
+	opts.AssigneeIDs = parseUserIDs(args.AssigneeIDs)
+	opts.ReviewerIDs = parseUserIDs(args.ReviewerIDs)
+
+	// Sets of labels
+	opts.AddLabels = newLabelOptions(args.AddLabels)
+	opts.RemoveLabels = newLabelOptions(args.RemoveLabels)
+
+	switch args.StateEvent {
+	case "close", "reopen":
+		opts.StateEvent = gitlab.Ptr(args.StateEvent)
+	case "":
+		// no-op
+	default:
+		return nil, fmt.Errorf("%w: invalid state_event: %q, must be one of 'close' or 'reopen'", ErrArgumentType, args.StateEvent)
+	}
+
+	// Handle boolean flags using the parseBoolString utility
+	opts.RemoveSourceBranch = args.RemoveSourceBranch.Ptr()
+	opts.Squash = args.Squash.Ptr()
+	opts.DiscussionLocked = args.DiscussionLocked.Ptr()
+	opts.AllowCollaboration = args.AllowCollaboration.Ptr()
+
+	mergeRequest, _, err := m.client.MergeRequests.UpdateMergeRequest(args.ProjectID.Value(), args.MergeRequestIID, &opts, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("UpdateMergeRequest(%q, %d): %w", args.ProjectID.Value(), args.MergeRequestIID, err)
+	}
+
+	return newToolResultJSON(mergeRequest)
 }
