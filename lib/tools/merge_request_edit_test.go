@@ -353,7 +353,7 @@ func TestEditMergeRequest(t *testing.T) {
 			args: map[string]any{
 				"project_id":           "test/project",
 				"merge_request_iid":    13,
-				"remove_source_branch": "true",
+				"remove_source_branch": true,
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
 				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(13), gomock.Any(), gomock.Any()).
@@ -380,7 +380,7 @@ func TestEditMergeRequest(t *testing.T) {
 			args: map[string]any{
 				"project_id":        "test/project",
 				"merge_request_iid": 14,
-				"squash":            "false",
+				"squash":            false,
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
 				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(14), gomock.Any(), gomock.Any()).
@@ -407,7 +407,7 @@ func TestEditMergeRequest(t *testing.T) {
 			args: map[string]any{
 				"project_id":        "test/project",
 				"merge_request_iid": 15,
-				"discussion_locked": "true",
+				"discussion_locked": true,
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
 				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(15), gomock.Any(), gomock.Any()).
@@ -434,7 +434,7 @@ func TestEditMergeRequest(t *testing.T) {
 			args: map[string]any{
 				"project_id":          "test/project",
 				"merge_request_iid":   16,
-				"allow_collaboration": "true",
+				"allow_collaboration": true,
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
 				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(16), gomock.Any(), gomock.Any()).
@@ -465,7 +465,7 @@ func TestEditMergeRequest(t *testing.T) {
 				"description":       "Updated Description",
 				"add_labels":        "enhancement,high-priority",
 				"assignee_ids":      "301,302",
-				"squash":            "true",
+				"squash":            true,
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
 				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(17), gomock.Any(), gomock.Any()).

@@ -690,21 +690,21 @@ func (m *MergeRequestsService) getMergeRequestDependencies(ctx context.Context, 
 }
 
 type editMergeRequestArgs struct {
-	ProjectID          mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	MergeRequestIID    int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
-	Title              string     `mcp_desc:"Changes the title of the merge request"`
-	Description        string     `mcp_desc:"Changes the description of the merge request. The description uses GitLab Flavored Markdown"`
-	TargetBranch       string     `mcp_desc:"Changes the target branch of the merge request"`
-	AssigneeIDs        string     `mcp_desc:"Comma-separated list of user IDs to assign the merge request to. Pass '-' to clear all assignees. Omit the parameter to leave assignees unchanged"`
-	ReviewerIDs        string     `mcp_desc:"Comma-separated list of user IDs to set as reviewers for the merge request. Pass '-' to clear all reviewers. Omit the parameter to leave reviewers unchanged"`
-	MilestoneID        int        `mcp_desc:"The ID of a milestone to assign the merge request to"`
-	AddLabels          string     `mcp_desc:"Comma-separated label names to add to the merge request"`
-	RemoveLabels       string     `mcp_desc:"Comma-separated label names to remove from the merge request"`
-	StateEvent         string     `mcp_desc:"The state of the merge request. Use 'close' to close the merge request or 'reopen' to reopen a closed merge request. Omit to keep the merge request state unchanged" mcp_enum:"close,reopen"`
-	RemoveSourceBranch string     `mcp_desc:"Flag indicating if the merge request should remove the source branch when merging" mcp_enum:"true,false"`
-	Squash             string     `mcp_desc:"If true, squash all commits into a single commit on merge" mcp_enum:"true,false"`
-	DiscussionLocked   string     `mcp_desc:"Flag indicating if the merge request's discussion is locked. If true, only project members can add or edit comments" mcp_enum:"true,false"`
-	AllowCollaboration string     `mcp_desc:"Allow commits from members who can merge to the target branch" mcp_enum:"true,false"`
+	ProjectID          mcpargs.ID           `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
+	MergeRequestIID    int                  `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
+	Title              string               `mcp_desc:"Changes the title of the merge request"`
+	Description        string               `mcp_desc:"Changes the description of the merge request. The description uses GitLab Flavored Markdown"`
+	TargetBranch       string               `mcp_desc:"Changes the target branch of the merge request"`
+	AssigneeIDs        string               `mcp_desc:"Comma-separated list of user IDs to assign the merge request to. Pass '-' to clear all assignees. Omit the parameter to leave assignees unchanged"`
+	ReviewerIDs        string               `mcp_desc:"Comma-separated list of user IDs to set as reviewers for the merge request. Pass '-' to clear all reviewers. Omit the parameter to leave reviewers unchanged"`
+	MilestoneID        int                  `mcp_desc:"The ID of a milestone to assign the merge request to"`
+	AddLabels          string               `mcp_desc:"Comma-separated label names to add to the merge request"`
+	RemoveLabels       string               `mcp_desc:"Comma-separated label names to remove from the merge request"`
+	StateEvent         string               `mcp_desc:"The state of the merge request. Use 'close' to close the merge request or 'reopen' to reopen a closed merge request. Omit to keep the merge request state unchanged" mcp_enum:"close,reopen"`
+	RemoveSourceBranch mcpargs.OptionalBool `mcp_desc:"Flag indicating if the merge request should remove the source branch when merging"`
+	Squash             mcpargs.OptionalBool `mcp_desc:"If true, squash all commits into a single commit on merge"`
+	DiscussionLocked   mcpargs.OptionalBool `mcp_desc:"Flag indicating if the merge request's discussion is locked. If true, only project members can add or edit comments"`
+	AllowCollaboration mcpargs.OptionalBool `mcp_desc:"Allow commits from members who can merge to the target branch"`
 }
 
 // EditMergeRequest returns a ServerTool for updating an existing merge request.
@@ -764,10 +764,10 @@ func (m *MergeRequestsService) editMergeRequest(ctx context.Context, request mcp
 	}
 
 	// Handle boolean flags using the parseBoolString utility
-	opts.RemoveSourceBranch = parseBoolString(args.RemoveSourceBranch)
-	opts.Squash = parseBoolString(args.Squash)
-	opts.DiscussionLocked = parseBoolString(args.DiscussionLocked)
-	opts.AllowCollaboration = parseBoolString(args.AllowCollaboration)
+	opts.RemoveSourceBranch = args.RemoveSourceBranch.Ptr()
+	opts.Squash = args.Squash.Ptr()
+	opts.DiscussionLocked = args.DiscussionLocked.Ptr()
+	opts.AllowCollaboration = args.AllowCollaboration.Ptr()
 
 	mergeRequest, _, err := m.client.MergeRequests.UpdateMergeRequest(args.ProjectID.Value(), args.MergeRequestIID, &opts, gitlab.WithContext(ctx))
 	if err != nil {
@@ -775,18 +775,4 @@ func (m *MergeRequestsService) editMergeRequest(ctx context.Context, request mcp
 	}
 
 	return newToolResultJSON(mergeRequest)
-}
-
-// parseBoolString parses a string representing a boolean value into a pointer to a boolean.
-// If the string is "true", it returns a pointer to true. If the string is "false", it returns a pointer to false.
-// For any other value, it returns nil.
-func parseBoolString(s string) *bool {
-	switch s {
-	case "true":
-		return gitlab.Ptr(true)
-	case "false":
-		return gitlab.Ptr(false)
-	default:
-		return nil
-	}
 }
