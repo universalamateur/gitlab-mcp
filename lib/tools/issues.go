@@ -59,6 +59,8 @@ type IssuesService struct {
 	currentUser string
 }
 
+const defaultIssueState = "opened"
+
 // AddTo registers all issue-related tools with the provided MCPServer.
 // It adds tools for listing, retrieving, and managing issues and their related merge requests.
 func (i *IssuesService) AddTo(srv *server.MCPServer) {
@@ -75,7 +77,7 @@ func (i *IssuesService) AddTo(srv *server.MCPServer) {
 
 type listUserIssuesArgs struct {
 	Assignee     string `mcp_desc:"Filter issues by the assignee. If left blank, returns all issues assigned to the authenticated user"`
-	State        string `mcp_desc:"Return all issues or just those that are opened or closed" mcp_enum:"all,opened,closed"`
+	State        string `mcp_desc:"Filter issues by state, with 'all' returning closed and opened issues. Defaults to 'opened'." mcp_enum:"all,opened,closed"`
 	Confidential bool   `mcp_desc:"If true, includes confidential issues. Default is false, which excludes confidential issues"`
 }
 
@@ -114,13 +116,15 @@ func (i *IssuesService) listUserIssues(ctx context.Context, request mcp.CallTool
 
 	opt.AssigneeUsername = gitlab.Ptr(assignee)
 
-	if args.State != "" {
-		opt.State = gitlab.Ptr(args.State)
+	if args.State == "" {
+		args.State = defaultIssueState
 	}
 
+	opt.State = gitlab.Ptr(args.State)
+
 	// If confidential issues are disabled, explicitly set "Confidential" to false.
-	// Otherwise, the default behaviour is to include confidential issues (since it is
-	// just not filtering on this property).
+	// Otherwise, the default behaviour is to include public and confidential
+	// issues (since it is just not filtering on this property).
 	if !args.Confidential {
 		opt.Confidential = gitlab.Ptr(false)
 	}
@@ -145,7 +149,7 @@ func (i *IssuesService) listUserIssues(ctx context.Context, request mcp.CallTool
 
 type listGroupIssuesArgs struct {
 	GroupID      mcpargs.ID `mcp_desc:"ID of the group either in owner/namespace format or the numeric group ID" mcp_required:"true"`
-	State        string     `mcp_desc:"Return all issues or just those that are opened or closed" mcp_enum:"all,opened,closed"`
+	State        string     `mcp_desc:"Filter issues by state, with 'all' returning closed and opened issues. Defaults to 'opened'." mcp_enum:"all,opened,closed"`
 	Confidential bool       `mcp_desc:"If true, includes confidential issues. Default is false, which excludes confidential issues"`
 }
 
@@ -169,8 +173,6 @@ func (i *IssuesService) listGroupIssues(ctx context.Context, request mcp.CallToo
 
 	var (
 		opt = gitlab.ListGroupIssuesOptions{
-			// TODO: use server-side filtering once supported by the Go package.
-			// Confidential: gitlab.Ptr(args.Confidential),
 			ListOptions: gitlab.ListOptions{
 				PerPage: maxPerPage,
 			},
@@ -178,18 +180,18 @@ func (i *IssuesService) listGroupIssues(ctx context.Context, request mcp.CallToo
 		issues []*gitlab.Issue
 	)
 
-	// Parse optional parameters
-	if args.State != "" {
-		opt.State = gitlab.Ptr(args.State)
+	if args.State == "" {
+		args.State = defaultIssueState
 	}
 
+	opt.State = gitlab.Ptr(args.State)
+
 	// If confidential issues are disabled, explicitly set "Confidential" to false.
-	// Otherwise, the default behaviour is to include confidential issues (since it is
-	// just not filtering on this property).
-	// TODO: use server-side filtering once supported by the Go package.
-	// if !args.Confidential {
-	// 	opt.Confidential = gitlab.Ptr(false)
-	// }
+	// Otherwise, the default behaviour is to include public and confidential
+	// issues (since it is just not filtering on this property).
+	if !args.Confidential {
+		opt.Confidential = gitlab.Ptr(args.Confidential)
+	}
 
 	for {
 		is, resp, err := i.client.Issues.ListGroupIssues(args.GroupID.Value(), &opt, gitlab.WithContext(ctx))
@@ -206,28 +208,12 @@ func (i *IssuesService) listGroupIssues(ctx context.Context, request mcp.CallToo
 		opt.Page = resp.NextPage
 	}
 
-	// TODO: remove client-side filtering once server-side filtering is supported.
-	issues = filterIssues(issues, args.Confidential)
-
 	return newToolResultJSON(issues)
-}
-
-// filterIssues filters a list of issues based on whether confidential issues should be included.
-func filterIssues(issues []*gitlab.Issue, includeConfidential bool) []*gitlab.Issue {
-	var filteredIssues []*gitlab.Issue
-
-	for _, issue := range issues {
-		if includeConfidential || !issue.Confidential {
-			filteredIssues = append(filteredIssues, issue)
-		}
-	}
-
-	return filteredIssues
 }
 
 type listProjectIssuesArgs struct {
 	ProjectID    mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	State        string     `mcp_desc:"Return all issues or just those that are opened or closed" mcp_enum:"all,opened,closed"`
+	State        string     `mcp_desc:"Filter issues by state, with 'all' returning closed and opened issues. Defaults to 'opened'." mcp_enum:"all,opened,closed"`
 	Confidential bool       `mcp_desc:"If true, includes confidential issues. Default is false, which excludes confidential issues"`
 }
 
@@ -258,14 +244,15 @@ func (i *IssuesService) listProjectIssues(ctx context.Context, request mcp.CallT
 		issues []*gitlab.Issue
 	)
 
-	// Parse optional parameters
-	if args.State != "" {
-		opt.State = gitlab.Ptr(args.State)
+	if args.State == "" {
+		args.State = defaultIssueState
 	}
 
+	opt.State = gitlab.Ptr(args.State)
+
 	// If confidential issues are disabled, explicitly set "Confidential" to false.
-	// Otherwise, the default behaviour is to include confidential issues (since it is
-	// just not filtering on this property).
+	// Otherwise, the default behaviour is to include public and confidential
+	// issues (since it is just not filtering on this property).
 	if !args.Confidential {
 		opt.Confidential = gitlab.Ptr(false)
 	}
