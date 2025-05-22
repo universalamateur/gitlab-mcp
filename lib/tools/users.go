@@ -116,7 +116,7 @@ func (u *UsersService) getUser(ctx context.Context, request mcp.CallToolRequest)
 }
 
 type getUserStatusArgs struct {
-	UserID int `mcp_desc:"ID of the user to get a status of" mcp_required:"true"`
+	UserID mcpargs.ID `mcp_desc:"ID or username of the user to get status for" mcp_required:"true"`
 }
 
 // GetUserStatus returns a ServerTool for fetching a user's status.
@@ -136,9 +136,14 @@ func (u *UsersService) getUserStatus(ctx context.Context, request mcp.CallToolRe
 		return nil, err //nolint:wrapcheck
 	}
 
-	status, _, err := u.client.Users.GetUserStatus(args.UserID, gitlab.WithContext(ctx))
+	userID := args.UserID.Value()
+	if s, ok := userID.(string); ok {
+		userID = strings.TrimPrefix(s, "@")
+	}
+
+	status, _, err := u.client.Users.GetUserStatus(userID, gitlab.WithContext(ctx))
 	if err != nil {
-		return nil, fmt.Errorf("GetUserStatus(%d): %w", args.UserID, err)
+		return nil, fmt.Errorf("GetUserStatus(%v): %w", userID, err)
 	}
 
 	return newToolResultJSON(status)
