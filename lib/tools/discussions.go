@@ -103,7 +103,7 @@ func (d *DiscussionService) NewDiscussion() server.ServerTool {
 
 func (d *DiscussionService) newDiscussion(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args newDiscussionArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -139,7 +139,7 @@ func (d *DiscussionService) ListDiscussions() server.ServerTool {
 
 func (d *DiscussionService) listDiscussions(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listDiscussionsArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -177,7 +177,7 @@ func (d *DiscussionService) AddDiscussionNote() server.ServerTool {
 
 func (d *DiscussionService) addDiscussionNote(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args addDiscussionNoteArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -216,7 +216,7 @@ func (d *DiscussionService) ModifyDiscussionNote() server.ServerTool {
 
 func (d *DiscussionService) modifyDiscussionNote(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args modifyDiscussionNoteArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -254,7 +254,7 @@ func (d *DiscussionService) DeleteDiscussionNote() server.ServerTool {
 
 func (d *DiscussionService) deleteDiscussionNote(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args deleteDiscussionNoteArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -291,7 +291,7 @@ func (d *DiscussionService) ResolveDiscussion() server.ServerTool {
 
 func (d *DiscussionService) resolveDiscussion(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args resolveDiscussionArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -353,7 +353,7 @@ func (d *DiscussionService) NewPositionDiscussion() server.ServerTool {
 
 func (d *DiscussionService) newDiffDiscussion(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args newPositionDiscussionArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 

@@ -123,7 +123,7 @@ func (m *MergeRequestsService) ListUserMergeRequests() server.ServerTool {
 
 func (m *MergeRequestsService) listUserMergeRequests(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listUserMergeRequestsArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -193,7 +193,7 @@ func (m *MergeRequestsService) ListProjectMergeRequests() server.ServerTool {
 
 func (m *MergeRequestsService) listProjectMergeRequests(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listProjectMergeRequestsArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -248,7 +248,7 @@ func (m *MergeRequestsService) ListGroupMergeRequests() server.ServerTool {
 
 func (m *MergeRequestsService) listGroupMergeRequests(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listGroupMergeRequestsArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -303,7 +303,7 @@ func (m *MergeRequestsService) GetMergeRequest() server.ServerTool {
 
 func (m *MergeRequestsService) getMergeRequest(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args getMergeRequestArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -399,7 +399,7 @@ func (m *MergeRequestsService) GetMergeRequestApprovals() server.ServerTool {
 
 func (m *MergeRequestsService) getMergeRequestApprovals(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args getMergeRequestApprovalsArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -430,7 +430,7 @@ func (m *MergeRequestsService) GetMergeRequestCommits() server.ServerTool {
 
 func (m *MergeRequestsService) getMergeRequestCommits(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args getMergeRequestCommitsArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -478,7 +478,7 @@ func (m *MergeRequestsService) ListMergeRequestDiffs() server.ServerTool {
 // listMergeRequestDiffs is the handler for the ListMergeRequestDiffs tool.
 func (m *MergeRequestsService) listMergeRequestDiffs(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listMergeRequestDiffsArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -536,7 +536,7 @@ func (m *MergeRequestsService) GetMergeRequestParticipants() server.ServerTool {
 
 func (m *MergeRequestsService) getMergeRequestParticipants(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args getMergeRequestParticipantsArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -567,7 +567,7 @@ func (m *MergeRequestsService) GetMergeRequestReviewers() server.ServerTool {
 
 func (m *MergeRequestsService) getMergeRequestReviewers(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args getMergeRequestReviewersArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -598,7 +598,7 @@ func (m *MergeRequestsService) ListMergeRequestPipelines() server.ServerTool {
 
 func (m *MergeRequestsService) listMergeRequestPipelines(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listMergeRequestPipelinesArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -629,7 +629,7 @@ func (m *MergeRequestsService) GetIssuesClosedOnMerge() server.ServerTool {
 
 func (m *MergeRequestsService) getIssuesClosedOnMerge(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args getIssuesClosedOnMergeArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -677,7 +677,7 @@ func (m *MergeRequestsService) GetMergeRequestDependencies() server.ServerTool {
 
 func (m *MergeRequestsService) getMergeRequestDependencies(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args getMergeRequestDependenciesArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -723,7 +723,7 @@ func (m *MergeRequestsService) EditMergeRequest() server.ServerTool {
 
 func (m *MergeRequestsService) editMergeRequest(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args editMergeRequestArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -766,6 +766,7 @@ func (m *MergeRequestsService) editMergeRequest(ctx context.Context, request mcp
 	// Handle boolean flags using the parseBoolString utility
 	opts.RemoveSourceBranch = args.RemoveSourceBranch.Ptr()
 	opts.Squash = args.Squash.Ptr()
+
 	opts.DiscussionLocked = args.DiscussionLocked.Ptr()
 	opts.AllowCollaboration = args.AllowCollaboration.Ptr()
 
@@ -796,7 +797,7 @@ func (m *MergeRequestsService) ListDraftNotes() server.ServerTool {
 // listDraftNotes returns all draft notes for the merge request.
 func (m *MergeRequestsService) listDraftNotes(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listDraftNotesArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 

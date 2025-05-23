@@ -95,7 +95,7 @@ func (i *IssuesService) ListUserIssues() server.ServerTool {
 
 func (i *IssuesService) listUserIssues(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listUserIssuesArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -168,7 +168,7 @@ func (i *IssuesService) ListGroupIssues() server.ServerTool {
 
 func (i *IssuesService) listGroupIssues(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listGroupIssuesArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -232,7 +232,7 @@ func (i *IssuesService) ListProjectIssues() server.ServerTool {
 
 func (i *IssuesService) listProjectIssues(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listProjectIssuesArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -296,7 +296,7 @@ func (i *IssuesService) GetIssue() server.ServerTool {
 
 func (i *IssuesService) getIssue(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args getIssueArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -385,7 +385,7 @@ func (i *IssuesService) ListMergeRequestsRelatedToIssue() server.ServerTool {
 
 func (i *IssuesService) listMergeRequestsRelatedToIssue(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listMergeRequestsRelatedToIssueArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -440,7 +440,7 @@ func (i *IssuesService) CreateIssue() server.ServerTool {
 
 func (i *IssuesService) createIssue(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args createIssueArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -464,7 +464,7 @@ func (i *IssuesService) createIssue(ctx context.Context, request mcp.CallToolReq
 	opt.AssigneeIDs = parseUserIDs(args.AssigneeIDs)
 	opt.Labels = newLabelOptions(args.Labels)
 
-	if _, ok := request.Params.Arguments["confidential"]; ok {
+	if _, ok := request.GetArguments()["confidential"]; ok {
 		opt.Confidential = gitlab.Ptr(args.Confidential)
 	}
 
@@ -506,7 +506,7 @@ func (i *IssuesService) EditIssue() server.ServerTool {
 
 func (i *IssuesService) editIssue(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args editIssueArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -552,7 +552,7 @@ func (i *IssuesService) editIssue(ctx context.Context, request mcp.CallToolReque
 	}
 
 	// Only set these if explicitly provided
-	if _, ok := request.Params.Arguments["discussion_locked"]; ok {
+	if _, ok := request.GetArguments()["discussion_locked"]; ok {
 		opt.DiscussionLocked = gitlab.Ptr(args.DiscussionLocked)
 	}
 

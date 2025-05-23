@@ -128,7 +128,7 @@ func (s *SnippetsService) ListAllSnippets() server.ServerTool {
 
 func (s *SnippetsService) listAllSnippets(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listAllSnippetsArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -212,7 +212,7 @@ func (s *SnippetsService) GetSnippet() server.ServerTool {
 
 func (s *SnippetsService) getSnippet(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args getSnippetArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -242,7 +242,7 @@ func (s *SnippetsService) GetSnippetContent() server.ServerTool {
 
 func (s *SnippetsService) getSnippetContent(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args getSnippetContentArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -282,7 +282,7 @@ func (s *SnippetsService) CreateSnippet() server.ServerTool {
 
 func (s *SnippetsService) createSnippet(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args createSnippetArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -354,7 +354,7 @@ func (s *SnippetsService) UpdateSnippet() server.ServerTool {
 
 func (s *SnippetsService) updateSnippet(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args updateSnippetArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -432,7 +432,7 @@ func (s *SnippetsService) DeleteSnippet() server.ServerTool {
 
 func (s *SnippetsService) deleteSnippet(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args deleteSnippetArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 

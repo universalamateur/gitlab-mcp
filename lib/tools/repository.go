@@ -64,7 +64,7 @@ func (r *RepositoryService) ListRepositoryDirectory() server.ServerTool {
 
 func (r *RepositoryService) listRepositoryDirectory(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listRepositoryDirectoryArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -128,7 +128,7 @@ func (r *RepositoryService) GetRepositoryFileContents() server.ServerTool {
 
 func (r *RepositoryService) getRepositoryFileContents(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args getRepositoryFileContentsArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 

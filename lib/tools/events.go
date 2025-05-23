@@ -61,7 +61,7 @@ const (
 
 func (e *EventsService) listUserEvents(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listEventArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, fmt.Errorf("mcpargs.Unmarshal: %w", err)
 	}
 
