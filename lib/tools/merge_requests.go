@@ -776,3 +776,53 @@ func (m *MergeRequestsService) editMergeRequest(ctx context.Context, request mcp
 
 	return newToolResultJSON(mergeRequest)
 }
+
+type listDraftNotesArgs struct {
+	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
+	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
+}
+
+// ListDraftNotes returns a ServerTool for listing all draft notes for a specific merge request.
+func (m *MergeRequestsService) ListDraftNotes() server.ServerTool {
+	return server.ServerTool{
+		Handler: m.listDraftNotes,
+		Tool: mcpargs.NewTool("list_draft_notes", listDraftNotesArgs{},
+			mcp.WithDescription("Returns a list of draft notes for the merge request. Draft notes are pending merge request review comments that have not yet been published."),
+			mcp.WithReadOnlyHintAnnotation(true),
+		),
+	}
+}
+
+// listDraftNotes returns all draft notes for the merge request.
+func (m *MergeRequestsService) listDraftNotes(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	var args listDraftNotesArgs
+	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+		return nil, err //nolint:wrapcheck
+	}
+
+	var (
+		opt = &gitlab.ListDraftNotesOptions{
+			ListOptions: gitlab.ListOptions{
+				PerPage: maxPerPage,
+			},
+		}
+		allNotes []*gitlab.DraftNote
+	)
+
+	for {
+		notes, resp, err := m.client.DraftNotes.ListDraftNotes(args.ProjectID.Value(), args.MergeRequestIID, opt, gitlab.WithContext(ctx))
+		if err != nil {
+			return nil, fmt.Errorf("ListDraftNotes(%v, %d): %w", args.ProjectID.Value(), args.MergeRequestIID, err)
+		}
+
+		allNotes = append(allNotes, notes...)
+
+		if resp.NextPage == 0 {
+			break
+		}
+
+		opt.Page = resp.NextPage
+	}
+
+	return newToolResultJSON(allNotes)
+}

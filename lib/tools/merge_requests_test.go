@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/mcptest"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
@@ -308,6 +309,239 @@ func TestGetMergeRequest(t *testing.T) {
 
 			if diff := cmp.Diff(tt.want, &got); diff != "" {
 				t.Errorf("getIssue() mismatch (-want/+got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestListDraftNotes(t *testing.T) {
+	tests := []struct {
+		name      string
+		args      map[string]any
+		setupMock func(*glabtest.MockDraftNotesServiceInterface)
+		want      []*gitlab.DraftNote
+		wantErr   bool
+	}{
+		{
+			name: "successful fetch of draft notes",
+			args: map[string]any{
+				"project_id":        "test/project",
+				"merge_request_iid": 123,
+			},
+			setupMock: func(mockDraftNotes *glabtest.MockDraftNotesServiceInterface) {
+				mockDraftNotes.EXPECT().
+					ListDraftNotes(gomock.Eq("test/project"), gomock.Eq(123), gomock.Any(), gomock.Any()).
+					Return([]*gitlab.DraftNote{
+						{
+							ID:       1,
+							AuthorID: 100,
+							Note:     "This is a draft comment",
+							Position: &gitlab.NotePosition{
+								BaseSHA:      "abc123",
+								StartSHA:     "def456",
+								HeadSHA:      "ghi789",
+								OldPath:      "file.go",
+								NewPath:      "file.go",
+								PositionType: "text+",
+								OldLine:      10,
+								NewLine:      12,
+							},
+							LineCode:          "abc123_10_12",
+							ResolveDiscussion: false,
+						},
+						{
+							ID:                2,
+							AuthorID:          101,
+							Note:              "Another draft comment",
+							Position:          nil, // General comment without specific position
+							ResolveDiscussion: true,
+						},
+					}, &gitlab.Response{
+						Response: &http.Response{StatusCode: http.StatusOK},
+						NextPage: 0,
+					}, nil)
+			},
+			want: []*gitlab.DraftNote{
+				{
+					ID:       1,
+					AuthorID: 100,
+					Note:     "This is a draft comment",
+					Position: &gitlab.NotePosition{
+						BaseSHA:      "abc123",
+						StartSHA:     "def456",
+						HeadSHA:      "ghi789",
+						OldPath:      "file.go",
+						NewPath:      "file.go",
+						PositionType: "text+",
+						OldLine:      10,
+						NewLine:      12,
+					},
+					LineCode:          "abc123_10_12",
+					ResolveDiscussion: false,
+				},
+				{
+					ID:                2,
+					AuthorID:          101,
+					Note:              "Another draft comment",
+					Position:          nil,
+					ResolveDiscussion: true,
+				},
+			},
+		},
+		{
+			name: "no draft notes found",
+			args: map[string]any{
+				"project_id":        "test/project",
+				"merge_request_iid": 456,
+			},
+			setupMock: func(mockDraftNotes *glabtest.MockDraftNotesServiceInterface) {
+				mockDraftNotes.EXPECT().
+					ListDraftNotes(gomock.Eq("test/project"), gomock.Eq(456), gomock.Any(), gomock.Any()).
+					Return([]*gitlab.DraftNote{}, &gitlab.Response{
+						Response: &http.Response{StatusCode: http.StatusOK},
+						NextPage: 0,
+					}, nil)
+			},
+			want: []*gitlab.DraftNote{},
+		},
+		{
+			name: "error in fetching draft notes",
+			args: map[string]any{
+				"project_id":        "test/project",
+				"merge_request_iid": 789,
+			},
+			setupMock: func(mockDraftNotes *glabtest.MockDraftNotesServiceInterface) {
+				mockDraftNotes.EXPECT().
+					ListDraftNotes(gomock.Eq("test/project"), gomock.Eq(789), gomock.Any(), gomock.Any()).
+					Return(nil, nil, fmt.Errorf("failed to fetch draft notes"))
+			},
+			wantErr: true,
+		},
+		{
+			name: "pagination handling for draft notes",
+			args: map[string]any{
+				"project_id":        "test/project",
+				"merge_request_iid": 101,
+			},
+			setupMock: func(mockDraftNotes *glabtest.MockDraftNotesServiceInterface) {
+				// First page
+				firstPage := mockDraftNotes.EXPECT().
+					ListDraftNotes(gomock.Eq("test/project"), gomock.Eq(101), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int, opts *gitlab.ListDraftNotesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.DraftNote, *gitlab.Response, error) {
+						if opts.Page != 0 {
+							t.Errorf("expected first page request, got page %d", opts.Page)
+						}
+
+						return []*gitlab.DraftNote{
+								{
+									ID:       1,
+									AuthorID: 100,
+									Note:     "First page draft note",
+								},
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+								NextPage: 2,
+							}, nil
+					})
+
+				// Second page
+				mockDraftNotes.EXPECT().
+					ListDraftNotes(gomock.Eq("test/project"), gomock.Eq(101), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int, opts *gitlab.ListDraftNotesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.DraftNote, *gitlab.Response, error) {
+						if opts.Page != 2 {
+							t.Errorf("expected second page request, got page %d", opts.Page)
+						}
+
+						return []*gitlab.DraftNote{
+								{
+									ID:       2,
+									AuthorID: 101,
+									Note:     "Second page draft note",
+								},
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+								NextPage: 0, // No more pages
+							}, nil
+					}).
+					After(firstPage.Call)
+			},
+			want: []*gitlab.DraftNote{
+				{
+					ID:       1,
+					AuthorID: 100,
+					Note:     "First page draft note",
+				},
+				{
+					ID:       2,
+					AuthorID: 101,
+					Note:     "Second page draft note",
+				},
+			},
+		},
+		{
+			name: "missing project ID",
+			args: map[string]any{
+				// project_id is missing
+				"merge_request_iid": 123,
+			},
+			setupMock: func(mockDraftNotes *glabtest.MockDraftNotesServiceInterface) {
+				// No mock expectations needed as this should fail validation
+			},
+			wantErr: true,
+		},
+		{
+			name: "missing merge request IID",
+			args: map[string]any{
+				"project_id": "test/project",
+				// merge_request_iid is missing
+			},
+			setupMock: func(mockDraftNotes *glabtest.MockDraftNotesServiceInterface) {
+				// No mock expectations needed as this should fail validation
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gitlabClient := glabtest.NewTestClient(t)
+			tt.setupMock(gitlabClient.MockDraftNotes)
+
+			mergeRequestsService := NewMergeRequestsTools(gitlabClient.Client, "test_user")
+
+			srv, err := mcptest.NewServer(t, mergeRequestsService.ListDraftNotes())
+			if err != nil {
+				t.Fatalf("failed to create server: %v", err)
+			}
+			defer srv.Close()
+
+			// Test direct function call
+			var req mcp.CallToolRequest
+			req.Params.Name = "list_draft_notes"
+			req.Params.Arguments = tt.args
+
+			result, err := srv.Client().CallTool(t.Context(), req)
+
+			if gotErr := err != nil; gotErr != tt.wantErr {
+				t.Errorf("listDraftNotes error mismatch, got: %v, want error: %v", err, tt.wantErr)
+			}
+
+			if err != nil {
+				return
+			}
+
+			var got []*gitlab.DraftNote
+			if err := unmarshalResult(result, &got); err != nil {
+				t.Fatalf("decode error: %v", err)
+			}
+
+			opts := []cmp.Option{
+				// Ignore empty slices vs. nil values.
+				cmpopts.EquateEmpty(),
+			}
+
+			if diff := cmp.Diff(tt.want, got, opts...); diff != "" {
+				t.Errorf("listDraftNotes() mismatch (-want/+got):\n%s", diff)
 			}
 		})
 	}

@@ -230,6 +230,18 @@ func TestUnmarshal(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "required field is missing - should error",
+			arguments: map[string]any{
+				"project_id": "1234",
+				// missing: merge_request_iid
+			},
+			want: struct {
+				ProjectID       ID  `mcp_desc:"The project ID" mcp_required:"true"`
+				MergeRequestIID int `mcp_desc:"The merge request ID" mcp_required:"true"`
+			}{},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
