@@ -167,6 +167,7 @@ You can provide the GitLab token in one of two ways:
 | `get_user_status` | Get a user's status |
 | `get_user` | Get information about a specific user or the current user. In particular, this tool can be used to resolve a username to an ID. |
 | `list_all_snippets` | List all snippets the user has access to |
+| `list_draft_notes` | Returns a list of draft notes for the merge request |
 | `list_downstream_pipelines` | Get a list of downstream pipeline triggers for a pipeline |
 | `list_epic_issues` | Returns a list of issues assigned to the provided epic |
 | `list_group_epics` | Get all epics for a specific group |
