@@ -1,3 +1,4 @@
+//nolint:goconst // "all" is used for scope and state. They should not use the same constant.
 package tools
 
 import (
@@ -298,8 +299,8 @@ func TestListUserIssues(t *testing.T) {
 						if opts.Confidential == nil || *opts.Confidential {
 							t.Errorf("opts.Confidential = %v, want false", opts.Confidential)
 						}
-						if opts.Scope == nil || *opts.Scope != "all" {
-							t.Errorf("opts.Scope = %v, want 'all'", opts.Scope)
+						if want := "all"; opts.Scope == nil || *opts.Scope != want {
+							t.Errorf("opts.Scope = %v, want %q", opts.Scope, want)
 						}
 
 						return []*gitlab.Issue{
@@ -689,8 +690,8 @@ func TestListGroupIssues(t *testing.T) {
 				mockIssues.EXPECT().
 					ListGroupIssues(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.ListGroupIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
-						if opts.State == nil || *opts.State != "all" {
-							t.Errorf("opts.State = %v, want 'all'", opts.State)
+						if want := "all"; opts.State == nil || *opts.State != want {
+							t.Errorf("opts.State = %v, want %q", opts.State, want)
 						}
 
 						return []*gitlab.Issue{
