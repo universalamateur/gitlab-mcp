@@ -298,6 +298,9 @@ func TestListUserIssues(t *testing.T) {
 						if opts.Confidential == nil || *opts.Confidential {
 							t.Errorf("opts.Confidential = %v, want false", opts.Confidential)
 						}
+						if opts.Scope == nil || *opts.Scope != "all" {
+							t.Errorf("opts.Scope = %v, want 'all'", opts.Scope)
+						}
 
 						return []*gitlab.Issue{
 								{

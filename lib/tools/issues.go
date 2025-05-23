@@ -101,6 +101,7 @@ func (i *IssuesService) listUserIssues(ctx context.Context, request mcp.CallTool
 
 	var (
 		opt = gitlab.ListIssuesOptions{
+			Scope: gitlab.Ptr("all"),
 			ListOptions: gitlab.ListOptions{
 				PerPage: maxPerPage,
 			},
