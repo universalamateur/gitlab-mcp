@@ -12,6 +12,7 @@ import (
 
 	"gitlab.com/fforster/gitlab-mcp/lib/build"
 	"gitlab.com/fforster/gitlab-mcp/lib/glclient"
+	"gitlab.com/fforster/gitlab-mcp/lib/glctx"
 	"gitlab.com/fforster/gitlab-mcp/lib/tools"
 )
 
@@ -76,8 +77,14 @@ func (c *rootCommand) run(cmd *cobra.Command, _ []string) error {
 
 	tools.AddTo(s)
 
+	opts := []server.StdioOption{
+		server.WithStdioContextFunc(func(ctx context.Context) context.Context {
+			return glctx.WithClient(ctx, client)
+		}),
+	}
+
 	// Start the server
-	err = server.ServeStdio(s)
+	err = server.ServeStdio(s, opts...)
 
 	switch {
 	case errors.Is(err, context.Canceled):
