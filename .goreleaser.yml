@@ -15,7 +15,7 @@ builds:
       - amd64
       - arm64
     ldflags:
-      - -s -w -X '{{.ModulePath}}/cmd.version={{.Version}}' -X '{{.ModulePath}}/cmd.commit={{.Commit}}' -X '{{.ModulePath}}/cmd.date={{.Date}}'
+      - -s -w -X '{{.ModulePath}}/lib/build.version={{.Version}}' -X '{{.ModulePath}}/lib/build.commit={{.Commit}}' -X '{{.ModulePath}}/lib/build.date={{.Date}}'
 
 archives:
   - name_template: >-

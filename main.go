@@ -8,6 +8,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 
+	"gitlab.com/fforster/gitlab-mcp/lib/build"
 	"gitlab.com/fforster/gitlab-mcp/lib/tools"
 )
 
@@ -15,7 +16,7 @@ func main() {
 	// Create a new MCP server
 	s := server.NewMCPServer(
 		"GitLab",
-		"1.0.0",
+		build.Version(),
 		server.WithResourceCapabilities(true, true),
 		server.WithLogging(),
 		server.WithRecovery(),
