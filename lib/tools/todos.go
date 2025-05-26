@@ -63,7 +63,7 @@ func (t *TodosService) ListUserTodos() server.ServerTool {
 
 func (t *TodosService) listUserTodos(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listUserTodosArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -157,7 +157,7 @@ func (t *TodosService) CompleteTodoItem() server.ServerTool {
 
 func (t *TodosService) completeTodoItem(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args completeTodoItemArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 

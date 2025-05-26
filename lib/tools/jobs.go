@@ -86,7 +86,7 @@ func (j *JobsService) ListPipelineJobs() server.ServerTool {
 
 func (j *JobsService) listPipelineJobs(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listPipelineJobsArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -141,7 +141,7 @@ func (j *JobsService) ListDownstreamPipelines() server.ServerTool {
 
 func (j *JobsService) listDownstreamPipelines(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listDownstreamPipelinesArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -194,7 +194,7 @@ func (j *JobsService) GetJob() server.ServerTool {
 
 func (j *JobsService) getJob(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args getJobArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -226,7 +226,7 @@ func (j *JobsService) DownloadJobArtifactsFile() server.ServerTool {
 
 func (j *JobsService) downloadJobArtifactsFile(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args downloadJobArtifactsFileArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -263,7 +263,7 @@ func (j *JobsService) DownloadJobLog() server.ServerTool {
 
 func (j *JobsService) downloadJobLog(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args downloadJobLogArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -301,7 +301,7 @@ func (j *JobsService) RetryJob() server.ServerTool {
 
 func (j *JobsService) retryJob(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args retryJobArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -333,7 +333,7 @@ func (j *JobsService) TriggerManualJob() server.ServerTool {
 
 func (j *JobsService) triggerManualJob(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args triggerManualJobArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 

@@ -70,7 +70,7 @@ func (e *EpicService) ListGroupEpics() server.ServerTool {
 
 func (e *EpicService) listGroupEpics(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listGroupEpicsArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -125,7 +125,7 @@ func (e *EpicService) GetEpic() server.ServerTool {
 
 func (e *EpicService) getEpic(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args getEpicArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -156,7 +156,7 @@ func (e *EpicService) GetEpicLinks() server.ServerTool {
 
 func (e *EpicService) getEpicLinks(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args getEpicLinksArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -187,7 +187,7 @@ func (e *EpicService) ListEpicIssues() server.ServerTool {
 
 func (e *EpicService) listEpicIssues(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args listEpicIssuesArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 

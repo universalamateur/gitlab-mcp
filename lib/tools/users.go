@@ -70,7 +70,7 @@ func (u *UsersService) GetUser() server.ServerTool {
 
 func (u *UsersService) getUser(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args getUserArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -132,7 +132,7 @@ func (u *UsersService) GetUserStatus() server.ServerTool {
 
 func (u *UsersService) getUserStatus(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args getUserStatusArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
@@ -169,7 +169,7 @@ func (u *UsersService) SetUserStatus() server.ServerTool {
 
 func (u *UsersService) setUserStatus(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var args setUserStatusArgs
-	if err := mcpargs.Unmarshal(request.Params.Arguments, &args); err != nil {
+	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, err //nolint:wrapcheck
 	}
 
