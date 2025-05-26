@@ -12,6 +12,8 @@ import (
 	"github.com/mark3labs/mcp-go/mcptest"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	glabtest "gitlab.com/gitlab-org/api/client-go/testing"
+
+	"gitlab.com/fforster/gitlab-mcp/lib/glctx"
 )
 
 func TestListUserEvents(t *testing.T) {
@@ -408,14 +410,16 @@ func TestListUserEvents(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gitlabClient := glabtest.NewTestClient(t)
 
+			ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
+
 			tt.setupMock(gitlabClient.MockUsers, tt.wantEvents)
 
-			eventsService := &EventsService{
-				client: gitlabClient.Client,
-			}
+			eventsService := new(EventsService)
 
-			srv, err := mcptest.NewServer(t, eventsService.ListUserEvents())
-			if err != nil {
+			srv := mcptest.NewUnstartedServer(t)
+			srv.AddTools(eventsService.ListUserEvents())
+
+			if err := srv.Start(ctx); err != nil {
 				t.Fatalf("failed to start MCP test server: %v", err)
 			}
 			defer srv.Close()

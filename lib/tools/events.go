@@ -8,6 +8,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 
+	"gitlab.com/fforster/gitlab-mcp/lib/glctx"
 	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
 
@@ -18,13 +19,7 @@ type EventsServiceInterface interface {
 	ListUserEvents() server.ServerTool
 }
 
-func NewEventsTools(client *gitlab.Client) *EventsService {
-	return &EventsService{client: client}
-}
-
-type EventsService struct {
-	client *gitlab.Client
-}
+type EventsService struct{}
 
 // AddTo registers all issue-related tools with the provided MCPServer.
 // It adds tools for listing, retrieving, and managing issues and their related merge requests.
@@ -59,13 +54,18 @@ const (
 )
 
 func (e *EventsService) listUserEvents(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	client, ok := glctx.Client(ctx)
+	if !ok {
+		return nil, fmt.Errorf("client not found in context")
+	}
+
 	var args listEventArgs
 	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
 		return nil, fmt.Errorf("mcpargs.Unmarshal: %w", err)
 	}
 
 	if args.Username == "" {
-		u, _, err := e.client.Users.CurrentUser(gitlab.WithContext(ctx))
+		u, _, err := client.Users.CurrentUser(gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("CurrentUser: %w", err)
 		}
@@ -81,7 +81,7 @@ func (e *EventsService) listUserEvents(ctx context.Context, request mcp.CallTool
 	var events []*gitlab.ContributionEvent
 
 	for {
-		eventPage, response, err := e.client.Users.ListUserContributionEvents(args.Username, opts, gitlab.WithContext(ctx))
+		eventPage, response, err := client.Users.ListUserContributionEvents(args.Username, opts, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("ListUserContributionEvents: %w", err)
 		}
