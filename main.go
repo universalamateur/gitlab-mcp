@@ -22,7 +22,11 @@ func main() {
 		server.WithRecovery(),
 	)
 
-	client, err := gitlab.NewClient(os.Getenv("GITLAB_TOKEN"))
+	client, err := gitlab.NewClient(os.Getenv("GITLAB_TOKEN"),
+		gitlab.WithRequestOptions(
+			gitlab.WithHeader("User-Agent", "gitlab-mcp/"+build.Version()),
+		),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
