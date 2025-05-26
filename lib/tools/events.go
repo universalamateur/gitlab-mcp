@@ -18,13 +18,12 @@ type EventsServiceInterface interface {
 	ListUserEvents() server.ServerTool
 }
 
-func NewEventsTools(client *gitlab.Client, currentUser string) *EventsService {
-	return &EventsService{client: client, currentUser: currentUser}
+func NewEventsTools(client *gitlab.Client) *EventsService {
+	return &EventsService{client: client}
 }
 
 type EventsService struct {
-	client      *gitlab.Client
-	currentUser string
+	client *gitlab.Client
 }
 
 // AddTo registers all issue-related tools with the provided MCPServer.
@@ -66,10 +65,15 @@ func (e *EventsService) listUserEvents(ctx context.Context, request mcp.CallTool
 	}
 
 	if args.Username == "" {
-		args.Username = e.currentUser
+		u, _, err := e.client.Users.CurrentUser(gitlab.WithContext(ctx))
+		if err != nil {
+			return nil, fmt.Errorf("CurrentUser: %w", err)
+		}
+
+		args.Username = u.Username
 	}
 
-	reqParams, err := buildRequestParams(args)
+	opts, err := listContributionEventsOptions(args)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +81,7 @@ func (e *EventsService) listUserEvents(ctx context.Context, request mcp.CallTool
 	var events []*gitlab.ContributionEvent
 
 	for {
-		eventPage, response, err := e.client.Users.ListUserContributionEvents(args.Username, reqParams, gitlab.WithContext(ctx))
+		eventPage, response, err := e.client.Users.ListUserContributionEvents(args.Username, opts, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("ListUserContributionEvents: %w", err)
 		}
@@ -94,15 +98,15 @@ func (e *EventsService) listUserEvents(ctx context.Context, request mcp.CallTool
 			break
 		}
 
-		reqParams.Page = response.NextPage
-		reqParams.PerPage = maxPerPage
+		opts.Page = response.NextPage
+		opts.PerPage = maxPerPage
 	}
 
 	return newToolResultJSON(events)
 }
 
-func buildRequestParams(args listEventArgs) (*gitlab.ListContributionEventsOptions, error) {
-	var reqParams = &gitlab.ListContributionEventsOptions{
+func listContributionEventsOptions(args listEventArgs) (*gitlab.ListContributionEventsOptions, error) {
+	opts := gitlab.ListContributionEventsOptions{
 		Sort: gitlab.Ptr(sortOrderDescending),
 		ListOptions: gitlab.ListOptions{
 			PerPage: maxPerPage,
@@ -110,13 +114,11 @@ func buildRequestParams(args listEventArgs) (*gitlab.ListContributionEventsOptio
 	}
 
 	if args.TargetType != "" {
-		targetType := gitlab.EventTargetTypeValue(args.TargetType)
-		reqParams.TargetType = &targetType
+		opts.TargetType = gitlab.Ptr(gitlab.EventTargetTypeValue(args.TargetType))
 	}
 
 	if args.ActionType != "" {
-		eventType := gitlab.EventTypeValue(args.TargetType)
-		reqParams.Action = &eventType
+		opts.Action = gitlab.Ptr(gitlab.EventTypeValue(args.ActionType))
 	}
 
 	if args.Before != "" {
@@ -125,7 +127,7 @@ func buildRequestParams(args listEventArgs) (*gitlab.ListContributionEventsOptio
 			return nil, fmt.Errorf("gitlab.ParseISOTime: %w", err)
 		}
 
-		reqParams.Before = &parsedDate
+		opts.Before = &parsedDate
 	}
 
 	if args.After != "" {
@@ -134,8 +136,8 @@ func buildRequestParams(args listEventArgs) (*gitlab.ListContributionEventsOptio
 			return nil, fmt.Errorf("gitlab.ParseISOTime: %w", err)
 		}
 
-		reqParams.After = &parsedDate
+		opts.After = &parsedDate
 	}
 
-	return reqParams, nil
+	return &opts, nil
 }
