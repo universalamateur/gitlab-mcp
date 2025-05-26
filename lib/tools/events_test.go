@@ -78,7 +78,7 @@ func TestListUserEvents(t *testing.T) {
 					DoAndReturn(func(uid any, opts *gitlab.ListContributionEventsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.ContributionEvent, *gitlab.Response, error) {
 						// Verify username is passed correctly
 						if uid != testUser {
-							return nil, nil, fmt.Errorf("expected username 'testuser', got %v", uid)
+							return nil, nil, fmt.Errorf("expected username %q, got %v", testUser, uid)
 						}
 
 						// Verify expected options
@@ -148,7 +148,7 @@ func TestListUserEvents(t *testing.T) {
 					ListUserContributionEvents(gomock.Any(), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(uid any, opts *gitlab.ListContributionEventsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.ContributionEvent, *gitlab.Response, error) {
 						if uid != testUser {
-							return nil, nil, fmt.Errorf("expected username 'testuser', got %v", uid)
+							return nil, nil, fmt.Errorf("expected username %q, got %v", testUser, uid)
 						}
 
 						targetType := gitlab.EventTargetTypeValue("issue")
@@ -185,7 +185,7 @@ func TestListUserEvents(t *testing.T) {
 					ListUserContributionEvents(gomock.Any(), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(uid any, opts *gitlab.ListContributionEventsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.ContributionEvent, *gitlab.Response, error) {
 						if uid != testUser {
-							return nil, nil, fmt.Errorf("expected username 'testuser', got %v", uid)
+							return nil, nil, fmt.Errorf("expected username %q, got %v", testUser, uid)
 						}
 
 						eventType := gitlab.EventTypeValue("created")
@@ -222,7 +222,7 @@ func TestListUserEvents(t *testing.T) {
 					ListUserContributionEvents(gomock.Any(), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(uid any, opts *gitlab.ListContributionEventsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.ContributionEvent, *gitlab.Response, error) {
 						if uid != testUser {
-							return nil, nil, fmt.Errorf("expected username 'testuser', got %v", uid)
+							return nil, nil, fmt.Errorf("expected username %q, got %v", testUser, uid)
 						}
 
 						beforeDate, _ := gitlab.ParseISOTime("2024-01-20")
@@ -264,7 +264,7 @@ func TestListUserEvents(t *testing.T) {
 					ListUserContributionEvents(gomock.Any(), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(uid any, opts *gitlab.ListContributionEventsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.ContributionEvent, *gitlab.Response, error) {
 						if uid != testUser {
-							return nil, nil, fmt.Errorf("expected username 'testuser', got %v", uid)
+							return nil, nil, fmt.Errorf("expected username %q, got %v", testUser, uid)
 						}
 
 						beforeDate, _ := gitlab.ParseISOTime("2024-01-20")
@@ -307,7 +307,7 @@ func TestListUserEvents(t *testing.T) {
 					ListUserContributionEvents(gomock.Any(), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(uid any, opts *gitlab.ListContributionEventsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.ContributionEvent, *gitlab.Response, error) {
 						if uid != testUser {
-							return nil, nil, fmt.Errorf("expected username 'testuser', got %v", uid)
+							return nil, nil, fmt.Errorf("expected username %q, got %v", testUser, uid)
 						}
 
 						if opts.Page == 0 {
@@ -396,7 +396,7 @@ func TestListUserEvents(t *testing.T) {
 					ListUserContributionEvents(gomock.Any(), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(uid any, opts *gitlab.ListContributionEventsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.ContributionEvent, *gitlab.Response, error) {
 						if uid != testUser {
-							return nil, nil, fmt.Errorf("expected username 'testuser', got %v", uid)
+							return nil, nil, fmt.Errorf("expected username %q, got %v", testUser, uid)
 						}
 
 						return nil, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusInternalServerError}}, fmt.Errorf("server error")
