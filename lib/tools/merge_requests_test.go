@@ -422,6 +422,39 @@ func TestListUserMergeRequests(t *testing.T) {
 			want: []*gitlab.BasicMergeRequest{{ID: 1}, {ID: 2}},
 		},
 		{
+			name: "fetch with limit flag",
+			args: map[string]any{
+				"project_id": "test-project",
+				// 349 is prime, so it is not a multiple of maxPerPage.
+				"limit": 349,
+			},
+			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface) {
+				mockMR.EXPECT().
+					ListMergeRequests(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(opts *gitlab.ListMergeRequestsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
+						page := opts.ListOptions.Page
+						if page == 0 {
+							page = 1
+						}
+
+						if opts.ListOptions.PerPage <= 0 {
+							return nil, nil, fmt.Errorf("per_page must be greater than 0")
+						}
+
+						index := (page - 1) * opts.ListOptions.PerPage
+						if index >= 349 {
+							return nil, nil, fmt.Errorf("page index %d exceeds limit %d (page = %d, per_page = %d)", index, 349, page, opts.ListOptions.PerPage)
+						}
+
+						return makeMergeRequests(index, index+opts.ListOptions.PerPage), &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: page + 1,
+						}, nil
+					}).AnyTimes()
+			},
+			want: makeMergeRequests(0, 349),
+		},
+		{
 			name: "API error",
 			args: map[string]any{},
 			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface) {
@@ -545,6 +578,39 @@ func TestListProjectMergeRequests(t *testing.T) {
 			want: []*gitlab.BasicMergeRequest{{ID: 1}, {ID: 2}},
 		},
 		{
+			name: "fetch with limit flag",
+			args: map[string]any{
+				"project_id": "test/project",
+				// 349 is prime, so it is not a multiple of maxPerPage.
+				"limit": 349,
+			},
+			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface) {
+				mockMR.EXPECT().
+					ListProjectMergeRequests(gomock.Eq("test/project"), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, opts *gitlab.ListProjectMergeRequestsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
+						page := opts.ListOptions.Page
+						if page == 0 {
+							page = 1
+						}
+
+						if opts.ListOptions.PerPage <= 0 {
+							return nil, nil, fmt.Errorf("per_page must be greater than 0")
+						}
+
+						index := (page - 1) * opts.ListOptions.PerPage
+						if index >= 349 {
+							return nil, nil, fmt.Errorf("page index %d exceeds limit %d (page = %d, per_page = %d)", index, 349, page, opts.ListOptions.PerPage)
+						}
+
+						return makeMergeRequests(index, index+opts.ListOptions.PerPage), &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: page + 1,
+						}, nil
+					}).AnyTimes()
+			},
+			want: makeMergeRequests(0, 349),
+		},
+		{
 			name: "API error",
 			args: map[string]any{"project_id": "test/project"},
 			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface) {
@@ -663,6 +729,39 @@ func TestListGroupMergeRequests(t *testing.T) {
 					After(first.Call)
 			},
 			want: []*gitlab.BasicMergeRequest{{ID: 1}, {ID: 2}},
+		},
+		{
+			name: "fetch with limit flag",
+			args: map[string]any{
+				"group_id": "test-group",
+				// 349 is prime, so it is not a multiple of maxPerPage.
+				"limit": 349,
+			},
+			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface) {
+				mockMR.EXPECT().
+					ListGroupMergeRequests(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, opts *gitlab.ListGroupMergeRequestsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
+						page := opts.ListOptions.Page
+						if page == 0 {
+							page = 1
+						}
+
+						if opts.ListOptions.PerPage <= 0 {
+							return nil, nil, fmt.Errorf("per_page must be greater than 0")
+						}
+
+						index := (page - 1) * opts.ListOptions.PerPage
+						if index >= 349 {
+							return nil, nil, fmt.Errorf("page index %d exceeds limit %d (page = %d, per_page = %d)", index, 349, page, opts.ListOptions.PerPage)
+						}
+
+						return makeMergeRequests(index, index+opts.ListOptions.PerPage), &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: page + 1,
+						}, nil
+					}).AnyTimes()
+			},
+			want: makeMergeRequests(0, 349),
 		},
 		{
 			name: "API error",
@@ -952,4 +1051,19 @@ func TestListDraftNotes(t *testing.T) {
 			}
 		})
 	}
+}
+
+func makeMergeRequests(from, to int) []*gitlab.BasicMergeRequest {
+	mrs := make([]*gitlab.BasicMergeRequest, 0, to-from)
+
+	for i := from; i < to; i++ {
+		mrs = append(mrs, &gitlab.BasicMergeRequest{
+			ID:    1000000 + i,
+			IID:   i,
+			Title: fmt.Sprintf("Merge request %d", i),
+			State: "opened",
+		})
+	}
+
+	return mrs
 }

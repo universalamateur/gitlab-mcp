@@ -45,3 +45,27 @@ func AllWithID[T any, O any](ctx context.Context, id any, getter func(id any, op
 
 	return All(ctx, wrappedGetter, opts, nextPage)
 }
+
+// Limited is a utility function that limits the number of items yielded by a sequence.
+// It stops yielding items after the specified max number of items has been reached.
+func Limited[T any](seq iter.Seq2[T, error], max int) iter.Seq2[T, error] {
+	return func(yield func(T, error) bool) {
+		var count int
+
+		for item, err := range seq {
+			if err != nil {
+				yield(item, err)
+				return
+			}
+
+			if !yield(item, nil) {
+				return
+			}
+
+			count++
+			if count >= max {
+				return
+			}
+		}
+	}
+}
