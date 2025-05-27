@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/go-cmp/cmp"
@@ -13,6 +14,11 @@ import (
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	glabtest "gitlab.com/gitlab-org/api/client-go/testing"
 )
+
+// timeComparer is a global comparer for time.Time fields to avoid cmp panics on private fields
+var timeComparer = cmp.Comparer(func(a, b time.Time) bool {
+	return a.Equal(b)
+})
 
 func TestGetIssue(t *testing.T) {
 	tests := []struct {
@@ -275,6 +281,19 @@ func TestGetIssue(t *testing.T) {
 }
 
 func TestListUserIssues(t *testing.T) {
+	// Default options template
+	defaultOpts := gitlab.ListIssuesOptions{
+		AssigneeUsername: gitlab.Ptr("test_user"),
+		State:            gitlab.Ptr(defaultIssueState),
+		Confidential:     gitlab.Ptr(false),
+		Scope:            gitlab.Ptr("all"),
+		ListOptions: gitlab.ListOptions{
+			PerPage: maxPerPage,
+		},
+	}
+
+	cmpOpts := []cmp.Option{timeComparer}
+
 	tests := []struct {
 		name      string
 		args      map[string]any
@@ -290,17 +309,10 @@ func TestListUserIssues(t *testing.T) {
 				mockIssues.EXPECT().
 					ListIssues(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
-						if opts.AssigneeUsername == nil || *opts.AssigneeUsername != "test_user" {
-							return nil, nil, fmt.Errorf("opts.AssigneeUsername = %v, want 'test_user'", opts.AssigneeUsername)
-						}
-						if opts.State == nil || *opts.State != defaultIssueState {
-							return nil, nil, fmt.Errorf("opts.State = %v, want %q", opts.State, defaultIssueState)
-						}
-						if opts.Confidential == nil || *opts.Confidential {
-							return nil, nil, fmt.Errorf("opts.Confidential = %v, want false", opts.Confidential)
-						}
-						if want := "all"; opts.Scope == nil || *opts.Scope != want {
-							return nil, nil, fmt.Errorf("opts.Scope = %v, want %q", opts.Scope, want)
+						wantOpts := defaultOpts
+
+						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
 						}
 
 						return []*gitlab.Issue{
@@ -338,8 +350,11 @@ func TestListUserIssues(t *testing.T) {
 				mockIssues.EXPECT().
 					ListIssues(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
-						if opts.AssigneeUsername == nil || *opts.AssigneeUsername != "other_user" {
-							return nil, nil, fmt.Errorf("opts.AssigneeUsername = %v, want 'other_user'", opts.AssigneeUsername)
+						wantOpts := defaultOpts
+						wantOpts.AssigneeUsername = gitlab.Ptr("other_user")
+
+						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
 						}
 
 						return []*gitlab.Issue{
@@ -429,8 +444,11 @@ func TestListUserIssues(t *testing.T) {
 				mockIssues.EXPECT().
 					ListIssues(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
-						if opts.Confidential != nil {
-							return nil, nil, fmt.Errorf("opts.Confidential = %v, want nil", opts.Confidential)
+						wantOpts := defaultOpts
+						wantOpts.Confidential = nil // Confidential should be nil when true is passed (not filtered)
+
+						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
 						}
 
 						return []*gitlab.Issue{
@@ -464,8 +482,11 @@ func TestListUserIssues(t *testing.T) {
 				mockIssues.EXPECT().
 					ListIssues(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
-						if opts.State == nil || *opts.State != "closed" {
-							return nil, nil, fmt.Errorf("opts.State = %v, want 'closed'", opts.State)
+						wantOpts := defaultOpts
+						wantOpts.State = gitlab.Ptr("closed")
+
+						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
 						}
 
 						return []*gitlab.Issue{
@@ -532,6 +553,17 @@ func TestListUserIssues(t *testing.T) {
 }
 
 func TestListGroupIssues(t *testing.T) {
+	// Default options template
+	defaultOpts := gitlab.ListGroupIssuesOptions{
+		State:        gitlab.Ptr(defaultIssueState),
+		Confidential: gitlab.Ptr(false),
+		ListOptions: gitlab.ListOptions{
+			PerPage: maxPerPage,
+		},
+	}
+
+	cmpOpts := []cmp.Option{timeComparer}
+
 	tests := []struct {
 		name      string
 		args      map[string]any
@@ -549,11 +581,10 @@ func TestListGroupIssues(t *testing.T) {
 				mockIssues.EXPECT().
 					ListGroupIssues(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.ListGroupIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
-						if opts.State == nil || *opts.State != defaultIssueState {
-							return nil, nil, fmt.Errorf("opts.State = %v, want %q", opts.State, defaultIssueState)
-						}
-						if opts.Confidential == nil || *opts.Confidential {
-							return nil, nil, fmt.Errorf("opts.Confidential = %v, want false", opts.Confidential)
+						wantOpts := defaultOpts
+
+						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
 						}
 
 						return []*gitlab.Issue{
@@ -654,8 +685,11 @@ func TestListGroupIssues(t *testing.T) {
 				mockIssues.EXPECT().
 					ListGroupIssues(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.ListGroupIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
-						if opts.Confidential != nil {
-							return nil, nil, fmt.Errorf("opts.Confidential = %v, want nil", opts.Confidential)
+						wantOpts := defaultOpts
+						wantOpts.Confidential = nil // Confidential should be nil when true is passed (not filtered)
+
+						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
 						}
 
 						return []*gitlab.Issue{
@@ -690,8 +724,11 @@ func TestListGroupIssues(t *testing.T) {
 				mockIssues.EXPECT().
 					ListGroupIssues(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.ListGroupIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
-						if want := "all"; opts.State == nil || *opts.State != want {
-							return nil, nil, fmt.Errorf("opts.State = %v, want %q", opts.State, want)
+						wantOpts := defaultOpts
+						wantOpts.State = gitlab.Ptr("all")
+
+						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
 						}
 
 						return []*gitlab.Issue{
@@ -758,6 +795,16 @@ func TestListGroupIssues(t *testing.T) {
 }
 
 func TestListProjectIssues(t *testing.T) {
+	defaultOpts := gitlab.ListProjectIssuesOptions{
+		State:        gitlab.Ptr(defaultIssueState),
+		Confidential: gitlab.Ptr(false),
+		ListOptions: gitlab.ListOptions{
+			PerPage: maxPerPage,
+		},
+	}
+
+	cmpOpts := []cmp.Option{timeComparer}
+
 	tests := []struct {
 		name      string
 		args      map[string]any
@@ -775,11 +822,10 @@ func TestListProjectIssues(t *testing.T) {
 				mockIssues.EXPECT().
 					ListProjectIssues(gomock.Eq("test-project"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.ListProjectIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
-						if opts.State == nil || *opts.State != defaultIssueState {
-							return nil, nil, fmt.Errorf("opts.State = %v, want %q", opts.State, defaultIssueState)
-						}
-						if opts.Confidential == nil || *opts.Confidential {
-							return nil, nil, fmt.Errorf("opts.Confidential = %v, want false", opts.Confidential)
+						wantOpts := defaultOpts
+
+						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
 						}
 
 						return []*gitlab.Issue{
@@ -880,8 +926,11 @@ func TestListProjectIssues(t *testing.T) {
 				mockIssues.EXPECT().
 					ListProjectIssues(gomock.Eq("test-project"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.ListProjectIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
-						if opts.Confidential != nil {
-							return nil, nil, fmt.Errorf("opts.Confidential = %v, want nil", opts.Confidential)
+						wantOpts := defaultOpts
+						wantOpts.Confidential = nil // Confidential should be nil when true is passed (not filtered)
+
+						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
 						}
 
 						return []*gitlab.Issue{
@@ -916,8 +965,11 @@ func TestListProjectIssues(t *testing.T) {
 				mockIssues.EXPECT().
 					ListProjectIssues(gomock.Eq("test-project"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.ListProjectIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
-						if opts.State == nil || *opts.State != "all" {
-							return nil, nil, fmt.Errorf("opts.State = %v, want 'all'", opts.State)
+						wantOpts := defaultOpts
+						wantOpts.State = gitlab.Ptr("all")
+
+						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
 						}
 
 						return []*gitlab.Issue{
