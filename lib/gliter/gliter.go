@@ -17,7 +17,9 @@ func All[T any, O any](ctx context.Context, getter func(opts *O, options ...gitl
 			items, resp, err := getter(&opts, gitlab.WithContext(ctx))
 			if err != nil {
 				var zero T
+
 				yield(zero, err)
+
 				return
 			}
 
@@ -47,8 +49,8 @@ func AllWithID[T any, O any](ctx context.Context, id any, getter func(id any, op
 }
 
 // Limited is a utility function that limits the number of items yielded by a sequence.
-// It stops yielding items after the specified max number of items has been reached.
-func Limited[T any](seq iter.Seq2[T, error], max int) iter.Seq2[T, error] {
+// It stops yielding items after the specified number of items has been reached.
+func Limited[T any](seq iter.Seq2[T, error], n int) iter.Seq2[T, error] {
 	return func(yield func(T, error) bool) {
 		var count int
 
@@ -63,7 +65,7 @@ func Limited[T any](seq iter.Seq2[T, error], max int) iter.Seq2[T, error] {
 			}
 
 			count++
-			if count >= max {
+			if count >= n {
 				return
 			}
 		}
