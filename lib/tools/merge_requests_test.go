@@ -7,7 +7,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/mcptest"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
@@ -1041,12 +1040,7 @@ func TestListDraftNotes(t *testing.T) {
 				t.Fatalf("decode error: %v", err)
 			}
 
-			opts := []cmp.Option{
-				// Ignore empty slices vs. nil values.
-				cmpopts.EquateEmpty(),
-			}
-
-			if diff := cmp.Diff(tt.want, got, opts...); diff != "" {
+			if diff := cmp.Diff(tt.want, got); diff != "" {
 				t.Errorf("listDraftNotes() mismatch (-want/+got):\n%s", diff)
 			}
 		})
