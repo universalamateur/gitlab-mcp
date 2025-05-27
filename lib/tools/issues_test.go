@@ -562,7 +562,22 @@ func TestListGroupIssues(t *testing.T) {
 		},
 	}
 
-	cmpOpts := []cmp.Option{timeComparer}
+	cmpOpts := []cmp.Option{
+		timeComparer,
+		cmp.Comparer(func(id0, id1 gitlab.AssigneeIDValue) bool {
+			json0, err := id0.MarshalJSON()
+			if err != nil {
+				panic(err)
+			}
+
+			json1, err := id1.MarshalJSON()
+			if err != nil {
+				panic(err)
+			}
+
+			return string(json0) == string(json1)
+		}),
+	}
 
 	tests := []struct {
 		name      string
@@ -751,6 +766,47 @@ func TestListGroupIssues(t *testing.T) {
 					Title: "Closed issue",
 					State: "closed",
 				},
+			},
+		},
+		{
+			name: "fetch with various filters",
+			args: map[string]any{
+				"group_id":      "test-group",
+				"labels":        "bug,feature",
+				"milestone":     "v1.0",
+				"author":        "test_author",
+				"assignee":      "123",
+				"search":        "critical issue",
+				"created_after": "2023-01-01T00:00:00Z",
+				"due_date":      "none",
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
+				mockIssues.EXPECT().
+					ListGroupIssues(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, opts *gitlab.ListGroupIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+						wantOpts := defaultOpts
+						wantOpts.Labels = &gitlab.LabelOptions{"bug", "feature"}
+						wantOpts.Milestone = gitlab.Ptr("v1.0")
+						wantOpts.AuthorUsername = gitlab.Ptr("test_author")
+						wantOpts.AssigneeID = gitlab.AssigneeID(123)
+						wantOpts.Search = gitlab.Ptr("critical issue")
+						createdAfter, _ := time.Parse(time.RFC3339, "2023-01-01T00:00:00Z")
+						wantOpts.CreatedAfter = &createdAfter
+						wantOpts.DueDate = gitlab.Ptr("0")
+
+						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
+						}
+
+						return []*gitlab.Issue{
+								{ID: 4001, Title: "Filtered group issue"},
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+							}, nil
+					})
+			},
+			want: []*gitlab.Issue{
+				{ID: 4001, Title: "Filtered group issue"},
 			},
 		},
 	}
@@ -1004,6 +1060,56 @@ func TestListProjectIssues(t *testing.T) {
 					Title: "Open issue",
 					State: "opened",
 				},
+			},
+		},
+		{
+			name: "fetch with various filters",
+			args: map[string]any{
+				"project_id":     "test-project",
+				"labels":         "enhancement",
+				"milestone":      "v2.0",
+				"iteration_id":   456,
+				"author":         "789",
+				"assignee":       "test_assignee",
+				"search":         "urgent fix",
+				"updated_before": "2024-12-31T23:59:59Z",
+				"due_date":       "week",
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
+				mockIssues.EXPECT().
+					ListProjectIssues(gomock.Eq("test-project"), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, opts *gitlab.ListProjectIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+						updatedBefore, _ := time.Parse(time.RFC3339, "2024-12-31T23:59:59Z")
+
+						wantOpts := gitlab.ListProjectIssuesOptions{
+							State:            gitlab.Ptr(defaultIssueState),
+							Confidential:     gitlab.Ptr(false),
+							Labels:           &gitlab.LabelOptions{"enhancement"},
+							Milestone:        gitlab.Ptr("v2.0"),
+							IterationID:      gitlab.Ptr(456),
+							AuthorID:         gitlab.Ptr(789),
+							AssigneeUsername: gitlab.Ptr("test_assignee"),
+							Search:           gitlab.Ptr("urgent fix"),
+							UpdatedBefore:    &updatedBefore,
+							DueDate:          gitlab.Ptr("week"),
+							ListOptions: gitlab.ListOptions{
+								PerPage: maxPerPage,
+							},
+						}
+
+						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
+						}
+
+						return []*gitlab.Issue{
+								{ID: 5001, Title: "Filtered project issue"},
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+							}, nil
+					})
+			},
+			want: []*gitlab.Issue{
+				{ID: 5001, Title: "Filtered project issue"},
 			},
 		},
 	}
