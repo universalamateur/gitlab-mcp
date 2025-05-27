@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -149,13 +150,23 @@ func (i *IssuesService) listUserIssues(ctx context.Context, request mcp.CallTool
 }
 
 type listGroupIssuesArgs struct {
-	GroupID      mcpargs.ID `mcp_desc:"ID of the group either in owner/namespace format or the numeric group ID" mcp_required:"true"`
-	State        string     `mcp_desc:"Filter issues by state, with 'all' returning closed and opened issues. Defaults to 'opened'." mcp_enum:"all,opened,closed"`
-	Confidential bool       `mcp_desc:"If true, includes confidential issues. Default is false, which excludes confidential issues"`
+	GroupID       mcpargs.ID `mcp_desc:"ID of the group either in owner/namespace format or the numeric group ID" mcp_required:"true"`
+	State         string     `mcp_desc:"Filter issues by state, with 'all' returning closed and opened issues. Defaults to 'opened'." mcp_enum:"all,opened,closed"`
+	Confidential  bool       `mcp_desc:"If true, includes confidential issues. Default is false, which excludes confidential issues"`
+	Labels        string     `mcp_desc:"Comma-separated list of label names to filter by"`
+	Milestone     string     `mcp_desc:"The milestone title to filter by"`
+	Author        mcpargs.ID `mcp_desc:"Filter by author ID or username"`
+	Assignee      mcpargs.ID `mcp_desc:"Filter by assignee ID or username"`
+	Search        string     `mcp_desc:"Search issues against their title and description"`
+	CreatedAfter  string     `mcp_desc:"Return issues created on or after the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
+	CreatedBefore string     `mcp_desc:"Return issues created on or before the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
+	UpdatedAfter  string     `mcp_desc:"Return issues updated on or after the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
+	UpdatedBefore string     `mcp_desc:"Return issues updated on or before the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
+	DueDate       string     `mcp_desc:"Return issues that have no due date, are overdue, or whose due date is this week, this month, or between two weeks ago and next month" mcp_enum:"0,any,today,tomorrow,overdue,week,month,next_month_and_previous_two_weeks"`
 }
 
 // ListGroupIssues returns a ServerTool for listing all issues within a specific group.
-// The tool accepts a group ID and optional state filter parameters.
+// The tool accepts a group ID and optional filter parameters.
 func (i *IssuesService) ListGroupIssues() server.ServerTool {
 	return server.ServerTool{
 		Handler: i.listGroupIssues,
@@ -172,30 +183,15 @@ func (i *IssuesService) listGroupIssues(ctx context.Context, request mcp.CallToo
 		return nil, err //nolint:wrapcheck
 	}
 
-	var (
-		opt = gitlab.ListGroupIssuesOptions{
-			ListOptions: gitlab.ListOptions{
-				PerPage: maxPerPage,
-			},
-		}
-		issues []*gitlab.Issue
-	)
-
-	if args.State == "" {
-		args.State = defaultIssueState
+	opt, err := listGroupIssuesOptions(args)
+	if err != nil {
+		return nil, fmt.Errorf("invalid filter options: %w", err)
 	}
 
-	opt.State = gitlab.Ptr(args.State)
-
-	// If confidential issues are disabled, explicitly set "Confidential" to false.
-	// Otherwise, the default behaviour is to include public and confidential
-	// issues (since it is just not filtering on this property).
-	if !args.Confidential {
-		opt.Confidential = gitlab.Ptr(args.Confidential)
-	}
+	var issues []*gitlab.Issue
 
 	for {
-		is, resp, err := i.client.Issues.ListGroupIssues(args.GroupID.Value(), &opt, gitlab.WithContext(ctx))
+		is, resp, err := i.client.Issues.ListGroupIssues(args.GroupID.Value(), opt, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("ListGroupIssues(%q): %w", args.GroupID.Value(), err)
 		}
@@ -213,13 +209,24 @@ func (i *IssuesService) listGroupIssues(ctx context.Context, request mcp.CallToo
 }
 
 type listProjectIssuesArgs struct {
-	ProjectID    mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	State        string     `mcp_desc:"Filter issues by state, with 'all' returning closed and opened issues. Defaults to 'opened'." mcp_enum:"all,opened,closed"`
-	Confidential bool       `mcp_desc:"If true, includes confidential issues. Default is false, which excludes confidential issues"`
+	ProjectID     mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
+	State         string     `mcp_desc:"Filter issues by state, with 'all' returning closed and opened issues. Defaults to 'opened'." mcp_enum:"all,opened,closed"`
+	Confidential  bool       `mcp_desc:"If true, includes confidential issues. Default is false, which excludes confidential issues"`
+	Labels        string     `mcp_desc:"Comma-separated list of label names to filter by"`
+	Milestone     string     `mcp_desc:"The milestone title to filter by"`
+	IterationID   int        `mcp_desc:"The iteration ID to filter by"`
+	Author        mcpargs.ID `mcp_desc:"Filter by author ID or username"`
+	Assignee      mcpargs.ID `mcp_desc:"Filter by assignee ID or username"`
+	Search        string     `mcp_desc:"Search issues against their title and description"`
+	CreatedAfter  string     `mcp_desc:"Return issues created on or after the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
+	CreatedBefore string     `mcp_desc:"Return issues created on or before the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
+	UpdatedAfter  string     `mcp_desc:"Return issues updated on or after the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
+	UpdatedBefore string     `mcp_desc:"Return issues updated on or before the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
+	DueDate       string     `mcp_desc:"Return issues that have no due date, are overdue, or whose due date is this week, this month, or between two weeks ago and next month" mcp_enum:"0,any,today,tomorrow,overdue,week,month,next_month_and_previous_two_weeks"`
 }
 
 // ListProjectIssues returns a ServerTool for listing all issues within a specific project.
-// The tool accepts a project ID and optional state filter parameters.
+// The tool accepts a project ID and optional filter parameters.
 func (i *IssuesService) ListProjectIssues() server.ServerTool {
 	return server.ServerTool{
 		Handler: i.listProjectIssues,
@@ -236,27 +243,12 @@ func (i *IssuesService) listProjectIssues(ctx context.Context, request mcp.CallT
 		return nil, err //nolint:wrapcheck
 	}
 
-	var (
-		opt = &gitlab.ListProjectIssuesOptions{
-			ListOptions: gitlab.ListOptions{
-				PerPage: maxPerPage,
-			},
-		}
-		issues []*gitlab.Issue
-	)
-
-	if args.State == "" {
-		args.State = defaultIssueState
+	opt, err := listProjectIssuesOptions(args)
+	if err != nil {
+		return nil, fmt.Errorf("invalid filter options: %w", err)
 	}
 
-	opt.State = gitlab.Ptr(args.State)
-
-	// If confidential issues are disabled, explicitly set "Confidential" to false.
-	// Otherwise, the default behaviour is to include public and confidential
-	// issues (since it is just not filtering on this property).
-	if !args.Confidential {
-		opt.Confidential = gitlab.Ptr(false)
-	}
+	var issues []*gitlab.Issue
 
 	for {
 		is, resp, err := i.client.Issues.ListProjectIssues(args.ProjectID.Value(), opt, gitlab.WithContext(ctx))
@@ -274,6 +266,170 @@ func (i *IssuesService) listProjectIssues(ctx context.Context, request mcp.CallT
 	}
 
 	return newToolResultJSON(issues)
+}
+
+// listProjectIssuesOptions builds GitLab API options from the project issues arguments.
+func listProjectIssuesOptions(args listProjectIssuesArgs) (*gitlab.ListProjectIssuesOptions, error) {
+	opt := &gitlab.ListProjectIssuesOptions{
+		ListOptions: gitlab.ListOptions{
+			PerPage: maxPerPage,
+		},
+	}
+
+	state := args.State
+	if state == "" {
+		state = defaultIssueState
+	}
+	opt.State = gitlab.Ptr(state)
+
+	// The handling of confidential issues is a bit unintuitive: if
+	// args.Confidential is set to true, we DO NOT set opt.Confidential at all,
+	// so the response includes both, confidential and public issues. Otherwise we
+	// set the filter to false to only return public issues.
+	if !args.Confidential {
+		opt.Confidential = gitlab.Ptr(false)
+	}
+
+	opt.Labels = newLabelOptions(args.Labels)
+
+	if args.Milestone != "" {
+		opt.Milestone = gitlab.Ptr(args.Milestone)
+	}
+
+	if args.IterationID != 0 {
+		opt.IterationID = gitlab.Ptr(args.IterationID)
+	}
+
+	switch {
+	case args.Author.Integer != 0:
+		opt.AuthorID = gitlab.Ptr(args.Author.Integer)
+	case args.Author.String != "":
+		opt.AuthorUsername = gitlab.Ptr(args.Author.String)
+	}
+
+	switch {
+	case args.Assignee.Integer != 0:
+		opt.AssigneeID = gitlab.Ptr(args.Assignee.Integer)
+	case args.Assignee.String != "":
+		opt.AssigneeUsername = gitlab.Ptr(args.Assignee.String)
+	}
+
+	if args.Search != "" {
+		opt.Search = gitlab.Ptr(args.Search)
+	}
+
+	// Date filters
+	var err error
+	if opt.CreatedAfter, err = parseTime(args.CreatedAfter); err != nil {
+		return nil, fmt.Errorf("invalid created_after date: %w", err)
+	}
+
+	if opt.CreatedBefore, err = parseTime(args.CreatedBefore); err != nil {
+		return nil, fmt.Errorf("invalid created_before date: %w", err)
+	}
+
+	if opt.UpdatedAfter, err = parseTime(args.UpdatedAfter); err != nil {
+		return nil, fmt.Errorf("invalid updated_after date: %w", err)
+	}
+
+	if opt.UpdatedBefore, err = parseTime(args.UpdatedBefore); err != nil {
+		return nil, fmt.Errorf("invalid updated_before date: %w", err)
+	}
+
+	if args.DueDate != "" {
+		opt.DueDate = gitlab.Ptr(args.DueDate)
+	}
+
+	return opt, nil
+}
+
+// listGroupIssuesOptions builds GitLab API options from the group issues arguments.
+func listGroupIssuesOptions(args listGroupIssuesArgs) (*gitlab.ListGroupIssuesOptions, error) {
+	opt := &gitlab.ListGroupIssuesOptions{
+		ListOptions: gitlab.ListOptions{
+			PerPage: maxPerPage,
+		},
+	}
+
+	state := args.State
+	if state == "" {
+		state = defaultIssueState
+	}
+	opt.State = gitlab.Ptr(state)
+
+	// The handling of confidential issues is a bit unintuitive: if
+	// args.Confidential is set to true, we DO NOT set opt.Confidential at all,
+	// so the response includes both, confidential and public issues. Otherwise we
+	// set the filter to false to only return public issues.
+	if !args.Confidential {
+		opt.Confidential = gitlab.Ptr(args.Confidential)
+	}
+
+	opt.Labels = newLabelOptions(args.Labels)
+
+	if args.Milestone != "" {
+		opt.Milestone = gitlab.Ptr(args.Milestone)
+	}
+
+	switch {
+	case args.Author.Integer != 0:
+		opt.AuthorID = gitlab.Ptr(args.Author.Integer)
+	case args.Author.String != "":
+		opt.AuthorUsername = gitlab.Ptr(args.Author.String)
+	}
+
+	switch {
+	case args.Assignee.Integer != 0:
+		opt.AssigneeID = gitlab.AssigneeID(args.Assignee.Integer)
+	case args.Assignee.String != "":
+		opt.AssigneeUsername = gitlab.Ptr(args.Assignee.String)
+	}
+
+	if args.Search != "" {
+		opt.Search = gitlab.Ptr(args.Search)
+	}
+
+	// Date filters
+	var err error
+	if opt.CreatedAfter, err = parseTime(args.CreatedAfter); err != nil {
+		return nil, fmt.Errorf("invalid created_after date: %w", err)
+	}
+
+	if opt.CreatedBefore, err = parseTime(args.CreatedBefore); err != nil {
+		return nil, fmt.Errorf("invalid created_before date: %w", err)
+	}
+
+	if opt.UpdatedAfter, err = parseTime(args.UpdatedAfter); err != nil {
+		return nil, fmt.Errorf("invalid updated_after date: %w", err)
+	}
+
+	if opt.UpdatedBefore, err = parseTime(args.UpdatedBefore); err != nil {
+		return nil, fmt.Errorf("invalid updated_before date: %w", err)
+	}
+
+	if args.DueDate != "" {
+		opt.DueDate = gitlab.Ptr(args.DueDate)
+	}
+
+	return opt, nil
+}
+
+// parseTime parses a time string and returns a time.Time pointer.
+// The string can have one out of three time formats: RFC3339, DateTime, or DateOnly.
+// If the time string is empty, it returns a nil pointer.
+func parseTime(timeStr string) (*time.Time, error) {
+	if timeStr == "" {
+		return nil, nil
+	}
+
+	for _, format := range []string{time.RFC3339, time.DateTime, time.DateOnly} {
+		t, err := time.ParseInLocation(format, timeStr, time.Local)
+		if err == nil {
+			return &t, nil
+		}
+	}
+
+	return nil, fmt.Errorf("parsing time %q failed", timeStr)
 }
 
 type getIssueArgs struct {
