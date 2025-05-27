@@ -11,8 +11,11 @@ import (
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/fforster/gitlab-mcp/lib/discussions"
+	"gitlab.com/fforster/gitlab-mcp/lib/gliter"
 	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
+
+const defaultMergeRequestsLimit = 1000
 
 // MergeRequestsServiceInterface defines the interface for merge request-related GitLab operations.
 // It provides methods for retrieving and listing merge requests and their associated data such as
@@ -106,6 +109,7 @@ type listUserMergeRequestsArgs struct {
 	Username string `mcp_desc:"Filter merge requests by username. If left blank, returns merge requests for the authenticated user"`
 	State    string `mcp_desc:"Return all merge requests or just those that are opened, closed, or merged" mcp_enum:"all,opened,closed,merged"`
 	Role     string `mcp_desc:"Specify whether to list merge requests where the user is the author or reviewer" mcp_enum:"author,reviewer"`
+	Limit    int    `mcp_desc:"The maximum number of merge requests to return. Defaults to 1000."`
 }
 
 // ListUserMergeRequests returns a ServerTool for listing all merge requests authored by or assigned to a specific user for review.
@@ -128,7 +132,7 @@ func (m *MergeRequestsService) listUserMergeRequests(ctx context.Context, reques
 	}
 
 	var (
-		opt = gitlab.ListMergeRequestsOptions{
+		opts = gitlab.ListMergeRequestsOptions{
 			Scope: gitlab.Ptr("all"),
 			ListOptions: gitlab.ListOptions{
 				PerPage: maxPerPage,
@@ -145,30 +149,34 @@ func (m *MergeRequestsService) listUserMergeRequests(ctx context.Context, reques
 
 	switch args.Role {
 	case "author", "":
-		opt.AuthorUsername = gitlab.Ptr(username)
+		opts.AuthorUsername = gitlab.Ptr(username)
 	case "reviewer":
-		opt.ReviewerUsername = gitlab.Ptr(username)
+		opts.ReviewerUsername = gitlab.Ptr(username)
 	default:
 		return nil, fmt.Errorf("%w: invalid role: %q, must be one of 'author' or 'reviewer'", ErrArgumentType, args.Role)
 	}
 
 	if args.State != "" {
-		opt.State = gitlab.Ptr(args.State)
+		opts.State = gitlab.Ptr(args.State)
 	}
 
-	for {
-		mrs, resp, err := m.client.MergeRequests.ListMergeRequests(&opt, gitlab.WithContext(ctx))
+	if args.Limit <= 0 {
+		args.Limit = defaultMergeRequestsLimit
+	}
+
+	nextPage := func(opts *gitlab.ListMergeRequestsOptions, page int) {
+		opts.ListOptions.Page = page
+	}
+
+	iter := gliter.All(ctx, m.client.MergeRequests.ListMergeRequests, opts, nextPage)
+	iter = gliter.Limited(iter, args.Limit)
+
+	for mr, err := range iter {
 		if err != nil {
-			return nil, fmt.Errorf("ListMergeRequests: %w", err)
+			return nil, fmt.Errorf("ListMergeRequests(): %w", err)
 		}
 
-		mergeRequests = append(mergeRequests, mrs...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opt.Page = resp.NextPage
+		mergeRequests = append(mergeRequests, mr)
 	}
 
 	return newToolResultJSON(mergeRequests)
@@ -177,6 +185,7 @@ func (m *MergeRequestsService) listUserMergeRequests(ctx context.Context, reques
 type listProjectMergeRequestsArgs struct {
 	ProjectID mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
 	State     string     `mcp_desc:"Return all merge requests or just those that are opened, closed, or merged" mcp_enum:"all,opened,closed,merged"`
+	Limit     int        `mcp_desc:"The maximum number of merge requests to return. Defaults to 1000."`
 }
 
 // ListProjectMergeRequests returns a ServerTool for listing all merge requests within a specific project.
@@ -198,7 +207,7 @@ func (m *MergeRequestsService) listProjectMergeRequests(ctx context.Context, req
 	}
 
 	var (
-		opt = &gitlab.ListProjectMergeRequestsOptions{
+		opts = gitlab.ListProjectMergeRequestsOptions{
 			ListOptions: gitlab.ListOptions{
 				PerPage: maxPerPage,
 			},
@@ -208,22 +217,26 @@ func (m *MergeRequestsService) listProjectMergeRequests(ctx context.Context, req
 
 	// Parse optional parameters
 	if args.State != "" {
-		opt.State = gitlab.Ptr(args.State)
+		opts.State = gitlab.Ptr(args.State)
 	}
 
-	for {
-		mrs, resp, err := m.client.MergeRequests.ListProjectMergeRequests(args.ProjectID.Value(), opt, gitlab.WithContext(ctx))
+	if args.Limit <= 0 {
+		args.Limit = defaultMergeRequestsLimit
+	}
+
+	nextPage := func(opts *gitlab.ListProjectMergeRequestsOptions, page int) {
+		opts.Page = page
+	}
+
+	iter := gliter.AllWithID(ctx, args.ProjectID.Value(), m.client.MergeRequests.ListProjectMergeRequests, opts, nextPage)
+	iter = gliter.Limited(iter, args.Limit)
+
+	for mr, err := range iter {
 		if err != nil {
-			return nil, fmt.Errorf("ListProjectMergeRequests(%q): %w", args.ProjectID.Value(), err)
+			return nil, fmt.Errorf("ListProjectMergeRequests(%v): %w", args.ProjectID.Value(), err)
 		}
 
-		mergeRequests = append(mergeRequests, mrs...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opt.Page = resp.NextPage
+		mergeRequests = append(mergeRequests, mr)
 	}
 
 	return newToolResultJSON(mergeRequests)
@@ -232,6 +245,7 @@ func (m *MergeRequestsService) listProjectMergeRequests(ctx context.Context, req
 type listGroupMergeRequestsArgs struct {
 	GroupID mcpargs.ID `mcp_desc:"ID of the group either in owner/namespace format or the numeric group ID" mcp_required:"true"`
 	State   string     `mcp_desc:"Return all merge requests or just those that are opened, closed, or merged" mcp_enum:"all,opened,closed,merged"`
+	Limit   int        `mcp_desc:"The maximum number of merge requests to return. Defaults to 1000."`
 }
 
 // ListGroupMergeRequests returns a ServerTool for listing all merge requests within a specific group.
@@ -253,7 +267,7 @@ func (m *MergeRequestsService) listGroupMergeRequests(ctx context.Context, reque
 	}
 
 	var (
-		opt = &gitlab.ListGroupMergeRequestsOptions{
+		opts = gitlab.ListGroupMergeRequestsOptions{
 			ListOptions: gitlab.ListOptions{
 				PerPage: maxPerPage,
 			},
@@ -263,22 +277,26 @@ func (m *MergeRequestsService) listGroupMergeRequests(ctx context.Context, reque
 
 	// Parse optional parameters
 	if args.State != "" {
-		opt.State = gitlab.Ptr(args.State)
+		opts.State = gitlab.Ptr(args.State)
 	}
 
-	for {
-		mrs, resp, err := m.client.MergeRequests.ListGroupMergeRequests(args.GroupID.Value(), opt, gitlab.WithContext(ctx))
+	if args.Limit <= 0 {
+		args.Limit = defaultMergeRequestsLimit
+	}
+
+	nextPage := func(opts *gitlab.ListGroupMergeRequestsOptions, page int) {
+		opts.Page = page
+	}
+
+	iter := gliter.AllWithID(ctx, args.GroupID.Value(), m.client.MergeRequests.ListGroupMergeRequests, opts, nextPage)
+	iter = gliter.Limited(iter, args.Limit)
+
+	for mr, err := range iter {
 		if err != nil {
-			return nil, fmt.Errorf("ListGroupMergeRequests(%q): %w", args.GroupID.Value(), err)
+			return nil, fmt.Errorf("ListGroupMergeRequests(%v): %w", args.GroupID.Value(), err)
 		}
 
-		mergeRequests = append(mergeRequests, mrs...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opt.Page = resp.NextPage
+		mergeRequests = append(mergeRequests, mr)
 	}
 
 	return newToolResultJSON(mergeRequests)

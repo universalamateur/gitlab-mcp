@@ -15,6 +15,7 @@ import (
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/fforster/gitlab-mcp/lib/discussions"
+	"gitlab.com/fforster/gitlab-mcp/lib/gliter"
 	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
 
@@ -139,29 +140,19 @@ func (i *IssuesService) listUserIssues(ctx context.Context, request mcp.CallTool
 		args.Limit = defaultIssuesLimit
 	}
 
-	for {
-		is, resp, err := i.client.Issues.ListIssues(&opt, gitlab.WithContext(ctx))
+	nextPage := func(opts *gitlab.ListIssuesOptions, page int) {
+		opts.Page = page
+	}
+
+	iter := gliter.All(ctx, i.client.Issues.ListIssues, opt, nextPage)
+	iter = gliter.Limited(iter, args.Limit)
+
+	for issue, err := range iter {
 		if err != nil {
-			return nil, fmt.Errorf("ListIssues: %w", err)
+			return nil, fmt.Errorf("ListIssues(): %w", err)
 		}
 
-		remaining := args.Limit - len(issues)
-		if remaining <= 0 {
-			break
-		}
-
-		if len(is) > remaining {
-			issues = append(issues, is[:remaining]...)
-			break
-		}
-
-		issues = append(issues, is...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opt.Page = resp.NextPage
+		issues = append(issues, issue)
 	}
 
 	return newToolResultJSON(issues)
@@ -211,31 +202,21 @@ func (i *IssuesService) listGroupIssues(ctx context.Context, request mcp.CallToo
 		args.Limit = defaultIssuesLimit
 	}
 
+	nextPage := func(opts *gitlab.ListGroupIssuesOptions, page int) {
+		opts.Page = page
+	}
+
+	iter := gliter.AllWithID(ctx, args.GroupID.Value(), i.client.Issues.ListGroupIssues, *opt, nextPage)
+	iter = gliter.Limited(iter, args.Limit)
+
 	var issues []*gitlab.Issue
 
-	for {
-		is, resp, err := i.client.Issues.ListGroupIssues(args.GroupID.Value(), opt, gitlab.WithContext(ctx))
+	for issue, err := range iter {
 		if err != nil {
 			return nil, fmt.Errorf("ListGroupIssues(%q): %w", args.GroupID.Value(), err)
 		}
 
-		remaining := args.Limit - len(issues)
-		if remaining <= 0 {
-			break
-		}
-
-		if len(is) > remaining {
-			issues = append(issues, is[:remaining]...)
-			break
-		}
-
-		issues = append(issues, is...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opt.Page = resp.NextPage
+		issues = append(issues, issue)
 	}
 
 	return newToolResultJSON(issues)
@@ -286,31 +267,21 @@ func (i *IssuesService) listProjectIssues(ctx context.Context, request mcp.CallT
 		args.Limit = defaultIssuesLimit
 	}
 
+	nextPage := func(opts *gitlab.ListProjectIssuesOptions, page int) {
+		opts.Page = page
+	}
+
+	iter := gliter.AllWithID(ctx, args.ProjectID.Value(), i.client.Issues.ListProjectIssues, *opt, nextPage)
+	iter = gliter.Limited(iter, args.Limit)
+
 	var issues []*gitlab.Issue
 
-	for {
-		is, resp, err := i.client.Issues.ListProjectIssues(args.ProjectID.Value(), opt, gitlab.WithContext(ctx))
+	for issue, err := range iter {
 		if err != nil {
 			return nil, fmt.Errorf("ListProjectIssues(%q): %w", args.ProjectID.Value(), err)
 		}
 
-		remaining := args.Limit - len(issues)
-		if remaining <= 0 {
-			break
-		}
-
-		if len(is) > remaining {
-			issues = append(issues, is[:remaining]...)
-			break
-		}
-
-		issues = append(issues, is...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opt.Page = resp.NextPage
+		issues = append(issues, issue)
 	}
 
 	return newToolResultJSON(issues)

@@ -8,6 +8,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 
+	"gitlab.com/fforster/gitlab-mcp/lib/gliter"
 	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
 
@@ -67,14 +68,13 @@ func (t *TodosService) listUserTodos(ctx context.Context, request mcp.CallToolRe
 		return nil, err //nolint:wrapcheck
 	}
 
-	limit := args.Limit
-	if limit <= 0 {
-		limit = defaultTodosLimit
+	if args.Limit <= 0 {
+		args.Limit = defaultTodosLimit
 	}
 
-	opt := &gitlab.ListTodosOptions{
+	opt := gitlab.ListTodosOptions{
 		ListOptions: gitlab.ListOptions{
-			PerPage: min(limit, maxPerPage),
+			PerPage: min(args.Limit, maxPerPage),
 		},
 	}
 
@@ -98,25 +98,21 @@ func (t *TodosService) listUserTodos(ctx context.Context, request mcp.CallToolRe
 		opt.Type = gitlab.Ptr(args.Type)
 	}
 
+	nextPage := func(opts *gitlab.ListTodosOptions, page int) {
+		opts.ListOptions.Page = page
+	}
+
+	iter := gliter.All(ctx, t.client.Todos.ListTodos, opt, nextPage)
+	iter = gliter.Limited(iter, args.Limit)
+
 	var todos []*gitlab.Todo
 
-	for {
-		ts, resp, err := t.client.Todos.ListTodos(opt, gitlab.WithContext(ctx))
+	for todo, err := range iter {
 		if err != nil {
-			return nil, fmt.Errorf("ListTodos: %w", err)
+			return nil, fmt.Errorf("ListTodos(): %w", err)
 		}
 
-		todos = append(todos, ts...)
-		if limit > 0 && len(todos) >= limit {
-			todos = todos[:limit]
-			break
-		}
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opt.Page = resp.NextPage
+		todos = append(todos, todo)
 	}
 
 	return newToolResultJSON(todos)
