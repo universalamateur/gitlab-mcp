@@ -314,6 +314,413 @@ func TestGetMergeRequest(t *testing.T) {
 	}
 }
 
+func TestListUserMergeRequests(t *testing.T) {
+	defaultOpts := gitlab.ListMergeRequestsOptions{
+		AuthorUsername: gitlab.Ptr("test_user"),
+		Scope:          gitlab.Ptr("all"),
+		ListOptions: gitlab.ListOptions{
+			PerPage: maxPerPage,
+		},
+	}
+
+	tests := []struct {
+		name      string
+		args      map[string]any
+		setupMock func(*glabtest.MockMergeRequestsServiceInterface)
+		want      []*gitlab.BasicMergeRequest
+		wantErr   bool
+	}{
+		{
+			name: "successful fetch with default user",
+			args: map[string]any{},
+			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface) {
+				mockMR.EXPECT().
+					ListMergeRequests(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(opts *gitlab.ListMergeRequestsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
+						if diff := cmp.Diff(&defaultOpts, opts); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
+						}
+
+						return []*gitlab.BasicMergeRequest{{ID: 1, Title: "MR by test_user"}},
+							&gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+					})
+			},
+			want: []*gitlab.BasicMergeRequest{{ID: 1, Title: "MR by test_user"}},
+		},
+		{
+			name: "fetch for a specific user as author",
+			args: map[string]any{"username": "another_user", "role": "author"},
+			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface) {
+				mockMR.EXPECT().
+					ListMergeRequests(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(opts *gitlab.ListMergeRequestsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
+						wantOpts := defaultOpts
+						wantOpts.AuthorUsername = gitlab.Ptr("another_user")
+						if diff := cmp.Diff(&wantOpts, opts); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
+						}
+
+						return []*gitlab.BasicMergeRequest{{ID: 2, Title: "MR by another_user"}},
+							&gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+					})
+			},
+			want: []*gitlab.BasicMergeRequest{{ID: 2, Title: "MR by another_user"}},
+		},
+		{
+			name: "fetch for a specific user as reviewer",
+			args: map[string]any{"username": "another_user", "role": "reviewer"},
+			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface) {
+				mockMR.EXPECT().
+					ListMergeRequests(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(opts *gitlab.ListMergeRequestsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
+						wantOpts := defaultOpts
+						wantOpts.AuthorUsername = nil
+						wantOpts.ReviewerUsername = gitlab.Ptr("another_user")
+
+						if diff := cmp.Diff(&wantOpts, opts); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
+						}
+
+						return []*gitlab.BasicMergeRequest{{ID: 3, Title: "MR for another_user to review"}},
+							&gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+					})
+			},
+			want: []*gitlab.BasicMergeRequest{{ID: 3, Title: "MR for another_user to review"}},
+		},
+		{
+			name: "fetch with state filter",
+			args: map[string]any{"state": "merged"},
+			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface) {
+				mockMR.EXPECT().
+					ListMergeRequests(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(opts *gitlab.ListMergeRequestsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
+						wantOpts := defaultOpts
+						wantOpts.State = gitlab.Ptr("merged")
+
+						if diff := cmp.Diff(&wantOpts, opts); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
+						}
+
+						return []*gitlab.BasicMergeRequest{{ID: 4, Title: "Merged MR"}},
+							&gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+					})
+			},
+			want: []*gitlab.BasicMergeRequest{{ID: 4, Title: "Merged MR"}},
+		},
+		{
+			name: "pagination",
+			args: map[string]any{},
+			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface) {
+				first := mockMR.EXPECT().
+					ListMergeRequests(gomock.Any(), gomock.Any()).
+					Return([]*gitlab.BasicMergeRequest{{ID: 1}}, &gitlab.Response{NextPage: 2}, nil)
+				mockMR.EXPECT().
+					ListMergeRequests(gomock.Any(), gomock.Any()).
+					Return([]*gitlab.BasicMergeRequest{{ID: 2}}, &gitlab.Response{NextPage: 0}, nil).
+					After(first.Call)
+			},
+			want: []*gitlab.BasicMergeRequest{{ID: 1}, {ID: 2}},
+		},
+		{
+			name: "API error",
+			args: map[string]any{},
+			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface) {
+				mockMR.EXPECT().
+					ListMergeRequests(gomock.Any(), gomock.Any()).
+					Return(nil, nil, fmt.Errorf("api error"))
+			},
+			wantErr: true,
+		},
+		{
+			name:    "invalid role",
+			args:    map[string]any{"role": "invalid_role"},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gitlabClient := glabtest.NewTestClient(t)
+			if tt.setupMock != nil {
+				tt.setupMock(gitlabClient.MockMergeRequests)
+			}
+
+			service := NewMergeRequestsTools(gitlabClient.Client, "test_user")
+
+			srv, err := mcptest.NewServer(t, service.ListUserMergeRequests())
+			if err != nil {
+				t.Fatalf("failed to create server: %v", err)
+			}
+
+			defer srv.Close()
+
+			var req mcp.CallToolRequest
+			req.Params.Name = "list_user_merge_requests"
+			req.Params.Arguments = tt.args
+
+			result, err := srv.Client().CallTool(t.Context(), req)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("listUserMergeRequests() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if tt.wantErr {
+				return
+			}
+
+			var got []*gitlab.BasicMergeRequest
+			if err := unmarshalResult(result, &got); err != nil {
+				t.Fatalf("decode error: %v", err)
+			}
+
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Errorf("listUserMergeRequests() mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestListProjectMergeRequests(t *testing.T) {
+	defaultOpts := gitlab.ListProjectMergeRequestsOptions{
+		ListOptions: gitlab.ListOptions{
+			PerPage: maxPerPage,
+		},
+	}
+
+	tests := []struct {
+		name      string
+		args      map[string]any
+		setupMock func(*glabtest.MockMergeRequestsServiceInterface)
+		want      []*gitlab.BasicMergeRequest
+		wantErr   bool
+	}{
+		{
+			name: "successful fetch with default state",
+			args: map[string]any{"project_id": "test/project"},
+			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface) {
+				mockMR.EXPECT().
+					ListProjectMergeRequests(gomock.Eq("test/project"), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, opts *gitlab.ListProjectMergeRequestsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
+						if diff := cmp.Diff(&defaultOpts, opts); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
+						}
+
+						return []*gitlab.BasicMergeRequest{{ID: 1, Title: "Project MR"}},
+							&gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+					})
+			},
+			want: []*gitlab.BasicMergeRequest{{ID: 1, Title: "Project MR"}},
+		},
+		{
+			name: "fetch with state filter",
+			args: map[string]any{"project_id": "test/project", "state": "closed"},
+			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface) {
+				mockMR.EXPECT().
+					ListProjectMergeRequests(gomock.Eq("test/project"), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, opts *gitlab.ListProjectMergeRequestsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
+						wantOpts := defaultOpts
+						wantOpts.State = gitlab.Ptr("closed")
+
+						if diff := cmp.Diff(&wantOpts, opts); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
+						}
+
+						return []*gitlab.BasicMergeRequest{{ID: 2, Title: "Closed Project MR"}},
+							&gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+					})
+			},
+			want: []*gitlab.BasicMergeRequest{{ID: 2, Title: "Closed Project MR"}},
+		},
+		{
+			name: "pagination",
+			args: map[string]any{"project_id": "test/project"},
+			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface) {
+				first := mockMR.EXPECT().
+					ListProjectMergeRequests(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return([]*gitlab.BasicMergeRequest{{ID: 1}}, &gitlab.Response{NextPage: 2}, nil)
+				mockMR.EXPECT().
+					ListProjectMergeRequests(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return([]*gitlab.BasicMergeRequest{{ID: 2}}, &gitlab.Response{NextPage: 0}, nil).
+					After(first.Call)
+			},
+			want: []*gitlab.BasicMergeRequest{{ID: 1}, {ID: 2}},
+		},
+		{
+			name: "API error",
+			args: map[string]any{"project_id": "test/project"},
+			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface) {
+				mockMR.EXPECT().
+					ListProjectMergeRequests(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(nil, nil, fmt.Errorf("api error"))
+			},
+			wantErr: true,
+		},
+		{
+			name:    "missing project id",
+			args:    map[string]any{},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gitlabClient := glabtest.NewTestClient(t)
+			if tt.setupMock != nil {
+				tt.setupMock(gitlabClient.MockMergeRequests)
+			}
+
+			service := NewMergeRequestsTools(gitlabClient.Client, "test_user")
+
+			srv, err := mcptest.NewServer(t, service.ListProjectMergeRequests())
+			if err != nil {
+				t.Fatalf("failed to create server: %v", err)
+			}
+
+			defer srv.Close()
+
+			var req mcp.CallToolRequest
+			req.Params.Name = "list_project_merge_requests"
+			req.Params.Arguments = tt.args
+
+			result, err := srv.Client().CallTool(t.Context(), req)
+
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("listProjectMergeRequests() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if tt.wantErr {
+				return
+			}
+
+			var got []*gitlab.BasicMergeRequest
+			if err := unmarshalResult(result, &got); err != nil {
+				t.Fatalf("decode error: %v", err)
+			}
+
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Errorf("listProjectMergeRequests() mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestListGroupMergeRequests(t *testing.T) {
+	defaultOpts := gitlab.ListGroupMergeRequestsOptions{
+		ListOptions: gitlab.ListOptions{
+			PerPage: maxPerPage,
+		},
+	}
+
+	tests := []struct {
+		name      string
+		args      map[string]any
+		setupMock func(*glabtest.MockMergeRequestsServiceInterface)
+		want      []*gitlab.BasicMergeRequest
+		wantErr   bool
+	}{
+		{
+			name: "successful fetch with default state",
+			args: map[string]any{"group_id": "test-group"},
+			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface) {
+				mockMR.EXPECT().
+					ListGroupMergeRequests(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, opts *gitlab.ListGroupMergeRequestsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
+						if diff := cmp.Diff(&defaultOpts, opts); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
+						}
+
+						return []*gitlab.BasicMergeRequest{{ID: 1, Title: "Group MR"}}, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+					})
+			},
+			want: []*gitlab.BasicMergeRequest{{ID: 1, Title: "Group MR"}},
+		},
+		{
+			name: "fetch with state filter",
+			args: map[string]any{"group_id": "test-group", "state": "opened"},
+			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface) {
+				mockMR.EXPECT().
+					ListGroupMergeRequests(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, opts *gitlab.ListGroupMergeRequestsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
+						wantOpts := defaultOpts
+						wantOpts.State = gitlab.Ptr("opened")
+						if diff := cmp.Diff(&wantOpts, opts); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
+						}
+
+						return []*gitlab.BasicMergeRequest{{ID: 2, Title: "Opened Group MR"}}, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+					})
+			},
+			want: []*gitlab.BasicMergeRequest{{ID: 2, Title: "Opened Group MR"}},
+		},
+		{
+			name: "pagination",
+			args: map[string]any{"group_id": "test-group"},
+			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface) {
+				first := mockMR.EXPECT().
+					ListGroupMergeRequests(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return([]*gitlab.BasicMergeRequest{{ID: 1}}, &gitlab.Response{NextPage: 2}, nil)
+				mockMR.EXPECT().
+					ListGroupMergeRequests(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return([]*gitlab.BasicMergeRequest{{ID: 2}}, &gitlab.Response{NextPage: 0}, nil).
+					After(first.Call)
+			},
+			want: []*gitlab.BasicMergeRequest{{ID: 1}, {ID: 2}},
+		},
+		{
+			name: "API error",
+			args: map[string]any{"group_id": "test-group"},
+			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface) {
+				mockMR.EXPECT().
+					ListGroupMergeRequests(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(nil, nil, fmt.Errorf("api error"))
+			},
+			wantErr: true,
+		},
+		{
+			name:    "missing group id",
+			args:    map[string]any{},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gitlabClient := glabtest.NewTestClient(t)
+			if tt.setupMock != nil {
+				tt.setupMock(gitlabClient.MockMergeRequests)
+			}
+
+			service := NewMergeRequestsTools(gitlabClient.Client, "test_user")
+
+			srv, err := mcptest.NewServer(t, service.ListGroupMergeRequests())
+			if err != nil {
+				t.Fatalf("failed to create server: %v", err)
+			}
+
+			defer srv.Close()
+
+			var req mcp.CallToolRequest
+			req.Params.Name = "list_group_merge_requests"
+			req.Params.Arguments = tt.args
+
+			result, err := srv.Client().CallTool(t.Context(), req)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("listGroupMergeRequests() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if tt.wantErr {
+				return
+			}
+
+			var got []*gitlab.BasicMergeRequest
+			if err := unmarshalResult(result, &got); err != nil {
+				t.Fatalf("decode error: %v", err)
+			}
+
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Errorf("listGroupMergeRequests() mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
 func TestListDraftNotes(t *testing.T) {
 	tests := []struct {
 		name      string
