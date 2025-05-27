@@ -11,6 +11,7 @@ import (
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/fforster/gitlab-mcp/lib/discussions"
+	"gitlab.com/fforster/gitlab-mcp/lib/gliter"
 	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
 
@@ -128,7 +129,7 @@ func (m *MergeRequestsService) listUserMergeRequests(ctx context.Context, reques
 	}
 
 	var (
-		opt = gitlab.ListMergeRequestsOptions{
+		opts = gitlab.ListMergeRequestsOptions{
 			Scope: gitlab.Ptr("all"),
 			ListOptions: gitlab.ListOptions{
 				PerPage: maxPerPage,
@@ -145,30 +146,29 @@ func (m *MergeRequestsService) listUserMergeRequests(ctx context.Context, reques
 
 	switch args.Role {
 	case "author", "":
-		opt.AuthorUsername = gitlab.Ptr(username)
+		opts.AuthorUsername = gitlab.Ptr(username)
 	case "reviewer":
-		opt.ReviewerUsername = gitlab.Ptr(username)
+		opts.ReviewerUsername = gitlab.Ptr(username)
 	default:
 		return nil, fmt.Errorf("%w: invalid role: %q, must be one of 'author' or 'reviewer'", ErrArgumentType, args.Role)
 	}
 
 	if args.State != "" {
-		opt.State = gitlab.Ptr(args.State)
+		opts.State = gitlab.Ptr(args.State)
 	}
 
-	for {
-		mrs, resp, err := m.client.MergeRequests.ListMergeRequests(&opt, gitlab.WithContext(ctx))
+	nextPage := func(opts *gitlab.ListMergeRequestsOptions, page int) {
+		opts.ListOptions.Page = page
+	}
+
+	iter := gliter.All(ctx, m.client.MergeRequests.ListMergeRequests, opts, nextPage)
+
+	for mr, err := range iter {
 		if err != nil {
-			return nil, fmt.Errorf("ListMergeRequests: %w", err)
+			return nil, fmt.Errorf("ListMergeRequests(): %w", err)
 		}
 
-		mergeRequests = append(mergeRequests, mrs...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opt.Page = resp.NextPage
+		mergeRequests = append(mergeRequests, mr)
 	}
 
 	return newToolResultJSON(mergeRequests)
@@ -198,7 +198,7 @@ func (m *MergeRequestsService) listProjectMergeRequests(ctx context.Context, req
 	}
 
 	var (
-		opt = &gitlab.ListProjectMergeRequestsOptions{
+		opts = gitlab.ListProjectMergeRequestsOptions{
 			ListOptions: gitlab.ListOptions{
 				PerPage: maxPerPage,
 			},
@@ -208,22 +208,21 @@ func (m *MergeRequestsService) listProjectMergeRequests(ctx context.Context, req
 
 	// Parse optional parameters
 	if args.State != "" {
-		opt.State = gitlab.Ptr(args.State)
+		opts.State = gitlab.Ptr(args.State)
 	}
 
-	for {
-		mrs, resp, err := m.client.MergeRequests.ListProjectMergeRequests(args.ProjectID.Value(), opt, gitlab.WithContext(ctx))
+	nextPage := func(opts *gitlab.ListProjectMergeRequestsOptions, page int) {
+		opts.Page = page
+	}
+
+	iter := gliter.AllWithID(ctx, args.ProjectID.Value(), m.client.MergeRequests.ListProjectMergeRequests, opts, nextPage)
+
+	for mr, err := range iter {
 		if err != nil {
-			return nil, fmt.Errorf("ListProjectMergeRequests(%q): %w", args.ProjectID.Value(), err)
+			return nil, fmt.Errorf("ListProjectMergeRequests(%v): %w", args.ProjectID.Value(), err)
 		}
 
-		mergeRequests = append(mergeRequests, mrs...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opt.Page = resp.NextPage
+		mergeRequests = append(mergeRequests, mr)
 	}
 
 	return newToolResultJSON(mergeRequests)
@@ -253,7 +252,7 @@ func (m *MergeRequestsService) listGroupMergeRequests(ctx context.Context, reque
 	}
 
 	var (
-		opt = &gitlab.ListGroupMergeRequestsOptions{
+		opts = gitlab.ListGroupMergeRequestsOptions{
 			ListOptions: gitlab.ListOptions{
 				PerPage: maxPerPage,
 			},
@@ -263,22 +262,21 @@ func (m *MergeRequestsService) listGroupMergeRequests(ctx context.Context, reque
 
 	// Parse optional parameters
 	if args.State != "" {
-		opt.State = gitlab.Ptr(args.State)
+		opts.State = gitlab.Ptr(args.State)
 	}
 
-	for {
-		mrs, resp, err := m.client.MergeRequests.ListGroupMergeRequests(args.GroupID.Value(), opt, gitlab.WithContext(ctx))
+	nextPage := func(opts *gitlab.ListGroupMergeRequestsOptions, page int) {
+		opts.Page = page
+	}
+
+	iter := gliter.AllWithID(ctx, args.GroupID.Value(), m.client.MergeRequests.ListGroupMergeRequests, opts, nextPage)
+
+	for mr, err := range iter {
 		if err != nil {
-			return nil, fmt.Errorf("ListGroupMergeRequests(%q): %w", args.GroupID.Value(), err)
+			return nil, fmt.Errorf("ListGroupMergeRequests(%v): %w", args.GroupID.Value(), err)
 		}
 
-		mergeRequests = append(mergeRequests, mrs...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opt.Page = resp.NextPage
+		mergeRequests = append(mergeRequests, mr)
 	}
 
 	return newToolResultJSON(mergeRequests)
