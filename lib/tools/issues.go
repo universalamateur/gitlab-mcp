@@ -60,7 +60,10 @@ type IssuesService struct {
 	currentUser string
 }
 
-const defaultIssueState = "opened"
+const (
+	defaultIssueState  = "opened"
+	defaultIssuesLimit = 1000
+)
 
 // AddTo registers all issue-related tools with the provided MCPServer.
 // It adds tools for listing, retrieving, and managing issues and their related merge requests.
@@ -80,6 +83,7 @@ type listUserIssuesArgs struct {
 	Assignee     string `mcp_desc:"Filter issues by the assignee. If left blank, returns all issues assigned to the authenticated user"`
 	State        string `mcp_desc:"Filter issues by state, with 'all' returning closed and opened issues. Defaults to 'opened'." mcp_enum:"all,opened,closed"`
 	Confidential bool   `mcp_desc:"If true, includes confidential issues. Default is false, which excludes confidential issues"`
+	Limit        int    `mcp_desc:"The maximum number of issues to return. Defaults to 1000."`
 }
 
 // ListUserIssues returns a ServerTool for listing all issues assigned to a user.
@@ -131,10 +135,24 @@ func (i *IssuesService) listUserIssues(ctx context.Context, request mcp.CallTool
 		opt.Confidential = gitlab.Ptr(false)
 	}
 
+	if args.Limit <= 0 {
+		args.Limit = defaultIssuesLimit
+	}
+
 	for {
 		is, resp, err := i.client.Issues.ListIssues(&opt, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("ListIssues: %w", err)
+		}
+
+		remaining := args.Limit - len(issues)
+		if remaining <= 0 {
+			break
+		}
+
+		if len(is) > remaining {
+			issues = append(issues, is[:remaining]...)
+			break
 		}
 
 		issues = append(issues, is...)
@@ -163,6 +181,7 @@ type listGroupIssuesArgs struct {
 	UpdatedAfter  string     `mcp_desc:"Return issues updated on or after the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
 	UpdatedBefore string     `mcp_desc:"Return issues updated on or before the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
 	DueDate       string     `mcp_desc:"Return issues that have no due date, are overdue, or whose due date is this week, this month, or between two weeks ago and next month" mcp_enum:"none,any,today,tomorrow,overdue,week,month,recent"`
+	Limit         int        `mcp_desc:"The maximum number of issues to return. Defaults to 1000."`
 }
 
 // ListGroupIssues returns a ServerTool for listing all issues within a specific group.
@@ -188,12 +207,26 @@ func (i *IssuesService) listGroupIssues(ctx context.Context, request mcp.CallToo
 		return nil, fmt.Errorf("invalid filter options: %w", err)
 	}
 
+	if args.Limit <= 0 {
+		args.Limit = defaultIssuesLimit
+	}
+
 	var issues []*gitlab.Issue
 
 	for {
 		is, resp, err := i.client.Issues.ListGroupIssues(args.GroupID.Value(), opt, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("ListGroupIssues(%q): %w", args.GroupID.Value(), err)
+		}
+
+		remaining := args.Limit - len(issues)
+		if remaining <= 0 {
+			break
+		}
+
+		if len(is) > remaining {
+			issues = append(issues, is[:remaining]...)
+			break
 		}
 
 		issues = append(issues, is...)
@@ -223,6 +256,7 @@ type listProjectIssuesArgs struct {
 	UpdatedAfter  string     `mcp_desc:"Return issues updated on or after the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
 	UpdatedBefore string     `mcp_desc:"Return issues updated on or before the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
 	DueDate       string     `mcp_desc:"Return issues that have no due date, are overdue, or whose due date is this week, this month, or between two weeks ago and next month" mcp_enum:"none,any,today,tomorrow,overdue,week,month,recent"`
+	Limit         int        `mcp_desc:"The maximum number of issues to return. Defaults to 1000."`
 }
 
 // ListProjectIssues returns a ServerTool for listing all issues within a specific project.
@@ -248,12 +282,26 @@ func (i *IssuesService) listProjectIssues(ctx context.Context, request mcp.CallT
 		return nil, fmt.Errorf("invalid filter options: %w", err)
 	}
 
+	if args.Limit <= 0 {
+		args.Limit = defaultIssuesLimit
+	}
+
 	var issues []*gitlab.Issue
 
 	for {
 		is, resp, err := i.client.Issues.ListProjectIssues(args.ProjectID.Value(), opt, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("ListProjectIssues(%q): %w", args.ProjectID.Value(), err)
+		}
+
+		remaining := args.Limit - len(issues)
+		if remaining <= 0 {
+			break
+		}
+
+		if len(is) > remaining {
+			issues = append(issues, is[:remaining]...)
+			break
 		}
 
 		issues = append(issues, is...)
