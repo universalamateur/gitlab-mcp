@@ -15,7 +15,7 @@ import (
 	glabtest "gitlab.com/gitlab-org/api/client-go/testing"
 )
 
-// timeComparer is a global comparer for time.Time fields to avoid cmp panics on private fields
+// timeComparer allows cmp to compare time.Time values.
 var timeComparer = cmp.Comparer(func(a, b time.Time) bool {
 	return a.Equal(b)
 })

@@ -280,6 +280,7 @@ func listProjectIssuesOptions(args listProjectIssuesArgs) (*gitlab.ListProjectIs
 	if state == "" {
 		state = defaultIssueState
 	}
+
 	opt.State = gitlab.Ptr(state)
 
 	// The handling of confidential issues is a bit unintuitive: if
@@ -353,6 +354,7 @@ func listGroupIssuesOptions(args listGroupIssuesArgs) (*gitlab.ListGroupIssuesOp
 	if state == "" {
 		state = defaultIssueState
 	}
+
 	opt.State = gitlab.Ptr(state)
 
 	// The handling of confidential issues is a bit unintuitive: if
@@ -421,6 +423,8 @@ var dueDateMap = map[string]*string{
 	"none":     gitlab.Ptr("0"),
 }
 
+var errParseTime = errors.New("parsing string as time failed")
+
 // parseTime parses a time string and returns a time.Time pointer.
 // The string can have one out of three time formats: RFC3339, DateTime, or DateOnly.
 // If the time string is empty, it returns a nil pointer.
@@ -430,13 +434,13 @@ func parseTime(timeStr string) (*time.Time, error) {
 	}
 
 	for _, format := range []string{time.RFC3339, time.DateTime, time.DateOnly} {
-		t, err := time.ParseInLocation(format, timeStr, time.Local)
+		t, err := time.ParseInLocation(format, timeStr, time.Local) //nolint:gosmopolitan
 		if err == nil {
 			return &t, nil
 		}
 	}
 
-	return nil, fmt.Errorf("parsing time %q failed", timeStr)
+	return nil, fmt.Errorf("timeStr = %q: %w", timeStr, errParseTime)
 }
 
 type getIssueArgs struct {
