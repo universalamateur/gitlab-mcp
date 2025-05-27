@@ -291,16 +291,16 @@ func TestListUserIssues(t *testing.T) {
 					ListIssues(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
 						if opts.AssigneeUsername == nil || *opts.AssigneeUsername != "test_user" {
-							t.Errorf("opts.AssigneeUsername = %v, want 'test_user'", opts.AssigneeUsername)
+							return nil, nil, fmt.Errorf("opts.AssigneeUsername = %v, want 'test_user'", opts.AssigneeUsername)
 						}
 						if opts.State == nil || *opts.State != defaultIssueState {
-							t.Errorf("opts.State = %v, want %q", opts.State, defaultIssueState)
+							return nil, nil, fmt.Errorf("opts.State = %v, want %q", opts.State, defaultIssueState)
 						}
 						if opts.Confidential == nil || *opts.Confidential {
-							t.Errorf("opts.Confidential = %v, want false", opts.Confidential)
+							return nil, nil, fmt.Errorf("opts.Confidential = %v, want false", opts.Confidential)
 						}
 						if want := "all"; opts.Scope == nil || *opts.Scope != want {
-							t.Errorf("opts.Scope = %v, want %q", opts.Scope, want)
+							return nil, nil, fmt.Errorf("opts.Scope = %v, want %q", opts.Scope, want)
 						}
 
 						return []*gitlab.Issue{
@@ -339,7 +339,7 @@ func TestListUserIssues(t *testing.T) {
 					ListIssues(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
 						if opts.AssigneeUsername == nil || *opts.AssigneeUsername != "other_user" {
-							t.Errorf("opts.AssigneeUsername = %v, want 'other_user'", opts.AssigneeUsername)
+							return nil, nil, fmt.Errorf("opts.AssigneeUsername = %v, want 'other_user'", opts.AssigneeUsername)
 						}
 
 						return []*gitlab.Issue{
@@ -430,7 +430,7 @@ func TestListUserIssues(t *testing.T) {
 					ListIssues(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
 						if opts.Confidential != nil {
-							t.Errorf("opts.Confidential = %v, want nil", opts.Confidential)
+							return nil, nil, fmt.Errorf("opts.Confidential = %v, want nil", opts.Confidential)
 						}
 
 						return []*gitlab.Issue{
@@ -465,7 +465,7 @@ func TestListUserIssues(t *testing.T) {
 					ListIssues(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
 						if opts.State == nil || *opts.State != "closed" {
-							t.Errorf("opts.State = %v, want 'closed'", opts.State)
+							return nil, nil, fmt.Errorf("opts.State = %v, want 'closed'", opts.State)
 						}
 
 						return []*gitlab.Issue{
@@ -550,10 +550,10 @@ func TestListGroupIssues(t *testing.T) {
 					ListGroupIssues(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.ListGroupIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
 						if opts.State == nil || *opts.State != defaultIssueState {
-							t.Errorf("opts.State = %v, want %q", opts.State, defaultIssueState)
+							return nil, nil, fmt.Errorf("opts.State = %v, want %q", opts.State, defaultIssueState)
 						}
 						if opts.Confidential == nil || *opts.Confidential {
-							t.Errorf("opts.Confidential = %v, want false", opts.Confidential)
+							return nil, nil, fmt.Errorf("opts.Confidential = %v, want false", opts.Confidential)
 						}
 
 						return []*gitlab.Issue{
@@ -655,7 +655,7 @@ func TestListGroupIssues(t *testing.T) {
 					ListGroupIssues(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.ListGroupIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
 						if opts.Confidential != nil {
-							t.Errorf("opts.Confidential = %v, want nil", opts.Confidential)
+							return nil, nil, fmt.Errorf("opts.Confidential = %v, want nil", opts.Confidential)
 						}
 
 						return []*gitlab.Issue{
@@ -691,7 +691,7 @@ func TestListGroupIssues(t *testing.T) {
 					ListGroupIssues(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.ListGroupIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
 						if want := "all"; opts.State == nil || *opts.State != want {
-							t.Errorf("opts.State = %v, want %q", opts.State, want)
+							return nil, nil, fmt.Errorf("opts.State = %v, want %q", opts.State, want)
 						}
 
 						return []*gitlab.Issue{
@@ -776,10 +776,10 @@ func TestListProjectIssues(t *testing.T) {
 					ListProjectIssues(gomock.Eq("test-project"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.ListProjectIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
 						if opts.State == nil || *opts.State != defaultIssueState {
-							t.Errorf("opts.State = %v, want %q", opts.State, defaultIssueState)
+							return nil, nil, fmt.Errorf("opts.State = %v, want %q", opts.State, defaultIssueState)
 						}
 						if opts.Confidential == nil || *opts.Confidential {
-							t.Errorf("opts.Confidential = %v, want false", opts.Confidential)
+							return nil, nil, fmt.Errorf("opts.Confidential = %v, want false", opts.Confidential)
 						}
 
 						return []*gitlab.Issue{
@@ -881,7 +881,7 @@ func TestListProjectIssues(t *testing.T) {
 					ListProjectIssues(gomock.Eq("test-project"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.ListProjectIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
 						if opts.Confidential != nil {
-							t.Errorf("opts.Confidential = %v, want nil", opts.Confidential)
+							return nil, nil, fmt.Errorf("opts.Confidential = %v, want nil", opts.Confidential)
 						}
 
 						return []*gitlab.Issue{
@@ -917,7 +917,7 @@ func TestListProjectIssues(t *testing.T) {
 					ListProjectIssues(gomock.Eq("test-project"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.ListProjectIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
 						if opts.State == nil || *opts.State != "all" {
-							t.Errorf("opts.State = %v, want 'all'", opts.State)
+							return nil, nil, fmt.Errorf("opts.State = %v, want 'all'", opts.State)
 						}
 
 						return []*gitlab.Issue{
