@@ -162,7 +162,7 @@ type listGroupIssuesArgs struct {
 	CreatedBefore string     `mcp_desc:"Return issues created on or before the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
 	UpdatedAfter  string     `mcp_desc:"Return issues updated on or after the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
 	UpdatedBefore string     `mcp_desc:"Return issues updated on or before the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
-	DueDate       string     `mcp_desc:"Return issues that have no due date, are overdue, or whose due date is this week, this month, or between two weeks ago and next month" mcp_enum:"none,any,today,tomorrow,overdue,week,month,next_month_and_previous_two_weeks"`
+	DueDate       string     `mcp_desc:"Return issues that have no due date, are overdue, or whose due date is this week, this month, or between two weeks ago and next month" mcp_enum:"none,any,today,tomorrow,overdue,week,month,recent"`
 }
 
 // ListGroupIssues returns a ServerTool for listing all issues within a specific group.
@@ -222,7 +222,7 @@ type listProjectIssuesArgs struct {
 	CreatedBefore string     `mcp_desc:"Return issues created on or before the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
 	UpdatedAfter  string     `mcp_desc:"Return issues updated on or after the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
 	UpdatedBefore string     `mcp_desc:"Return issues updated on or before the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
-	DueDate       string     `mcp_desc:"Return issues that have no due date, are overdue, or whose due date is this week, this month, or between two weeks ago and next month" mcp_enum:"none,any,today,tomorrow,overdue,week,month,next_month_and_previous_two_weeks"`
+	DueDate       string     `mcp_desc:"Return issues that have no due date, are overdue, or whose due date is this week, this month, or between two weeks ago and next month" mcp_enum:"none,any,today,tomorrow,overdue,week,month,recent"`
 }
 
 // ListProjectIssues returns a ServerTool for listing all issues within a specific project.
@@ -336,12 +336,7 @@ func listProjectIssuesOptions(args listProjectIssuesArgs) (*gitlab.ListProjectIs
 		return nil, fmt.Errorf("invalid updated_before date: %w", err)
 	}
 
-	if args.DueDate == "none" {
-		args.DueDate = "0"
-	}
-	if args.DueDate != "" {
-		opt.DueDate = gitlab.Ptr(args.DueDate)
-	}
+	opt.DueDate = dueDateMap[args.DueDate]
 
 	return opt, nil
 }
@@ -410,14 +405,20 @@ func listGroupIssuesOptions(args listGroupIssuesArgs) (*gitlab.ListGroupIssuesOp
 		return nil, fmt.Errorf("invalid updated_before date: %w", err)
 	}
 
-	if args.DueDate == "none" {
-		args.DueDate = "0"
-	}
-	if args.DueDate != "" {
-		opt.DueDate = gitlab.Ptr(args.DueDate)
-	}
+	opt.DueDate = dueDateMap[args.DueDate]
 
 	return opt, nil
+}
+
+var dueDateMap = map[string]*string{
+	"today":    gitlab.Ptr("today"),
+	"tomorrow": gitlab.Ptr("tomorrow"),
+	"overdue":  gitlab.Ptr("overdue"),
+	"week":     gitlab.Ptr("week"),
+	"month":    gitlab.Ptr("month"),
+	"recent":   gitlab.Ptr("next_month_and_previous_two_weeks"),
+	"any":      gitlab.Ptr("any"),
+	"none":     gitlab.Ptr("0"),
 }
 
 // parseTime parses a time string and returns a time.Time pointer.
