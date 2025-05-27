@@ -112,7 +112,6 @@ func (i *IssuesService) listUserIssues(ctx context.Context, request mcp.CallTool
 				PerPage: maxPerPage,
 			},
 		}
-		issues []*gitlab.Issue
 	)
 
 	// Parse optional parameters
@@ -146,6 +145,8 @@ func (i *IssuesService) listUserIssues(ctx context.Context, request mcp.CallTool
 
 	iter := gliter.All(ctx, i.client.Issues.ListIssues, opt, nextPage)
 	iter = gliter.Limited(iter, args.Limit)
+
+	var issues []*gitlab.Issue
 
 	for issue, err := range iter {
 		if err != nil {

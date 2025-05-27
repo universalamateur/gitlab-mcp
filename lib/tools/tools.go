@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -94,6 +95,11 @@ func (s *Tools) AddTo(srv *server.MCPServer) {
 // It handles the JSON encoding and error handling, providing a consistent way to return
 // JSON responses from tool handlers.
 func newToolResultJSON(v any) (*mcp.CallToolResult, error) {
+	// If v is a slice and v is nil, we return "[]" (indicating an empty slice) rather than "null".
+	if value := reflect.ValueOf(v); value.Kind() == reflect.Slice && value.IsNil() {
+		return mcp.NewToolResultText("[]"), nil
+	}
+
 	var b bytes.Buffer
 	if err := json.NewEncoder(&b).Encode(v); err != nil {
 		return nil, fmt.Errorf("encoding to JSON: %w", err)

@@ -543,6 +543,19 @@ func TestListUserIssues(t *testing.T) {
 			},
 			want: makeIssues(0, 349),
 		},
+		{
+			name: "empty response",
+			args: map[string]any{},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
+				mockIssues.EXPECT().
+					ListIssues(gomock.Any(), gomock.Any()).
+					Return(nil, &gitlab.Response{
+						Response: &http.Response{StatusCode: http.StatusOK},
+						NextPage: 0,
+					}, nil)
+			},
+			want: []*gitlab.Issue{},
+		},
 	}
 
 	for _, tt := range tests {
@@ -873,6 +886,21 @@ func TestListGroupIssues(t *testing.T) {
 					}).AnyTimes()
 			},
 			want: makeIssues(0, 349),
+		},
+		{
+			name: "empty response",
+			args: map[string]any{
+				"group_id": "test-group",
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
+				// Mock ListGroupIssues
+				mockIssues.EXPECT().
+					ListGroupIssues(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
+					Return(nil, &gitlab.Response{
+						Response: &http.Response{StatusCode: http.StatusOK},
+					}, nil)
+			},
+			want: []*gitlab.Issue{},
 		},
 	}
 
@@ -1209,6 +1237,21 @@ func TestListProjectIssues(t *testing.T) {
 					}).AnyTimes()
 			},
 			want: makeIssues(0, 349),
+		},
+		{
+			name: "empty response",
+			args: map[string]any{
+				"project_id": "test-project",
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
+				// Mock ListProjectIssues
+				mockIssues.EXPECT().
+					ListProjectIssues(gomock.Eq("test-project"), gomock.Any(), gomock.Any()).
+					Return(nil, &gitlab.Response{
+						Response: &http.Response{StatusCode: http.StatusOK},
+					}, nil)
+			},
+			want: []*gitlab.Issue{},
 		},
 	}
 

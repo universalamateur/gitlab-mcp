@@ -8,7 +8,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/mcptest"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
@@ -48,7 +47,6 @@ func TestListUserEvents(t *testing.T) {
 		cmp.Comparer(func(i1, i2 gitlab.ISOTime) bool {
 			return i1.String() == i2.String()
 		}),
-		cmpopts.EquateEmpty(),
 	}
 
 	tests := []struct {
