@@ -511,6 +511,38 @@ func TestListUserIssues(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "fetch with limit flag",
+			args: map[string]any{
+				// 349 is prime, so it is not a multiple of maxPerPage.
+				"limit": 349,
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
+				mockIssues.EXPECT().
+					ListIssues(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+						page := opts.ListOptions.Page
+						if page == 0 {
+							page = 1
+						}
+
+						if opts.ListOptions.PerPage <= 0 {
+							return nil, nil, fmt.Errorf("per_page must be greater than 0")
+						}
+
+						index := (page - 1) * opts.ListOptions.PerPage
+						if index >= 349 {
+							return nil, nil, fmt.Errorf("page index %d exceeds limit %d (page = %d, per_page = %d)", index, 349, page, opts.ListOptions.PerPage)
+						}
+
+						return makeIssues(index, index+opts.ListOptions.PerPage), &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: page + 1,
+						}, nil
+					}).AnyTimes()
+			},
+			want: makeIssues(0, 349),
+		},
 	}
 
 	for _, tt := range tests {
@@ -808,6 +840,39 @@ func TestListGroupIssues(t *testing.T) {
 			want: []*gitlab.Issue{
 				{ID: 4001, Title: "Filtered group issue"},
 			},
+		},
+		{
+			name: "fetch with limit flag",
+			args: map[string]any{
+				"group_id": "test-group",
+				// 349 is prime, so it is not a multiple of maxPerPage.
+				"limit": 349,
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
+				mockIssues.EXPECT().
+					ListGroupIssues(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, opts *gitlab.ListGroupIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+						page := opts.ListOptions.Page
+						if page == 0 {
+							page = 1
+						}
+
+						if opts.ListOptions.PerPage <= 0 {
+							return nil, nil, fmt.Errorf("per_page must be greater than 0")
+						}
+
+						index := (page - 1) * opts.ListOptions.PerPage
+						if index >= 349 {
+							return nil, nil, fmt.Errorf("page index %d exceeds limit %d (page = %d, per_page = %d)", index, 349, page, opts.ListOptions.PerPage)
+						}
+
+						return makeIssues(index, index+opts.ListOptions.PerPage), &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: page + 1,
+						}, nil
+					}).AnyTimes()
+			},
+			want: makeIssues(0, 349),
 		},
 	}
 
@@ -1112,6 +1177,39 @@ func TestListProjectIssues(t *testing.T) {
 				{ID: 5001, Title: "Filtered project issue"},
 			},
 		},
+		{
+			name: "fetch with limit flag",
+			args: map[string]any{
+				"project_id": "test-project",
+				// 349 is prime, so it is not a multiple of maxPerPage.
+				"limit": 349,
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
+				mockIssues.EXPECT().
+					ListProjectIssues(gomock.Eq("test-project"), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, opts *gitlab.ListProjectIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+						page := opts.ListOptions.Page
+						if page == 0 {
+							page = 1
+						}
+
+						if opts.ListOptions.PerPage <= 0 {
+							return nil, nil, fmt.Errorf("per_page must be greater than 0")
+						}
+
+						index := (page - 1) * opts.ListOptions.PerPage
+						if index >= 349 {
+							return nil, nil, fmt.Errorf("page index %d exceeds limit %d (page = %d, per_page = %d)", index, 349, page, opts.ListOptions.PerPage)
+						}
+
+						return makeIssues(index, index+opts.ListOptions.PerPage), &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: page + 1,
+						}, nil
+					}).AnyTimes()
+			},
+			want: makeIssues(0, 349),
+		},
 	}
 
 	for _, tt := range tests {
@@ -1151,4 +1249,19 @@ func TestListProjectIssues(t *testing.T) {
 			}
 		})
 	}
+}
+
+func makeIssues(from, to int) []*gitlab.Issue {
+	issues := make([]*gitlab.Issue, 0, to-from)
+
+	for i := from; i < to; i++ {
+		issues = append(issues, &gitlab.Issue{
+			ID:    1000000 + i,
+			IID:   i,
+			Title: fmt.Sprintf("Issue %d", i),
+			State: defaultIssueState,
+		})
+	}
+
+	return issues
 }
