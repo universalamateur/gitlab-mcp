@@ -87,6 +87,8 @@ type listUserIssuesArgs struct {
 	OrderBy      string `mcp_desc:"Sort issues by the selected field. Default is 'created_at'" mcp_enum:"created_at,due_date,label_priority,milestone_due,popularity,priority,relative_position,title,updated_at,weight"`
 	SortOrder    string `mcp_desc:"Sort order to use. Default is 'desc'" mcp_enum:"asc,desc"`
 	Limit        int    `mcp_desc:"The maximum number of issues to return. Defaults to 1000."`
+	Milestone    string `mcp_desc:"The milestone title to filter by"`
+	Labels       string `mcp_desc:"Comma-separated list of label names to filter by"`
 }
 
 // ListUserIssues returns a ServerTool for listing all issues assigned to a user.
@@ -116,6 +118,12 @@ func (i *IssuesService) listUserIssues(ctx context.Context, request mcp.CallTool
 	assignee := i.currentUser
 	if args.Assignee != "" {
 		assignee = args.Assignee
+	}
+
+	opt.Labels = newLabelOptions(args.Labels)
+
+	if args.Milestone != "" {
+		opt.Milestone = gitlab.Ptr(args.Milestone)
 	}
 
 	opt.AssigneeUsername = gitlab.Ptr(assignee)
