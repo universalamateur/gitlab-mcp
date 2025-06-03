@@ -342,9 +342,11 @@ func TestListUserIssues(t *testing.T) {
 			},
 		},
 		{
-			name: "successful fetch with custom assignee",
+			name: "successful fetch with several filters",
 			args: map[string]any{
-				"assignee": "other_user",
+				"assignee":  "other_user",
+				"labels":    "bug,feature",
+				"milestone": "v1.0",
 			},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
 				mockIssues.EXPECT().
@@ -352,6 +354,8 @@ func TestListUserIssues(t *testing.T) {
 					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := defaultOpts
 						wantOpts.AssigneeUsername = gitlab.Ptr("other_user")
+						wantOpts.Labels = &gitlab.LabelOptions{"bug", "feature"}
+						wantOpts.Milestone = gitlab.Ptr("v1.0")
 
 						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
 							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
