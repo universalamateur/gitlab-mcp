@@ -544,6 +544,44 @@ func TestListUserIssues(t *testing.T) {
 			want: makeIssues(0, 349),
 		},
 		{
+			name: "order_by and sort_order",
+			args: map[string]any{
+				"order_by":   "priority",
+				"sort_order": "desc",
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
+				mockIssues.EXPECT().
+					ListIssues(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+						wantOpts := defaultOpts
+						wantOpts.ListOptions.OrderBy = "priority"
+						wantOpts.ListOptions.Sort = "desc"
+
+						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
+						}
+
+						return []*gitlab.Issue{
+								{
+									ID:    5001,
+									IID:   501,
+									Title: "High priority issue",
+								},
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+								NextPage: 0,
+							}, nil
+					})
+			},
+			want: []*gitlab.Issue{
+				{
+					ID:    5001,
+					IID:   501,
+					Title: "High priority issue",
+				},
+			},
+		},
+		{
 			name: "empty response",
 			args: map[string]any{},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
@@ -886,6 +924,45 @@ func TestListGroupIssues(t *testing.T) {
 					}).AnyTimes()
 			},
 			want: makeIssues(0, 349),
+		},
+		{
+			name: "order_by and sort_order",
+			args: map[string]any{
+				"group_id":   "test-group",
+				"order_by":   "priority",
+				"sort_order": "desc",
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
+				mockIssues.EXPECT().
+					ListGroupIssues(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, opts *gitlab.ListGroupIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+						wantOpts := defaultOpts
+						wantOpts.ListOptions.OrderBy = "priority"
+						wantOpts.ListOptions.Sort = "desc"
+
+						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
+						}
+
+						return []*gitlab.Issue{
+								{
+									ID:    5001,
+									IID:   501,
+									Title: "High priority issue",
+								},
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+								NextPage: 0,
+							}, nil
+					})
+			},
+			want: []*gitlab.Issue{
+				{
+					ID:    5001,
+					IID:   501,
+					Title: "High priority issue",
+				},
+			},
 		},
 		{
 			name: "empty response",
@@ -1237,6 +1314,45 @@ func TestListProjectIssues(t *testing.T) {
 					}).AnyTimes()
 			},
 			want: makeIssues(0, 349),
+		},
+		{
+			name: "order_by and sort_order",
+			args: map[string]any{
+				"project_id": "test-project",
+				"order_by":   "priority",
+				"sort_order": "desc",
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
+				mockIssues.EXPECT().
+					ListProjectIssues(gomock.Eq("test-project"), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, opts *gitlab.ListProjectIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+						wantOpts := defaultOpts
+						wantOpts.ListOptions.OrderBy = "priority"
+						wantOpts.ListOptions.Sort = "desc"
+
+						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
+						}
+
+						return []*gitlab.Issue{
+								{
+									ID:    5001,
+									IID:   501,
+									Title: "High priority issue",
+								},
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+								NextPage: 0,
+							}, nil
+					})
+			},
+			want: []*gitlab.Issue{
+				{
+					ID:    5001,
+					IID:   501,
+					Title: "High priority issue",
+				},
+			},
 		},
 		{
 			name: "empty response",

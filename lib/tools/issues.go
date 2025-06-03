@@ -84,6 +84,8 @@ type listUserIssuesArgs struct {
 	Assignee     string `mcp_desc:"Filter issues by the assignee. If left blank, returns all issues assigned to the authenticated user"`
 	State        string `mcp_desc:"Filter issues by state, with 'all' returning closed and opened issues. Defaults to 'opened'." mcp_enum:"all,opened,closed"`
 	Confidential bool   `mcp_desc:"If true, includes confidential issues. Default is false, which excludes confidential issues"`
+	OrderBy      string `mcp_desc:"Sort issues by the selected field. Default is 'created_at'" mcp_enum:"created_at,due_date,label_priority,milestone_due,popularity,priority,relative_position,title,updated_at,weight"`
+	SortOrder    string `mcp_desc:"Sort order to use. Default is 'desc'" mcp_enum:"asc,desc"`
 	Limit        int    `mcp_desc:"The maximum number of issues to return. Defaults to 1000."`
 }
 
@@ -105,14 +107,10 @@ func (i *IssuesService) listUserIssues(ctx context.Context, request mcp.CallTool
 		return nil, err //nolint:wrapcheck
 	}
 
-	var (
-		opt = gitlab.ListIssuesOptions{
-			Scope: gitlab.Ptr("all"),
-			ListOptions: gitlab.ListOptions{
-				PerPage: maxPerPage,
-			},
-		}
-	)
+	opt := gitlab.ListIssuesOptions{
+		ListOptions: newListOptions(request),
+		Scope:       gitlab.Ptr("all"),
+	}
 
 	// Parse optional parameters
 	assignee := i.currentUser
@@ -173,6 +171,8 @@ type listGroupIssuesArgs struct {
 	UpdatedAfter  string     `mcp_desc:"Return issues updated on or after the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
 	UpdatedBefore string     `mcp_desc:"Return issues updated on or before the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
 	DueDate       string     `mcp_desc:"Return issues that have no due date, are overdue, or whose due date is this week, this month, or between two weeks ago and next month" mcp_enum:"none,any,today,tomorrow,overdue,week,month,recent"`
+	OrderBy       string     `mcp_desc:"Sort issues by the selected field. Default is 'created_at'" mcp_enum:"created_at,due_date,label_priority,milestone_due,popularity,priority,relative_position,title,updated_at,weight"`
+	SortOrder     string     `mcp_desc:"Sort order to use. Default is 'desc'" mcp_enum:"asc,desc"`
 	Limit         int        `mcp_desc:"The maximum number of issues to return. Defaults to 1000."`
 }
 
@@ -198,6 +198,8 @@ func (i *IssuesService) listGroupIssues(ctx context.Context, request mcp.CallToo
 	if err != nil {
 		return nil, fmt.Errorf("invalid filter options: %w", err)
 	}
+
+	opt.ListOptions = newListOptions(request)
 
 	if args.Limit <= 0 {
 		args.Limit = defaultIssuesLimit
@@ -238,6 +240,8 @@ type listProjectIssuesArgs struct {
 	UpdatedAfter  string     `mcp_desc:"Return issues updated on or after the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
 	UpdatedBefore string     `mcp_desc:"Return issues updated on or before the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
 	DueDate       string     `mcp_desc:"Return issues that have no due date, are overdue, or whose due date is this week, this month, or between two weeks ago and next month" mcp_enum:"none,any,today,tomorrow,overdue,week,month,recent"`
+	OrderBy       string     `mcp_desc:"Sort issues by the selected field. Default is 'created_at'" mcp_enum:"created_at,due_date,label_priority,milestone_due,popularity,priority,relative_position,title,updated_at,weight"`
+	SortOrder     string     `mcp_desc:"Sort order to use. Default is 'desc'" mcp_enum:"asc,desc"`
 	Limit         int        `mcp_desc:"The maximum number of issues to return. Defaults to 1000."`
 }
 
@@ -263,6 +267,8 @@ func (i *IssuesService) listProjectIssues(ctx context.Context, request mcp.CallT
 	if err != nil {
 		return nil, fmt.Errorf("invalid filter options: %w", err)
 	}
+
+	opt.ListOptions = newListOptions(request)
 
 	if args.Limit <= 0 {
 		args.Limit = defaultIssuesLimit

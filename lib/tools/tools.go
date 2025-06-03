@@ -107,3 +107,16 @@ func newToolResultJSON(v any) (*mcp.CallToolResult, error) {
 
 	return mcp.NewToolResultText(b.String()), nil
 }
+
+// newListOptions initializes a ListOptions struct populated with default values
+// and values from common arguments in the provided MCP CallToolRequest.
+func newListOptions(req mcp.CallToolRequest) gitlab.ListOptions {
+	opts := gitlab.ListOptions{
+		PerPage: maxPerPage,
+	}
+
+	opts.OrderBy = req.GetString("order_by", "")
+	opts.Sort = req.GetString("sort_order", "")
+
+	return opts
+}
