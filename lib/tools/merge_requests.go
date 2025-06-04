@@ -62,6 +62,9 @@ type MergeRequestsServiceInterface interface { //nolint:interfacebloat
 
 	// EditMergeRequest returns a tool for updating an existing merge request.
 	EditMergeRequest() server.ServerTool
+
+	// ListDraftNotes returns a tool for fetching draft MR notes.
+	ListDraftNotes() server.ServerTool
 }
 
 // NewMergeRequestsTools creates a new instance of MergeRequestsServiceInterface with the provided GitLab client
@@ -95,6 +98,7 @@ func (m *MergeRequestsService) AddTo(srv *server.MCPServer) {
 		m.GetIssuesClosedOnMerge(),
 		m.GetMergeRequestDependencies(),
 		m.EditMergeRequest(),
+		m.ListDraftNotes(),
 	)
 }
 
