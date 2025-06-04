@@ -57,10 +57,38 @@ docker run -i -e GITLAB_TOKEN=your_gitlab_token registry.gitlab.com/fforster/git
 docker run -i -e GITLAB_TOKEN=your_gitlab_token -e GITLAB_URL=https://gitlab.example.com registry.gitlab.com/fforster/gitlab-mcp:latest
 ```
 
-## Personal Access Token
+## Authentication
 
-_gitlab-mcp_ requires a personal access token for authentication.
+_gitlab-mcp_ offers two authentication methods:
+
+- OAuth2 Token (preferred)
+- Personal Access Token
+
+### OAuth2 Token
+
+Run `gitlab-mcp auth` to generate an OAuth2 token.
+This is the preferred method because it expires in a few days, reducing the risk of your token being exposed or misused.
+
+```bash
+# Run the OAuth flow to obtain tokens
+$ gitlab-mcp auth
+Please visit the following URL to authorize the application:
+https://gitlab.com/oauth/device?user_code=WDJB-MJHT
+
+Waiting to retrieve an access token...
+Success.
+```
+
+The command prints an authentication URL.
+Follow the link and authorize the application to complete the flow.
+_gitlab-mcp_ will automatically detect when you have completed the OAuth flow and will then store the access token in a file.
+
+### Personal Access Token
+
+Alternatively, _gitlab-mcp_ can use a personal access token for authentication.
 Generate one from your [GitLab User Settings](https://gitlab.com/-/user_settings/personal_access_tokens) with the `api` scope, or `read_api` for read-only access.
+
+Once created, ensure the token is available to _gitlab-mcp_ in the environment variable `GITLAB_TOKEN`.
 
 ## Usage with Claude Desktop
 
