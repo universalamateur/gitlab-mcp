@@ -4,23 +4,26 @@ import (
 	"context"
 	"log"
 	"os"
-
-	gitlab "gitlab.com/gitlab-org/api/client-go"
+	"os/signal"
+	"syscall"
 
 	"gitlab.com/fforster/gitlab-mcp/cmd"
-	"gitlab.com/fforster/gitlab-mcp/lib/build"
+	"gitlab.com/fforster/gitlab-mcp/internal/config"
+	"gitlab.com/fforster/gitlab-mcp/internal/gitlabclient"
 )
 
 func main() {
-	ctx := context.Background()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	client, err := gitlab.NewClient(os.Getenv("GITLAB_TOKEN"),
-		gitlab.WithRequestOptions(
-			gitlab.WithHeader("User-Agent", "gitlab-mcp/"+build.Version()),
-		),
-	)
+	cfg, err := config.New()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Configuration error: %v", err)
+	}
+
+	client, err := gitlabclient.New(cfg)
+	if err != nil {
+		log.Fatalf("Failed to create GitLab client: %v", err)
 	}
 
 	if err := cmd.New(client).ExecuteContext(ctx); err != nil {
