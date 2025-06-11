@@ -1,10 +1,15 @@
 package config
 
 import (
-	"fmt"
+	"errors"
 	"os"
 
 	"gitlab.com/fforster/gitlab-mcp/lib/build"
+)
+
+var (
+	// ErrMissingToken is returned when GITLAB_TOKEN environment variable is not set.
+	ErrMissingToken = errors.New("GITLAB_TOKEN environment variable is not set")
 )
 
 type Config struct {
@@ -17,7 +22,7 @@ type Config struct {
 func New() (*Config, error) {
 	token := os.Getenv("GITLAB_TOKEN")
 	if token == "" {
-		return nil, fmt.Errorf("GITLAB_TOKEN environment variable is not set")
+		return nil, ErrMissingToken
 	}
 
 	version := build.Version()
@@ -30,5 +35,6 @@ func New() (*Config, error) {
 		GitLabURL:   os.Getenv("GITLAB_URL"), // Can be empty
 		UserAgent:   "gitlab-mcp/" + version,
 	}
+
 	return cfg, nil
 }
