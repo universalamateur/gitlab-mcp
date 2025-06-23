@@ -3,10 +3,11 @@
 # See the project for instructions on how to update the project
 #
 # Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
-_commit: v1.31.0
+_commit: v1.35.1
 _src_path: https://gitlab.com/gitlab-com/gl-infra/common-template-copier.git
 ee_licensed: false
 golang: true
+helm: false
 initial_codeowners: '@fforster'
 jsonnet: false
 project_name: gitlab-mcp
