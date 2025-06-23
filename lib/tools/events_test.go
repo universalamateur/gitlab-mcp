@@ -414,11 +414,9 @@ func TestListUserEvents(t *testing.T) {
 				client: gitlabClient.Client,
 			}
 
-			srv := mcptest.NewUnstartedServer(t)
-			srv.AddTools(eventsService.ListUserEvents())
-
-			if err := srv.Start(); err != nil {
-				t.Fatalf("failed to start server: %v", err)
+			srv, err := mcptest.NewServer(t, eventsService.ListUserEvents())
+			if err != nil {
+				t.Fatalf("failed to start MCP test server: %v", err)
 			}
 			defer srv.Close()
 
