@@ -2,6 +2,10 @@
 
 A Model Context Protocol (MCP) server for GitLab, enabling Claude to interact directly with your GitLab instance.
 
+> [!warning]
+> ⚠️ This is an unofficial project.
+> It is not endorsed or supported by GitLab Inc. and is not recommended for use in production environments.
+
 ## :speech_balloon: Feedback
 
 Please provide feedback in https://gitlab.com/gitlab-org/ux-research/-/issues/3495, or (if you don't have access) open a new issue at https://gitlab.com/fforster/gitlab-mcp/-/issues.
