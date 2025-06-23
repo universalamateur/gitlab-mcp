@@ -65,7 +65,7 @@ func New(client *gitlab.Client, currentUser string) *Tools {
 	return &Tools{
 		Discussions:   NewDiscussionTools(client),
 		Epics:         NewEpicTools(client),
-		Events:        new(EventsService),
+		Events:        new(EventsTools),
 		Issues:        NewIssuesTools(client, currentUser),
 		Jobs:          NewJobsTools(client),
 		MergeRequests: NewMergeRequestsTools(client, currentUser),

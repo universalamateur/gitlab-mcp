@@ -13,17 +13,18 @@ import (
 )
 
 type EventsServiceInterface interface {
-	// AddTo registers all issue-related tools with the provided MCPServer.
+	// AddTo registers all user events related tools with the provided MCPServer.
 	AddTo(srv *server.MCPServer)
 
 	ListUserEvents() server.ServerTool
 }
 
-type EventsService struct{}
+// EventsTools implements user events related MCP tools.
+type EventsTools struct{}
 
-// AddTo registers all issue-related tools with the provided MCPServer.
+// AddTo registers all user events related tools with the provided MCPServer.
 // It adds tools for listing, retrieving, and managing issues and their related merge requests.
-func (e *EventsService) AddTo(srv *server.MCPServer) {
+func (e *EventsTools) AddTo(srv *server.MCPServer) {
 	srv.AddTools(
 		e.ListUserEvents(),
 	)
@@ -32,12 +33,12 @@ func (e *EventsService) AddTo(srv *server.MCPServer) {
 type listEventArgs struct {
 	Username   string `mcp_desc:"The username for which to load events, defaults to the current user"`
 	Before     string `mcp_desc:"Load all events with a creation date before this date (format: YYYY-MM-DD). When both Before and After limits are missing, only 100 events are returned."`
-	After      string `mcp_desc:"Load all events with a creation date after this date(format: YYYY-MM-DD). When both Before and After limits are missing, only 100 events are returned."`
+	After      string `mcp_desc:"Load all events with a creation date after this date (format: YYYY-MM-DD). When both Before and After limits are missing, only 100 events are returned."`
 	TargetType string `mcp_desc:"Filter events for a certain target type. If omitted, all target types are returned" mcp_enum:"epic,issue,merge_request,milestone,note,project,snippet,user"`
 	ActionType string `mcp_desc:"Filter events for a certain action type. If omitted, all action types are returned" mcp_enum:"approved,closed,commented,created,destroyed,expired,joined,left,merged,pushed,reopened,updated"`
 }
 
-func (e *EventsService) ListUserEvents() server.ServerTool {
+func (e *EventsTools) ListUserEvents() server.ServerTool {
 	return server.ServerTool{
 		Handler: e.listUserEvents,
 		Tool: mcpargs.NewTool("list_user_events", listEventArgs{},
@@ -53,10 +54,10 @@ const (
 	sortOrderDescending = "desc"
 )
 
-func (e *EventsService) listUserEvents(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (e *EventsTools) listUserEvents(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	client, ok := glctx.Client(ctx)
 	if !ok {
-		return nil, fmt.Errorf("client not found in context")
+		return nil, glctx.ErrNoClient
 	}
 
 	var args listEventArgs

@@ -414,7 +414,7 @@ func TestListUserEvents(t *testing.T) {
 
 			tt.setupMock(gitlabClient.MockUsers, tt.wantEvents)
 
-			eventsService := new(EventsService)
+			eventsService := new(EventsTools)
 
 			srv := mcptest.NewUnstartedServer(t)
 			srv.AddTools(eventsService.ListUserEvents())

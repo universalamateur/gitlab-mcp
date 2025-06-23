@@ -5,9 +5,13 @@ package glctx
 
 import (
 	"context"
+	"errors"
 
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
+
+// ErrNoClient is the error returned when no GitLab client is found in the context.
+var ErrNoClient = errors.New("gitlab client not found in context")
 
 type key struct{}
 
