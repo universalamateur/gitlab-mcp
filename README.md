@@ -50,7 +50,11 @@ This is recommended if you plan on contributing features or bug fixes to *gitlab
 A pre-built Docker image is available:
 
 ```bash
+# Use with gitlab.com (default)
 docker run -i -e GITLAB_TOKEN=your_gitlab_token registry.gitlab.com/fforster/gitlab-mcp:latest
+
+# Use with custom GitLab instance
+docker run -i -e GITLAB_TOKEN=your_gitlab_token -e GITLAB_URL=https://gitlab.example.com registry.gitlab.com/fforster/gitlab-mcp:latest
 ```
 
 ## Personal Access Token
@@ -90,15 +94,19 @@ To use the GitLab MCP server with Claude Desktop, add the following to your Clau
         "--rm",
         "--pull=always",
         "-e", "GITLAB_TOKEN",
+        "-e", "GITLAB_URL",
         "registry.gitlab.com/fforster/gitlab-mcp:latest"
       ],
       "env": {
-        "GITLAB_TOKEN": "your_gitlab_token"
+        "GITLAB_TOKEN": "your_gitlab_token",
+        "GITLAB_URL": "https://gitlab.example.com"
       }
     }
   }
 }
 ```
+
+Note: Remove the `GITLAB_URL` environment variable from both `args` and `env` sections if you want to use the default gitlab.com instance.
 
 **Explanation:**
 
@@ -106,6 +114,7 @@ To use the GitLab MCP server with Claude Desktop, add the following to your Clau
 * `--rm` cleans up the container when *gitlab-mcp* exits.
 * `--pull=always` ensures that Docker downloads the latest version of *gitlab-mcp* before running.
 * `-e GITLAB_TOKEN` exports the `GITLAB_TOKEN` environment variable to *gitlab-mcp*.
+* `-e GITLAB_URL` exports the `GITLAB_URL` environment variable for custom GitLab instances (optional).
 
 ### Config file location
 
@@ -116,10 +125,20 @@ The configuration file is typically located at:
 
 ### Environment Variables
 
-You can provide the GitLab token in one of two ways:
+GitLab MCP supports the following environment variables:
+
+#### Required
+- **`GITLAB_TOKEN`**: Your GitLab personal access token with `api` (or `read_api` for read-only) scope
+
+#### Optional
+- **`GITLAB_URL`**: Custom GitLab instance URL (defaults to https://gitlab.com)
+  - Must use HTTPS scheme for security
+  - Example: `https://gitlab.example.com`
+
+You can provide these environment variables in one of two ways:
 
 1. **Directly in the configuration**, by adding an `env` section. This is what the above examples use.
-2. **Via shell initialization files**, where your `.bashrc` or similar file sets the `GITLAB_TOKEN` environment variable:
+2. **Via shell initialization files**, where your `.bashrc` or similar file sets the environment variables:
 
    ```json
    {
@@ -134,6 +153,24 @@ You can provide the GitLab token in one of two ways:
      }
    }
    ```
+
+#### Custom GitLab Instance Example
+
+To connect to a custom GitLab instance:
+
+```json
+{
+  "mcpServers": {
+    "GitLab": {
+      "command": "/opt/homebrew/bin/gitlab-mcp",
+      "env": {
+        "GITLAB_TOKEN": "your_gitlab_token",
+        "GITLAB_URL": "https://gitlab.example.com"
+      }
+    }
+  }
+}
+```
 
 ## Supported Tools
 
@@ -210,6 +247,23 @@ Once configured, you can ask Claude to interact with your GitLab instance:
   and 2025-05-02?"
 - "List all of my pending todos."
 - "List the latest 100 completed todos."
+
+## Development
+
+
+### Building from Source
+
+```bash
+# Clone the repository
+git clone https://gitlab.com/fforster/gitlab-mcp.git
+cd gitlab-mcp
+
+# Build the binary
+go build -o gitlab-mcp .
+
+# Run with custom GitLab instance
+GITLAB_TOKEN=your_token GITLAB_URL=https://gitlab.example.com ./gitlab-mcp
+```
 
 ## License
 
