@@ -8,20 +8,19 @@ import (
 	"syscall"
 
 	"gitlab.com/fforster/gitlab-mcp/cmd"
-	"gitlab.com/fforster/gitlab-mcp/internal/config"
-	"gitlab.com/fforster/gitlab-mcp/internal/gitlabclient"
+	"gitlab.com/fforster/gitlab-mcp/lib/glclient"
 )
 
 func main() {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	cfg, err := config.New()
+	cfg, err := glclient.NewConfig()
 	if err != nil {
 		log.Fatalf("Configuration error: %v", err)
 	}
 
-	client, err := gitlabclient.New(cfg)
+	client, err := glclient.New(cfg)
 	if err != nil {
 		log.Fatalf("Failed to create GitLab client: %v", err)
 	}

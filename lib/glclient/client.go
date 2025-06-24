@@ -1,22 +1,52 @@
-package gitlabclient
+package glclient
 
 import (
 	"errors"
 	"fmt"
 	"net/url"
+	"os"
 
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 
-	"gitlab.com/fforster/gitlab-mcp/internal/config"
+	"gitlab.com/fforster/gitlab-mcp/lib/build"
 )
 
 var (
+	// ErrMissingToken is returned when GITLAB_TOKEN environment variable is not set.
+	ErrMissingToken = errors.New("GITLAB_TOKEN environment variable is not set")
 	// ErrInvalidScheme is returned when GitLab URL doesn't use HTTPS.
 	ErrInvalidScheme = errors.New("GITLAB_URL must use https scheme")
 )
 
+type Config struct {
+	GitLabToken string
+	GitLabURL   string // Optional
+	UserAgent   string
+}
+
+// NewConfig creates a new configuration by reading environment variables.
+func NewConfig() (*Config, error) {
+	token := os.Getenv("GITLAB_TOKEN")
+	if token == "" {
+		return nil, ErrMissingToken
+	}
+
+	version := build.Version()
+	if version == "" {
+		version = "dev"
+	}
+
+	cfg := &Config{
+		GitLabToken: token,
+		GitLabURL:   os.Getenv("GITLAB_URL"), // Can be empty
+		UserAgent:   "gitlab-mcp/" + version,
+	}
+
+	return cfg, nil
+}
+
 // New creates a GitLab client with proper validation and security checks.
-func New(cfg *config.Config) (*gitlab.Client, error) {
+func New(cfg *Config) (*gitlab.Client, error) {
 	var clientOptions []gitlab.ClientOptionFunc
 
 	// Validate and add custom GitLab URL if provided

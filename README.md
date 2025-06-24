@@ -51,10 +51,10 @@ A pre-built Docker image is available:
 
 ```bash
 # Use with gitlab.com (default)
-docker run -i -e GITLAB_TOKEN=your_gitlab_token registry.gitlab.com/netresearch/gitlab-mcp:latest
+docker run -i -e GITLAB_TOKEN=your_gitlab_token registry.gitlab.com/fforster/gitlab-mcp:latest
 
 # Use with custom GitLab instance
-docker run -i -e GITLAB_TOKEN=your_gitlab_token -e GITLAB_URL=https://gitlab.company.com registry.gitlab.com/netresearch/gitlab-mcp:latest
+docker run -i -e GITLAB_TOKEN=your_gitlab_token -e GITLAB_URL=https://gitlab.example.com registry.gitlab.com/fforster/gitlab-mcp:latest
 ```
 
 ## Personal Access Token
@@ -95,11 +95,11 @@ To use the GitLab MCP server with Claude Desktop, add the following to your Clau
         "--pull=always",
         "-e", "GITLAB_TOKEN",
         "-e", "GITLAB_URL",
-        "registry.gitlab.com/netresearch/gitlab-mcp:latest"
+        "registry.gitlab.com/fforster/gitlab-mcp:latest"
       ],
       "env": {
         "GITLAB_TOKEN": "your_gitlab_token",
-        "GITLAB_URL": "https://gitlab.company.com"
+        "GITLAB_URL": "https://gitlab.example.com"
       }
     }
   }
@@ -133,7 +133,7 @@ GitLab MCP supports the following environment variables:
 #### Optional
 - **`GITLAB_URL`**: Custom GitLab instance URL (defaults to https://gitlab.com)
   - Must use HTTPS scheme for security
-  - Example: `https://gitlab.company.com`
+  - Example: `https://gitlab.example.com`
 
 You can provide these environment variables in one of two ways:
 
@@ -165,7 +165,7 @@ To connect to a custom GitLab instance:
       "command": "/opt/homebrew/bin/gitlab-mcp",
       "env": {
         "GITLAB_TOKEN": "your_gitlab_token",
-        "GITLAB_URL": "https://gitlab.company.com"
+        "GITLAB_URL": "https://gitlab.example.com"
       }
     }
   }
@@ -250,29 +250,12 @@ Once configured, you can ask Claude to interact with your GitLab instance:
 
 ## Development
 
-### Project Structure
-
-The project uses a clean Go architecture with the following internal packages:
-
-- **`internal/config`**: Configuration management and environment variable handling
-  - Validates required `GITLAB_TOKEN` environment variable
-  - Handles optional `GITLAB_URL` for custom GitLab instances
-  - Provides fallback version handling
-
-- **`internal/gitlabclient`**: GitLab client creation with security validation
-  - Enforces HTTPS scheme for custom GitLab URLs
-  - Wraps errors from external packages for better error handling
-  - Configures User-Agent headers
-
-- **`main.go`**: Application entry point with graceful shutdown support
-  - Uses `signal.NotifyContext` for handling interrupt signals
-  - Clean separation of configuration, client creation, and command execution
 
 ### Building from Source
 
 ```bash
 # Clone the repository
-git clone https://gitlab.com/netresearch/gitlab-mcp.git
+git clone https://gitlab.com/fforster/gitlab-mcp.git
 cd gitlab-mcp
 
 # Build the binary
