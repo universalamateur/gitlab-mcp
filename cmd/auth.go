@@ -35,6 +35,7 @@ func runAuth(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println("Please visit the following URL to authorize the application:")
+
 	switch {
 	case da.VerificationURIComplete != "":
 		fmt.Println(da.VerificationURIComplete)
@@ -44,8 +45,8 @@ func runAuth(cmd *cobra.Command, args []string) error {
 	default:
 		fmt.Println(da.VerificationURI)
 	}
-	fmt.Println()
 
+	fmt.Println()
 	fmt.Println("Waiting to retrieve an access token...")
 
 	token, err := config.DeviceAccessToken(ctx, da)
@@ -65,7 +66,7 @@ func runAuth(cmd *cobra.Command, args []string) error {
 func storeToken(token *oauth2.Token) error {
 	filename := auth.TokenPath()
 
-	if err := os.MkdirAll(filepath.Dir(filename), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filename), 0700); err != nil {
 		return fmt.Errorf("MkdirAll(%q): %w", filepath.Dir(filename), err)
 	}
 

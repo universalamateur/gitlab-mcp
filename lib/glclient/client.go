@@ -15,21 +15,21 @@ import (
 
 var (
 	// ErrMissingToken is returned when GITLAB_TOKEN environment variable is not set.
-	ErrMissingToken = errors.New("GITLAB_TOKEN environment variable is not set")
+	ErrMissingToken = errors.New("no authentication token available. Run `gitlab-mcp auth` to generate a token")
 	// ErrInvalidScheme is returned when GitLab URL doesn't use HTTPS.
 	ErrInvalidScheme = errors.New("GITLAB_URL must use https scheme")
 )
 
 type Config struct {
-	GitLabToken    string
+	AccessToken    string
 	OAuthTokenFile string
-	GitLabURL      string // Optional
+	BaseURL        string // Optional
 }
 
 // NewConfig creates a new configuration by reading environment variables.
 func NewConfig() (*Config, error) {
 	cfg := &Config{
-		GitLabURL: os.Getenv("GITLAB_URL"), // Can be empty
+		BaseURL: os.Getenv("GITLAB_URL"), // Can be empty
 	}
 
 	if err := cfg.configureToken(); err != nil {
@@ -45,29 +45,28 @@ func NewConfig() (*Config, error) {
 
 func (c *Config) configureToken() error {
 	tokenFile := auth.TokenPath()
-	s, err := os.Stat(tokenFile)
-	if err == nil && s.Mode().IsRegular() {
+
+	if s, err := os.Stat(tokenFile); err == nil && s.Mode().IsRegular() {
 		c.OAuthTokenFile = tokenFile
 		return nil
 	}
 
-	pat, havePAT := os.LookupEnv("GITLAB_TOKEN")
-	if havePAT {
-		c.GitLabToken = pat
+	if pat, havePAT := os.LookupEnv("GITLAB_TOKEN"); havePAT {
+		c.AccessToken = pat
 		return nil
 	}
 
-	return fmt.Errorf("no authentication token available. Run `gitlab-mcp auth` to generate a token")
+	return ErrMissingToken
 }
 
 func (c *Config) validateBaseURL() error {
-	if c.GitLabURL == "" {
+	if c.BaseURL == "" {
 		return nil
 	}
 
-	u, err := url.ParseRequestURI(c.GitLabURL)
+	u, err := url.ParseRequestURI(c.BaseURL)
 	if err != nil {
-		return fmt.Errorf("url.ParseRequestURI(%q): %w", c.GitLabURL, err)
+		return fmt.Errorf("url.ParseRequestURI(%q): %w", c.BaseURL, err)
 	}
 
 	if u.Scheme != "https" {
@@ -82,8 +81,8 @@ func New(ctx context.Context, cfg *Config) (*gitlab.Client, error) {
 	var clientOptions []gitlab.ClientOptionFunc
 
 	// Validate and add custom GitLab URL if provided
-	if cfg.GitLabURL != "" {
-		clientOptions = append(clientOptions, gitlab.WithBaseURL(cfg.GitLabURL))
+	if cfg.BaseURL != "" {
+		clientOptions = append(clientOptions, gitlab.WithBaseURL(cfg.BaseURL))
 	}
 
 	var (
@@ -98,11 +97,11 @@ func New(ctx context.Context, cfg *Config) (*gitlab.Client, error) {
 		}
 		client, err = gitlab.NewAuthSourceClient(as)
 
-	case cfg.GitLabToken != "":
-		client, err = gitlab.NewClient(cfg.GitLabToken, clientOptions...)
+	case cfg.AccessToken != "":
+		client, err = gitlab.NewClient(cfg.AccessToken, clientOptions...)
 
 	default:
-		return nil, fmt.Errorf("no authentication token available. Run `gitlab-mcp auth` to generate a token")
+		return nil, ErrMissingToken
 	}
 
 	if err != nil {

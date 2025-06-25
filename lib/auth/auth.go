@@ -24,10 +24,13 @@ func Config() *oauth2.Config {
 }
 
 // TokenPath returns the path of the token file based on the operating system:
+//
 // - Mac OS: `~/Library/Application Support/gitlab-mcp/token.json`
 // - Linux: `~/.config/gitlab-mcp/token.json`
 // - Windows: `%APPDATA%\gitlab-mcp\token.json`
 // - Other: `~/.gitlab-mcp/token.json`
+//
+//nolint:godot
 func TokenPath() string {
 	switch runtime.GOOS {
 	case "darwin":
@@ -43,6 +46,8 @@ func TokenPath() string {
 
 // FileTokenSource returns an oauth2.TokenSource that is backed by a file on the file system.
 // The token is refreshed automatically. New tokens are automatically written to the file.
+//
+//nolint:ireturn // Return type is determined by oauth2.ReuseTokenSource.
 func FileTokenSource(ctx context.Context, filename string, config *oauth2.Config) oauth2.TokenSource {
 	src := &fileBackedToken{
 		ctx:      ctx,
@@ -53,6 +58,7 @@ func FileTokenSource(ctx context.Context, filename string, config *oauth2.Config
 	return oauth2.ReuseTokenSource(nil, src)
 }
 
+//nolint:containedctx // We have to implement the TokenSource interface, which does not accept a context.
 type fileBackedToken struct {
 	ctx      context.Context
 	filename string
