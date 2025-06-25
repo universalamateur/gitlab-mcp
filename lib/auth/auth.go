@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -68,9 +69,10 @@ func TokenPath() string {
 //nolint:ireturn // Return type is determined by oauth2.ReuseTokenSource.
 func FileTokenSource(ctx context.Context, filename string, config *oauth2.Config) oauth2.TokenSource {
 	src := &fileBackedToken{
-		ctx:      ctx,
-		filename: filename,
-		config:   config,
+		ctx:        ctx,
+		filename:   filename,
+		config:     config,
+		fileSystem: osFS{},
 	}
 
 	return oauth2.ReuseTokenSource(nil, src)
@@ -80,17 +82,20 @@ func FileTokenSource(ctx context.Context, filename string, config *oauth2.Config
 type fileBackedToken struct {
 	ctx      context.Context
 	filename string
-	config   *oauth2.Config
-	mu       sync.Mutex
+	config   interface {
+		TokenSource(ctx context.Context, t *oauth2.Token) oauth2.TokenSource
+	}
+	fileSystem fileSystem
+	mu         sync.Mutex
 }
 
 func (t *fileBackedToken) Token() (*oauth2.Token, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	data, err := os.ReadFile(t.filename)
+	data, err := t.fileSystem.ReadFile(t.filename)
 	if err != nil {
-		return nil, fmt.Errorf("io.ReadFile(%q): %w", t.filename, err)
+		return nil, fmt.Errorf("ReadFile(%q): %w", t.filename, err)
 	}
 
 	var storedToken oauth2.Token
@@ -104,8 +109,13 @@ func (t *fileBackedToken) Token() (*oauth2.Token, error) {
 	}
 
 	if storedToken.RefreshToken != refreshedToken.RefreshToken {
-		if err := StoreToken(t.filename, refreshedToken); err != nil {
-			return nil, fmt.Errorf("writeToken(): %w", err)
+		data, err := json.Marshal(refreshedToken)
+		if err != nil {
+			return nil, fmt.Errorf("json.Marshal(): %w", err)
+		}
+
+		if err := t.fileSystem.WriteFile(t.filename, data, 0600); err != nil {
+			return nil, fmt.Errorf("WriteFile(%q): %w", t.filename, err)
 		}
 	}
 
@@ -114,15 +124,39 @@ func (t *fileBackedToken) Token() (*oauth2.Token, error) {
 
 // StoreToken writes the provided token to the specified file.
 func StoreToken(filename string, token *oauth2.Token) error {
-	fh, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		return fmt.Errorf("os.OpenFile(%q): %w", filename, err)
-	}
-	defer fh.Close()
+	fs := osFS{}
 
-	if err := json.NewEncoder(fh).Encode(token); err != nil {
-		return fmt.Errorf("json.Encoder(): %w", err)
+	data, err := json.Marshal(token)
+	if err != nil {
+		return fmt.Errorf("json.Marshal(): %w", err)
+	}
+
+	if err := fs.WriteFile(filename, data, 0600); err != nil {
+		return fmt.Errorf("WriteFile(%q): %w", filename, err)
 	}
 
 	return nil
+}
+
+// fileSystem is an interface that abstracts file system operations for testing.
+type fileSystem interface {
+	ReadFile(filename string) ([]byte, error)
+	WriteFile(filename string, data []byte, perm fs.FileMode) error
+}
+
+// osFS implements FileSystem using the os package.
+type osFS struct{}
+
+func (fs osFS) ReadFile(filename string) ([]byte, error) {
+	return os.ReadFile(filename) //nolint:wrapcheck
+}
+
+func (fs osFS) WriteFile(filename string, data []byte, perm fs.FileMode) error {
+	dir := filepath.Dir(filename)
+
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return fmt.Errorf("os.MkdirAll(%q): %w", dir, err)
+	}
+
+	return os.WriteFile(filename, data, perm) //nolint:wrapcheck
 }
