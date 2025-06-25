@@ -133,12 +133,12 @@ To use the GitLab MCP server with Claude Desktop, add the following to your Clau
         "--rm",
         "--pull=always",
         "-e", "GITLAB_TOKEN",
-        "-e", "GITLAB_URL",
-        "registry.gitlab.com/fforster/gitlab-mcp:latest"
+        "registry.gitlab.com/fforster/gitlab-mcp:latest",
+        "--",
+        "--base-url", "https://gitlab.example.com"
       ],
       "env": {
-        "GITLAB_TOKEN": "your_gitlab_token",
-        "GITLAB_URL": "https://gitlab.example.com"
+        "GITLAB_TOKEN": "your_gitlab_token"
       }
     }
   }
@@ -146,15 +146,15 @@ To use the GitLab MCP server with Claude Desktop, add the following to your Clau
 ```
 
 > [!note]
-> Remove the `GITLAB_URL` environment variable from both `args` and `env` sections to use the default `gitlab.com` instance.
+> Remove the `--base-url` argument to use the default `gitlab.com` instance.
 
 **Explanation:**
 
-* `-i` is required so Docker keeps `STDIN` open.
-* `--rm` cleans up the container when *gitlab-mcp* exits.
-* `--pull=always` ensures that Docker downloads the latest version of *gitlab-mcp* before running.
-* `-e GITLAB_TOKEN` exports the `GITLAB_TOKEN` environment variable to *gitlab-mcp*.
-* `-e GITLAB_URL` exports the `GITLAB_URL` environment variable for custom GitLab instances (optional).
+- `-i` is required so Docker keeps `STDIN` open.
+- `--rm` cleans up the container when *gitlab-mcp* exits.
+- `--pull=always` ensures that Docker downloads the latest version of *gitlab-mcp* before running.
+- `-e GITLAB_TOKEN` exports the `GITLAB_TOKEN` environment variable to *gitlab-mcp*.
+- `--base-url` specifies a custom GitLab instance URL (optional).
 
 ### Config file location
 
@@ -172,6 +172,7 @@ GitLab MCP supports the following environment variables:
 - **`GITLAB_URL`**: Custom GitLab instance URL (defaults to `https://gitlab.com/api/v4`).
   - Must use HTTPS scheme for security
   - Example: `https://gitlab.example.com`
+  - Will be overridden by the `--base-url` flag if both are specified
 
 You can provide these environment variables in one of two ways:
 

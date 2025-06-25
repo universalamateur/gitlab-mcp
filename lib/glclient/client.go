@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/spf13/pflag"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/fforster/gitlab-mcp/lib/auth"
@@ -27,9 +28,14 @@ type Config struct {
 }
 
 // NewConfig creates a new configuration by reading environment variables.
-func NewConfig() (*Config, error) {
+func NewConfig(fs *pflag.FlagSet) (*Config, error) {
+	baseURL, err := fs.GetString("base-url")
+	if err != nil {
+		return nil, fmt.Errorf("determining base URL from flags: %w", err)
+	}
+
 	cfg := &Config{
-		BaseURL: os.Getenv("GITLAB_URL"), // Can be empty
+		BaseURL: baseURL,
 	}
 
 	if err := cfg.configureToken(); err != nil {

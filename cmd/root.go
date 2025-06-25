@@ -2,19 +2,22 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"os"
 
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/spf13/cobra"
-	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/fforster/gitlab-mcp/lib/build"
+	"gitlab.com/fforster/gitlab-mcp/lib/glclient"
 	"gitlab.com/fforster/gitlab-mcp/lib/tools"
 )
 
 // New creates a new command hierarchy for Cobra with the provided GitLab client.
-func New(client *gitlab.Client) *cobra.Command {
-	cmd := newRootCommand(client)
+func New() *cobra.Command {
+	cmd := newRootCommand()
 
 	cmd.AddCommand(newAuthCommand())
 	cmd.AddCommand(newVersionCommand())
@@ -23,21 +26,38 @@ func New(client *gitlab.Client) *cobra.Command {
 }
 
 type rootCommand struct {
-	client *gitlab.Client
+	baseURL string
 }
 
 // newRootCommand returns the root command for the CLI.
-func newRootCommand(client *gitlab.Client) *cobra.Command {
-	return &cobra.Command{
+func newRootCommand() *cobra.Command {
+	rc := new(rootCommand)
+
+	cmd := &cobra.Command{
 		Use:   "gitlab-mcp",
 		Short: "GitLab MCP server",
 		Long:  "A command-line tool that provides an MCP server for interacting with GitLab.",
-		RunE:  (&rootCommand{client}).run,
+		RunE:  rc.run,
 		Args:  cobra.NoArgs,
 	}
+
+	fs := cmd.Flags()
+	fs.StringVar(&rc.baseURL, "base-url", os.Getenv("GITLAB_URL"), "Custom GitLab instance URL")
+
+	return cmd
 }
 
-func (c *rootCommand) run(_ *cobra.Command, _ []string) error {
+func (c *rootCommand) run(cmd *cobra.Command, _ []string) error {
+	cfg, err := glclient.NewConfig(cmd.Flags())
+	if err != nil {
+		return fmt.Errorf("glclient.NewConfig: %w", err)
+	}
+
+	client, err := glclient.New(cmd.Context(), cfg)
+	if err != nil {
+		return fmt.Errorf("creating GitLab client: %w", err)
+	}
+
 	// Create a new MCP server
 	s := server.NewMCPServer(
 		"GitLab",
@@ -47,17 +67,23 @@ func (c *rootCommand) run(_ *cobra.Command, _ []string) error {
 		server.WithRecovery(),
 	)
 
-	user, _, err := c.client.Users.CurrentUser()
+	user, _, err := client.Users.CurrentUser()
 	if err != nil {
 		return fmt.Errorf("CurrentUser: %w", err)
 	}
 
-	tools := tools.New(c.client, user.Username)
+	tools := tools.New(client, user.Username)
 
 	tools.AddTo(s)
 
 	// Start the server
-	if err := server.ServeStdio(s); err != nil {
+	err = server.ServeStdio(s)
+
+	switch {
+	case errors.Is(err, context.Canceled):
+		return nil
+
+	case err != nil:
 		return fmt.Errorf("ServeStdio: %w", err)
 	}
 
