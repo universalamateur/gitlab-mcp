@@ -5,6 +5,7 @@ go 1.24.4
 require (
 	github.com/mark3labs/mcp-go v0.32.0
 	github.com/spf13/cobra v1.9.1
+	golang.org/x/oauth2 v0.30.0
 )
 
 require (
@@ -15,7 +16,6 @@ require (
 	github.com/spf13/cast v1.7.1 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
 	go.uber.org/mock v0.5.2 // indirect
-	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/time v0.11.0 // indirect
 )
 

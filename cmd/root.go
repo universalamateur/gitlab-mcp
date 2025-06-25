@@ -16,6 +16,7 @@ import (
 func New(client *gitlab.Client) *cobra.Command {
 	cmd := newRootCommand(client)
 
+	cmd.AddCommand(newAuthCommand())
 	cmd.AddCommand(newVersionCommand())
 
 	return cmd

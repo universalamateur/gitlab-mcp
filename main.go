@@ -20,7 +20,7 @@ func main() {
 		log.Fatalf("Configuration error: %v", err)
 	}
 
-	client, err := glclient.New(cfg)
+	client, err := glclient.New(ctx, cfg)
 	if err != nil {
 		log.Fatalf("Failed to create GitLab client: %v", err)
 	}
