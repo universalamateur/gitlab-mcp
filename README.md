@@ -37,7 +37,14 @@ brew tap fforster/gitlab-mcp https://gitlab.com/fforster/homebrew-gitlab-mcp.git
 brew install gitlab-mcp
 ```
 
-### Option 2: Build from source
+### Option 2: Download Precompiled Binaries
+
+The [GitLab Releases](https://gitlab.com/fforster/gitlab-mcp/-/releases) page contains pre-built binaries for Linux, Mac OS, and Windows, for x86_64 and ARM64 architectures.
+
+Download the appropriate `.tar.gz` file, extract it, and you will find the binary in the extracted directory.
+The binary does not depend on any other files.
+
+### Option 3: Build from source
 
 This is recommended if you plan on contributing features or bug fixes to *gitlab-mcp*.
 
@@ -45,7 +52,7 @@ This is recommended if you plan on contributing features or bug fixes to *gitlab
 2. Build the binary with `go build`, this creates `gitlab-mcp` in the current directory.
    Use `-o <path>` to chose a different filename (or directory).
 
-### Option 3: Docker
+### Option 4: Docker
 
 A pre-built Docker image is available:
 
@@ -101,9 +108,6 @@ To use the GitLab MCP server with Claude Desktop, add the following to your Clau
   "mcpServers": {
     "GitLab": {
       "command": "/opt/homebrew/bin/gitlab-mcp",
-      "env": {
-        "GITLAB_TOKEN": "your_gitlab_token"
-      }
     }
   }
 }
@@ -134,7 +138,8 @@ To use the GitLab MCP server with Claude Desktop, add the following to your Clau
 }
 ```
 
-Note: Remove the `GITLAB_URL` environment variable from both `args` and `env` sections if you want to use the default gitlab.com instance.
+> [!note]
+> Remove the `GITLAB_URL` environment variable from both `args` and `env` sections to use the default `gitlab.com` instance.
 
 **Explanation:**
 
@@ -155,17 +160,30 @@ The configuration file is typically located at:
 
 GitLab MCP supports the following environment variables:
 
-#### Required
-- **`GITLAB_TOKEN`**: Your GitLab personal access token with `api` (or `read_api` for read-only) scope
-
-#### Optional
-- **`GITLAB_URL`**: Custom GitLab instance URL (defaults to https://gitlab.com)
+- **`GITLAB_TOKEN`**: Your GitLab personal access token with `api` (or `read_api` for read-only) scope.
+  Prefer to create an OAuth token using `gitlab-mcp auth` instead, which does not require any configuration via environment variables.
+- **`GITLAB_URL`**: Custom GitLab instance URL (defaults to `https://gitlab.com/api/v4`).
   - Must use HTTPS scheme for security
   - Example: `https://gitlab.example.com`
 
 You can provide these environment variables in one of two ways:
 
-1. **Directly in the configuration**, by adding an `env` section. This is what the above examples use.
+1. **Directly in the configuration**, by adding an `env` section to the configuration:
+
+   ```json
+   {
+     "mcpServers": {
+       "GitLab": {
+         "command": "/opt/homebrew/bin/gitlab-mcp",
+         "env": {
+           "GITLAB_TOKEN": "your_gitlab_token",
+           "GITLAB_URL": "https://gitlab.example.com"
+         }
+       }
+     }
+   }
+   ```
+
 2. **Via shell initialization files**, where your `.bashrc` or similar file sets the environment variables:
 
    ```json
@@ -181,24 +199,6 @@ You can provide these environment variables in one of two ways:
      }
    }
    ```
-
-#### Custom GitLab Instance Example
-
-To connect to a custom GitLab instance:
-
-```json
-{
-  "mcpServers": {
-    "GitLab": {
-      "command": "/opt/homebrew/bin/gitlab-mcp",
-      "env": {
-        "GITLAB_TOKEN": "your_gitlab_token",
-        "GITLAB_URL": "https://gitlab.example.com"
-      }
-    }
-  }
-}
-```
 
 ## Supported Tools
 
@@ -275,23 +275,6 @@ Once configured, you can ask Claude to interact with your GitLab instance:
   and 2025-05-02?"
 - "List all of my pending todos."
 - "List the latest 100 completed todos."
-
-## Development
-
-
-### Building from Source
-
-```bash
-# Clone the repository
-git clone https://gitlab.com/fforster/gitlab-mcp.git
-cd gitlab-mcp
-
-# Build the binary
-go build -o gitlab-mcp .
-
-# Run with custom GitLab instance
-GITLAB_TOKEN=your_token GITLAB_URL=https://gitlab.example.com ./gitlab-mcp
-```
 
 ## License
 
