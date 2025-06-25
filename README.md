@@ -90,6 +90,13 @@ The command prints an authentication URL.
 Follow the link and authorize the application to complete the flow.
 _gitlab-mcp_ will automatically detect when you have completed the OAuth flow and will then store the access token in a file.
 
+For custom GitLab instances, use the `--base-url` flag to specify the URL of the GitLab instance.
+For example:
+
+```bash
+gitlab-mcp auth --base-url https://gitlab.example.com
+```
+
 ### Personal Access Token
 
 Alternatively, _gitlab-mcp_ can use a personal access token for authentication.

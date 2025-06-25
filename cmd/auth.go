@@ -11,23 +11,34 @@ import (
 	"gitlab.com/fforster/gitlab-mcp/lib/auth"
 )
 
+type authCommand struct {
+	baseURL string
+}
+
 func newAuthCommand() *cobra.Command {
-	return &cobra.Command{
+	ac := new(authCommand)
+
+	cmd := &cobra.Command{
 		Use:   "auth",
 		Short: "Create an authentication token",
 		Long:  "Performs the OAuth2 Device Authorization Grant Flow to obtain an access token for the GitLab MCP server.",
-		RunE:  runAuth,
+		RunE:  ac.run,
 		Args:  cobra.NoArgs,
 	}
+
+	fs := cmd.Flags()
+	fs.StringVar(&ac.baseURL, "base-url", os.Getenv("GITLAB_URL"), "Custom GitLab instance URL")
+
+	return cmd
 }
 
 // runAuth performs the OAuth Device Authorization Grant Flow with GitLab to obtain an access token
 // for the GitLab MCP server.
-func runAuth(cmd *cobra.Command, args []string) error {
+func (ac *authCommand) run(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
 	// Create a new OAuth2 config
-	config := auth.Config()
+	config := auth.Config(ac.baseURL)
 
 	da, err := config.DeviceAuth(ctx)
 	if err != nil {

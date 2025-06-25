@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 
 	"golang.org/x/oauth2"
@@ -15,11 +16,28 @@ import (
 
 const ClientID = "039e1e052b348d4e45e55bd50bd5cd1fa28b6ee3d044962587fd78bf68ceae4f"
 
-func Config() *oauth2.Config {
+// Config creates an OAuth2 config for the GitLab instance at baseURL.
+// If baseURL is empty, it defaults to gitlab.com.
+func Config(baseURL string) *oauth2.Config {
 	return &oauth2.Config{
 		ClientID: ClientID,
-		Endpoint: endpoints.GitLab,
+		Endpoint: endpoint(baseURL),
 		Scopes:   []string{"api"},
+	}
+}
+
+func endpoint(baseURL string) oauth2.Endpoint {
+	if baseURL == "" {
+		return endpoints.GitLab
+	}
+
+	baseURL = strings.TrimSuffix(baseURL, "/")
+	baseURL = strings.TrimSuffix(baseURL, "/api/v4")
+
+	return oauth2.Endpoint{
+		AuthURL:       baseURL + "/oauth/authorize",
+		TokenURL:      baseURL + "/oauth/token",
+		DeviceAuthURL: baseURL + "/oauth/authorize_device",
 	}
 }
 
