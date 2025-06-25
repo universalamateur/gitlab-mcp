@@ -25,9 +25,13 @@ func WithClient(ctx context.Context, client *gitlab.Client) context.Context {
 }
 
 // Client retrieves the GitLab client from the provided context.
-// It returns the client and a boolean indicating whether a valid client was found.
-// If no client exists in the context or the client is nil, it returns (nil, false).
-func Client(ctx context.Context) (*gitlab.Client, bool) {
+// It returns the client and an error indicating whether a valid client was found.
+// If no client exists in the context or the client is nil, it returns ErrNoClient.
+func Client(ctx context.Context) (*gitlab.Client, error) {
 	client, ok := ctx.Value(clientKey).(*gitlab.Client)
-	return client, ok && client != nil
+	if !ok || client == nil {
+		return nil, ErrNoClient
+	}
+
+	return client, nil
 }

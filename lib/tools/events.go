@@ -55,9 +55,9 @@ const (
 )
 
 func (e *EventsTools) listUserEvents(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	client, ok := glctx.Client(ctx)
-	if !ok {
-		return nil, glctx.ErrNoClient
+	client, err := glctx.Client(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("glctx.Client: %w", err)
 	}
 
 	var args listEventArgs

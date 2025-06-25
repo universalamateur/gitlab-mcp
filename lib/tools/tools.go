@@ -63,7 +63,7 @@ type Tools struct {
 // It initializes all the service interfaces for epics, issues, and merge requests.
 func New(client *gitlab.Client, currentUser string) *Tools {
 	return &Tools{
-		Discussions:   NewDiscussionTools(client),
+		Discussions:   new(DiscussionTools),
 		Epics:         NewEpicTools(client),
 		Events:        new(EventsTools),
 		Issues:        NewIssuesTools(client, currentUser),
