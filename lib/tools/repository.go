@@ -24,19 +24,13 @@ type RepositoryServiceInterface interface {
 	GetRepositoryFileContents() server.ServerTool
 }
 
-// NewRepositoryTools creates a new instance of RepositoryServiceInterface with the provided GitLab client.
-// It returns an implementation that can be used to interact with GitLab's repository files API.
-func NewRepositoryTools(client *gitlab.Client) *RepositoryService {
-	return &RepositoryService{client: client}
-}
-
-type RepositoryService struct {
-	client *gitlab.Client
-}
+// RepositoryTools implements the RepositoryServiceInterface and provides tools
+// for listing repository files and retrieving file contents from GitLab.
+type RepositoryTools struct{}
 
 // AddTo registers all repository file-related tools with the provided MCPServer.
 // It adds tools for listing repository tree and retrieving file contents.
-func (r *RepositoryService) AddTo(srv ToolAdder) {
+func (r *RepositoryTools) AddTo(srv ToolAdder) {
 	srv.AddTools(
 		r.ListRepositoryDirectory(),
 		r.GetRepositoryFileContents(),
@@ -52,9 +46,9 @@ type listRepositoryDirectoryArgs struct {
 
 // ListRepositoryDirectory returns a ServerTool for listing repository files and directories.
 // The tool accepts project ID and various optional parameters for customizing the tree listing.
-func (r *RepositoryService) ListRepositoryDirectory() server.ServerTool {
+func (r *RepositoryTools) ListRepositoryDirectory() server.ServerTool {
 	return server.ServerTool{
-		Handler: r.listRepositoryDirectory,
+		Handler: ClientHandler(r.listRepositoryDirectory),
 		Tool: mcpargs.NewTool("list_repository_directory", listRepositoryDirectoryArgs{},
 			mcp.WithDescription("Get a list of repository files and directories in a project. The returned JSON uses Git terminology, e.g. calling files 'blob' and directories 'tree'."),
 			mcp.WithReadOnlyHintAnnotation(true),
@@ -62,12 +56,7 @@ func (r *RepositoryService) ListRepositoryDirectory() server.ServerTool {
 	}
 }
 
-func (r *RepositoryService) listRepositoryDirectory(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var args listRepositoryDirectoryArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
+func (r *RepositoryTools) listRepositoryDirectory(ctx context.Context, client *gitlab.Client, args listRepositoryDirectoryArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// Prepare options for the API call
 	opt := &gitlab.ListTreeOptions{
 		ListOptions: gitlab.ListOptions{
@@ -90,7 +79,7 @@ func (r *RepositoryService) listRepositoryDirectory(ctx context.Context, request
 	var allTree []*gitlab.TreeNode
 
 	for {
-		tree, resp, err := r.client.Repositories.ListTree(args.ProjectID.Value(), opt, gitlab.WithContext(ctx))
+		tree, resp, err := client.Repositories.ListTree(args.ProjectID.Value(), opt, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("ListTree(%q): %w", args.ProjectID.Value(), err)
 		}
@@ -116,9 +105,9 @@ type getRepositoryFileContentsArgs struct {
 
 // GetRepositoryFileContents returns a ServerTool for retrieving the contents of a file.
 // The tool accepts either a blob SHA or a file path with optional reference (branch/tag).
-func (r *RepositoryService) GetRepositoryFileContents() server.ServerTool {
+func (r *RepositoryTools) GetRepositoryFileContents() server.ServerTool {
 	return server.ServerTool{
-		Handler: r.getRepositoryFileContents,
+		Handler: ClientHandler(r.getRepositoryFileContents),
 		Tool: mcpargs.NewTool("get_repository_file_contents", getRepositoryFileContentsArgs{},
 			mcp.WithDescription("Get the contents of a single file from the repository."),
 			mcp.WithReadOnlyHintAnnotation(true),
@@ -126,12 +115,7 @@ func (r *RepositoryService) GetRepositoryFileContents() server.ServerTool {
 	}
 }
 
-func (r *RepositoryService) getRepositoryFileContents(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var args getRepositoryFileContentsArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
+func (r *RepositoryTools) getRepositoryFileContents(ctx context.Context, client *gitlab.Client, args getRepositoryFileContentsArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	if haveSHA, havePath := args.SHA != "", args.FilePath != ""; haveSHA == havePath {
 		return mcp.NewToolResultError("exactly one of 'sha' or 'file_path' must be provided"), nil
 	}
@@ -139,7 +123,7 @@ func (r *RepositoryService) getRepositoryFileContents(ctx context.Context, reque
 	// Choose the appropriate API endpoint based on the provided parameters
 	if args.SHA != "" {
 		// Use RawBlobContent when SHA is provided
-		contents, _, err := r.client.Repositories.RawBlobContent(args.ProjectID.Value(), args.SHA, gitlab.WithContext(ctx))
+		contents, _, err := client.Repositories.RawBlobContent(args.ProjectID.Value(), args.SHA, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("RawBlobContent(%q, %q): %w", args.ProjectID.Value(), args.SHA, err)
 		}
@@ -153,7 +137,7 @@ func (r *RepositoryService) getRepositoryFileContents(ctx context.Context, reque
 		opt.Ref = gitlab.Ptr(args.Ref)
 	}
 
-	contents, _, err := r.client.RepositoryFiles.GetRawFile(args.ProjectID.Value(), args.FilePath, &opt, gitlab.WithContext(ctx))
+	contents, _, err := client.RepositoryFiles.GetRawFile(args.ProjectID.Value(), args.FilePath, &opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("GetRawFile(%q, %q, ref=%q): %w", args.ProjectID.Value(), args.FilePath, args.Ref, err)
 	}
