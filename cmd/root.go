@@ -67,6 +67,8 @@ func newRootCommand() *cobra.Command {
 	return cmd
 }
 
+var ErrInvalidTransport = errors.New("invalid transport protocol")
+
 func (c *rootCommand) run(cmd *cobra.Command, _ []string) error {
 	// Create a new MCP server
 	s := server.NewMCPServer(
@@ -87,7 +89,7 @@ func (c *rootCommand) run(cmd *cobra.Command, _ []string) error {
 		return c.serveHTTP(s)
 
 	default:
-		return fmt.Errorf("unknown transport protocol: %q", c.transport)
+		return fmt.Errorf("%w: %q", ErrInvalidTransport, c.transport)
 	}
 }
 
