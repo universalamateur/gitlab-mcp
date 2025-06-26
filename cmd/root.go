@@ -124,6 +124,7 @@ func (c *rootCommand) serveStdio(srv *server.MCPServer, cmd *cobra.Command) erro
 	return nil
 }
 
+//nolint:funlen
 func (c *rootCommand) serveHTTP(mcpSrv *server.MCPServer) error {
 	opts := []server.StreamableHTTPOption{
 		server.WithHTTPContextFunc(httpContextFunc(glclient.ServerConfig{
@@ -149,6 +150,7 @@ func (c *rootCommand) serveHTTP(mcpSrv *server.MCPServer) error {
 
 	go func() {
 		log.Printf("Listening on %s", c.listenAddr)
+
 		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errChan <- err
 		}
@@ -162,6 +164,7 @@ func (c *rootCommand) serveHTTP(mcpSrv *server.MCPServer) error {
 	select {
 	case <-stop:
 		log.Println("Shutting down server...")
+
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
