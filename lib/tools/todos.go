@@ -23,17 +23,11 @@ type TodosServiceInterface interface {
 	ListUserTodos() server.ServerTool
 }
 
-// NewTodosTools creates a new instance of TodosServiceInterface with the provided GitLab client.
-func NewTodosTools(client *gitlab.Client) *TodosService {
-	return &TodosService{client: client}
-}
-
-type TodosService struct {
-	client *gitlab.Client
-}
+// TodosTools provides tools to list and manage todos.
+type TodosTools struct{}
 
 // AddTo registers all todo-related tools with the provided MCPServer.
-func (t *TodosService) AddTo(srv ToolAdder) {
+func (t *TodosTools) AddTo(srv ToolAdder) {
 	srv.AddTools(
 		t.ListUserTodos(),
 		t.CompleteTodoItem(),
@@ -52,9 +46,9 @@ type listUserTodosArgs struct {
 }
 
 // ListUserTodos returns a ServerTool for listing all todos for the current user.
-func (t *TodosService) ListUserTodos() server.ServerTool {
+func (t *TodosTools) ListUserTodos() server.ServerTool {
 	return server.ServerTool{
-		Handler: t.listUserTodos,
+		Handler: ClientHandler(t.listUserTodos),
 		Tool: mcpargs.NewTool("list_user_todos", listUserTodosArgs{},
 			mcp.WithDescription("Get all todos for the current user, with optional filtering."),
 			mcp.WithReadOnlyHintAnnotation(true),
@@ -62,12 +56,7 @@ func (t *TodosService) ListUserTodos() server.ServerTool {
 	}
 }
 
-func (t *TodosService) listUserTodos(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var args listUserTodosArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
+func (t *TodosTools) listUserTodos(ctx context.Context, client *gitlab.Client, args listUserTodosArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	if args.Limit <= 0 {
 		args.Limit = defaultTodosLimit
 	}
@@ -102,7 +91,7 @@ func (t *TodosService) listUserTodos(ctx context.Context, request mcp.CallToolRe
 		opts.ListOptions.Page = page
 	}
 
-	iter := gliter.All(ctx, t.client.Todos.ListTodos, opt, nextPage)
+	iter := gliter.All(ctx, client.Todos.ListTodos, opt, nextPage)
 	iter = gliter.Limited(iter, args.Limit)
 
 	var todos []*gitlab.Todo
@@ -140,9 +129,9 @@ type completeTodoItemArgs struct {
 
 // CompleteTodoItem returns a ServerTool for marking a single todo item as done.
 // The tool accepts the ID of the todo item to be marked as done.
-func (t *TodosService) CompleteTodoItem() server.ServerTool {
+func (t *TodosTools) CompleteTodoItem() server.ServerTool {
 	return server.ServerTool{
-		Handler: t.completeTodoItem,
+		Handler: ClientHandler(t.completeTodoItem),
 		Tool: mcpargs.NewTool("complete_todo_item", completeTodoItemArgs{},
 			mcp.WithDescription("Marks a single pending todo item as done"),
 			mcp.WithDestructiveHintAnnotation(true),
@@ -151,13 +140,8 @@ func (t *TodosService) CompleteTodoItem() server.ServerTool {
 	}
 }
 
-func (t *TodosService) completeTodoItem(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var args completeTodoItemArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
-	_, err := t.client.Todos.MarkTodoAsDone(args.ID, gitlab.WithContext(ctx))
+func (t *TodosTools) completeTodoItem(ctx context.Context, client *gitlab.Client, args completeTodoItemArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	_, err := client.Todos.MarkTodoAsDone(args.ID, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("MarkTodoAsDone(%d): %w", args.ID, err)
 	}
@@ -167,9 +151,9 @@ func (t *TodosService) completeTodoItem(ctx context.Context, request mcp.CallToo
 
 // CompleteAllTodoItems returns a ServerTool for marking all pending todo items as done.
 // This tool takes no parameters as it affects all pending todo items.
-func (t *TodosService) CompleteAllTodoItems() server.ServerTool {
+func (t *TodosTools) CompleteAllTodoItems() server.ServerTool {
 	return server.ServerTool{
-		Handler: t.completeAllTodoItems,
+		Handler: ClientHandler(t.completeAllTodoItems),
 		Tool: mcp.NewTool("complete_all_todo_items",
 			mcp.WithDescription("Marks all pending todo items for the current user as done. Only perform this action when explicitly requested by the user."),
 			mcp.WithDestructiveHintAnnotation(true),
@@ -178,8 +162,8 @@ func (t *TodosService) CompleteAllTodoItems() server.ServerTool {
 	}
 }
 
-func (t *TodosService) completeAllTodoItems(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	_, err := t.client.Todos.MarkAllTodosAsDone(gitlab.WithContext(ctx))
+func (t *TodosTools) completeAllTodoItems(ctx context.Context, client *gitlab.Client, _ struct{}, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	_, err := client.Todos.MarkAllTodosAsDone(gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("MarkAllTodosAsDone: %w", err)
 	}
