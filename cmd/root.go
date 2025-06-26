@@ -7,7 +7,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/spf13/cobra"
@@ -131,8 +135,43 @@ func (c *rootCommand) serveHTTP(mcpSrv *server.MCPServer) error {
 
 	mux.Handle("/mcp", httpMCPServer)
 
-	log.Printf("Listening on %s", c.listenAddr)
-	return http.ListenAndServe(c.listenAddr, mux)
+	httpServer := &http.Server{
+		Addr:         c.listenAddr,
+		Handler:      mux,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  120 * time.Second,
+	}
+
+	errChan := make(chan error, 1)
+
+	go func() {
+		log.Printf("Listening on %s", c.listenAddr)
+		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			errChan <- err
+		}
+	}()
+
+	// Set up graceful shutdown
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+
+	// Block until shutdown signal or error
+	select {
+	case <-stop:
+		log.Println("Shutting down server...")
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		if err := httpServer.Shutdown(ctx); err != nil {
+			return fmt.Errorf("server shutdown error: %w", err)
+		}
+
+		return nil
+
+	case err := <-errChan:
+		return fmt.Errorf("server error: %w", err)
+	}
 }
 
 func httpContextFunc(serverConfig glclient.ServerConfig) server.HTTPContextFunc {
