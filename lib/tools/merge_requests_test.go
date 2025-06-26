@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/mcptest"
+	"gitlab.com/fforster/gitlab-mcp/lib/glctx"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	glabtest "gitlab.com/gitlab-org/api/client-go/testing"
 )
@@ -276,13 +277,15 @@ func TestGetMergeRequest(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gitlabClient := glabtest.NewTestClient(t)
+			ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
+
 			tt.setupMock(gitlabClient.MockMergeRequests, gitlabClient.MockDiscussions)
 
-			mergeRequestsService := NewMergeRequestsTools(gitlabClient.Client, "test_user")
+			srv := mcptest.NewUnstartedServer(t)
+			new(MergeRequestsTools).AddTo(srv)
 
-			srv, err := mcptest.NewServer(t, mergeRequestsService.GetMergeRequest())
-			if err != nil {
-				t.Fatalf("failed to create server: %v", err)
+			if err := srv.Start(ctx); err != nil {
+				t.Fatalf("failed to start MCP test server: %v", err)
 			}
 			defer srv.Close()
 
@@ -473,17 +476,24 @@ func TestListUserMergeRequests(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gitlabClient := glabtest.NewTestClient(t)
+			ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
+
+			gitlabClient.MockUsers.EXPECT().
+				CurrentUser(gomock.Any()).
+				Return(&gitlab.User{Username: "test_user"}, &gitlab.Response{
+					Response: &http.Response{StatusCode: http.StatusOK},
+				}, nil).AnyTimes()
+
 			if tt.setupMock != nil {
 				tt.setupMock(gitlabClient.MockMergeRequests)
 			}
 
-			service := NewMergeRequestsTools(gitlabClient.Client, "test_user")
+			srv := mcptest.NewUnstartedServer(t)
+			new(MergeRequestsTools).AddTo(srv)
 
-			srv, err := mcptest.NewServer(t, service.ListUserMergeRequests())
-			if err != nil {
-				t.Fatalf("failed to create server: %v", err)
+			if err := srv.Start(ctx); err != nil {
+				t.Fatalf("failed to start MCP test server: %v", err)
 			}
-
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
@@ -628,17 +638,18 @@ func TestListProjectMergeRequests(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gitlabClient := glabtest.NewTestClient(t)
+			ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
+
 			if tt.setupMock != nil {
 				tt.setupMock(gitlabClient.MockMergeRequests)
 			}
 
-			service := NewMergeRequestsTools(gitlabClient.Client, "test_user")
+			srv := mcptest.NewUnstartedServer(t)
+			new(MergeRequestsTools).AddTo(srv)
 
-			srv, err := mcptest.NewServer(t, service.ListProjectMergeRequests())
-			if err != nil {
-				t.Fatalf("failed to create server: %v", err)
+			if err := srv.Start(ctx); err != nil {
+				t.Fatalf("failed to start MCP test server: %v", err)
 			}
-
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
@@ -781,17 +792,18 @@ func TestListGroupMergeRequests(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gitlabClient := glabtest.NewTestClient(t)
+			ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
+
 			if tt.setupMock != nil {
 				tt.setupMock(gitlabClient.MockMergeRequests)
 			}
 
-			service := NewMergeRequestsTools(gitlabClient.Client, "test_user")
+			srv := mcptest.NewUnstartedServer(t)
+			new(MergeRequestsTools).AddTo(srv)
 
-			srv, err := mcptest.NewServer(t, service.ListGroupMergeRequests())
-			if err != nil {
-				t.Fatalf("failed to create server: %v", err)
+			if err := srv.Start(ctx); err != nil {
+				t.Fatalf("failed to start MCP test server: %v", err)
 			}
-
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
@@ -1010,13 +1022,15 @@ func TestListDraftNotes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gitlabClient := glabtest.NewTestClient(t)
+			ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
+
 			tt.setupMock(gitlabClient.MockDraftNotes)
 
-			mergeRequestsService := NewMergeRequestsTools(gitlabClient.Client, "test_user")
+			srv := mcptest.NewUnstartedServer(t)
+			new(MergeRequestsTools).AddTo(srv)
 
-			srv, err := mcptest.NewServer(t, mergeRequestsService.ListDraftNotes())
-			if err != nil {
-				t.Fatalf("failed to create server: %v", err)
+			if err := srv.Start(ctx); err != nil {
+				t.Fatalf("failed to start MCP test server: %v", err)
 			}
 			defer srv.Close()
 
