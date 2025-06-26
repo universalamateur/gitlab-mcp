@@ -41,19 +41,12 @@ type JobsServiceInterface interface {
 	TriggerManualJob() server.ServerTool
 }
 
-// NewJobsTools creates a new instance of JobsServiceInterface with the provided GitLab client.
-// It returns an implementation that can be used to interact with GitLab's jobs API.
-func NewJobsTools(client *gitlab.Client) *JobsService {
-	return &JobsService{client: client}
-}
-
-type JobsService struct {
-	client *gitlab.Client
-}
+// JobsTools implements job-related MCP tools.
+type JobsTools struct{}
 
 // AddTo registers all job-related tools with the provided MCPServer.
 // It adds tools for listing, retrieving, and managing jobs and their artifacts.
-func (j *JobsService) AddTo(srv ToolAdder) {
+func (j *JobsTools) AddTo(srv ToolAdder) {
 	srv.AddTools(
 		j.ListPipelineJobs(),
 		j.ListDownstreamPipelines(),
@@ -74,9 +67,9 @@ type listPipelineJobsArgs struct {
 
 // ListPipelineJobs returns a ServerTool for listing all jobs in a specific pipeline.
 // The tool accepts a project ID, pipeline ID, and optional filter parameters.
-func (j *JobsService) ListPipelineJobs() server.ServerTool {
+func (j *JobsTools) ListPipelineJobs() server.ServerTool {
 	return server.ServerTool{
-		Handler: j.listPipelineJobs,
+		Handler: ClientHandler(j.listPipelineJobs),
 		Tool: mcpargs.NewTool("list_pipeline_jobs", listPipelineJobsArgs{},
 			mcp.WithDescription("Get a list of jobs for a pipeline"),
 			mcp.WithReadOnlyHintAnnotation(true),
@@ -84,12 +77,7 @@ func (j *JobsService) ListPipelineJobs() server.ServerTool {
 	}
 }
 
-func (j *JobsService) listPipelineJobs(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var args listPipelineJobsArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
+func (j *JobsTools) listPipelineJobs(ctx context.Context, client *gitlab.Client, args listPipelineJobsArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var (
 		opt = &gitlab.ListJobsOptions{
 			ListOptions: gitlab.ListOptions{
@@ -104,7 +92,7 @@ func (j *JobsService) listPipelineJobs(ctx context.Context, request mcp.CallTool
 	opt.Scope = parseBuildStates(args.Status)
 
 	for {
-		j, resp, err := j.client.Jobs.ListPipelineJobs(args.ProjectID.Value(), args.PipelineID, opt, gitlab.WithContext(ctx))
+		j, resp, err := client.Jobs.ListPipelineJobs(args.ProjectID.Value(), args.PipelineID, opt, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("ListPipelineJobs(%q, %d): %w", args.ProjectID.Value(), args.PipelineID, err)
 		}
@@ -129,9 +117,9 @@ type listDownstreamPipelinesArgs struct {
 
 // ListDownstreamPipelines returns a ServerTool for listing all downstream pipeline triggers in a specific pipeline.
 // The tool accepts a project ID, pipeline ID, and optional filter parameters.
-func (j *JobsService) ListDownstreamPipelines() server.ServerTool {
+func (j *JobsTools) ListDownstreamPipelines() server.ServerTool {
 	return server.ServerTool{
-		Handler: j.listDownstreamPipelines,
+		Handler: ClientHandler(j.listDownstreamPipelines),
 		Tool: mcpargs.NewTool("list_downstream_pipelines", listDownstreamPipelinesArgs{},
 			mcp.WithDescription("Get a list of downstream pipeline triggered by a pipeline. Downstream pipelines are represented by a 'trigger job'."),
 			mcp.WithReadOnlyHintAnnotation(true),
@@ -139,12 +127,7 @@ func (j *JobsService) ListDownstreamPipelines() server.ServerTool {
 	}
 }
 
-func (j *JobsService) listDownstreamPipelines(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var args listDownstreamPipelinesArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
+func (j *JobsTools) listDownstreamPipelines(ctx context.Context, client *gitlab.Client, args listDownstreamPipelinesArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var (
 		opt = &gitlab.ListJobsOptions{
 			ListOptions: gitlab.ListOptions{
@@ -158,7 +141,7 @@ func (j *JobsService) listDownstreamPipelines(ctx context.Context, request mcp.C
 	opt.Scope = parseBuildStates(args.Status)
 
 	for {
-		b, resp, err := j.client.Jobs.ListPipelineBridges(args.ProjectID.Value(), args.PipelineID, opt, gitlab.WithContext(ctx))
+		b, resp, err := client.Jobs.ListPipelineBridges(args.ProjectID.Value(), args.PipelineID, opt, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("ListPipelineBridges(%q, %d): %w", args.ProjectID.Value(), args.PipelineID, err)
 		}
@@ -182,9 +165,9 @@ type getJobArgs struct {
 
 // GetJob returns a ServerTool for fetching information about a specific job.
 // The tool accepts a project ID and a job ID as parameters.
-func (j *JobsService) GetJob() server.ServerTool {
+func (j *JobsTools) GetJob() server.ServerTool {
 	return server.ServerTool{
-		Handler: j.getJob,
+		Handler: ClientHandler(j.getJob),
 		Tool: mcpargs.NewTool("get_job", getJobArgs{},
 			mcp.WithDescription("Get a single job of a project"),
 			mcp.WithReadOnlyHintAnnotation(true),
@@ -192,13 +175,8 @@ func (j *JobsService) GetJob() server.ServerTool {
 	}
 }
 
-func (j *JobsService) getJob(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var args getJobArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
-	job, _, err := j.client.Jobs.GetJob(args.ProjectID.Value(), args.JobID, gitlab.WithContext(ctx))
+func (j *JobsTools) getJob(ctx context.Context, client *gitlab.Client, args getJobArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	job, _, err := client.Jobs.GetJob(args.ProjectID.Value(), args.JobID, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("GetJob(%q, %d): %w", args.ProjectID.Value(), args.JobID, err)
 	}
@@ -214,9 +192,9 @@ type downloadJobArtifactsFileArgs struct {
 
 // DownloadJobArtifactsFile returns a ServerTool for downloading a specific artifact file from a job.
 // The tool accepts a project ID, job ID, and artifact path as parameters.
-func (j *JobsService) DownloadJobArtifactsFile() server.ServerTool {
+func (j *JobsTools) DownloadJobArtifactsFile() server.ServerTool {
 	return server.ServerTool{
-		Handler: j.downloadJobArtifactsFile,
+		Handler: ClientHandler(j.downloadJobArtifactsFile),
 		Tool: mcpargs.NewTool("download_job_artifacts_file", downloadJobArtifactsFileArgs{},
 			mcp.WithDescription("Download a single artifact file from a job"),
 			mcp.WithReadOnlyHintAnnotation(true),
@@ -224,13 +202,8 @@ func (j *JobsService) DownloadJobArtifactsFile() server.ServerTool {
 	}
 }
 
-func (j *JobsService) downloadJobArtifactsFile(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var args downloadJobArtifactsFileArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
-	reader, _, err := j.client.Jobs.DownloadSingleArtifactsFile(args.ProjectID.Value(), args.JobID, args.ArtifactPath, gitlab.WithContext(ctx))
+func (j *JobsTools) downloadJobArtifactsFile(ctx context.Context, client *gitlab.Client, args downloadJobArtifactsFileArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	reader, _, err := client.Jobs.DownloadSingleArtifactsFile(args.ProjectID.Value(), args.JobID, args.ArtifactPath, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("DownloadSingleArtifactsFile(%q, %d, %q): %w", args.ProjectID.Value(), args.JobID, args.ArtifactPath, err)
 	}
@@ -251,9 +224,9 @@ type downloadJobLogArgs struct {
 
 // DownloadJobLog returns a ServerTool for downloading the log file of a specific job.
 // The tool accepts a project ID and a job ID as parameters.
-func (j *JobsService) DownloadJobLog() server.ServerTool {
+func (j *JobsTools) DownloadJobLog() server.ServerTool {
 	return server.ServerTool{
-		Handler: j.downloadJobLog,
+		Handler: ClientHandler(j.downloadJobLog),
 		Tool: mcpargs.NewTool("download_job_log", downloadJobLogArgs{},
 			mcp.WithDescription("Download a log file for a specific job"),
 			mcp.WithReadOnlyHintAnnotation(true),
@@ -261,13 +234,8 @@ func (j *JobsService) DownloadJobLog() server.ServerTool {
 	}
 }
 
-func (j *JobsService) downloadJobLog(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var args downloadJobLogArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
-	reader, _, err := j.client.Jobs.GetTraceFile(args.ProjectID.Value(), args.JobID, gitlab.WithContext(ctx))
+func (j *JobsTools) downloadJobLog(ctx context.Context, client *gitlab.Client, args downloadJobLogArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	reader, _, err := client.Jobs.GetTraceFile(args.ProjectID.Value(), args.JobID, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("GetTraceFile(%q, %d): %w", args.ProjectID.Value(), args.JobID, err)
 	}
@@ -288,9 +256,9 @@ type retryJobArgs struct {
 
 // RetryJob returns a ServerTool for retrying a failed job.
 // The tool accepts a project ID and a job ID as parameters.
-func (j *JobsService) RetryJob() server.ServerTool {
+func (j *JobsTools) RetryJob() server.ServerTool {
 	return server.ServerTool{
-		Handler: j.retryJob,
+		Handler: ClientHandler(j.retryJob),
 		Tool: mcpargs.NewTool("retry_job", retryJobArgs{},
 			mcp.WithDescription("Retry a single job of a project"),
 			mcp.WithDestructiveHintAnnotation(false),
@@ -299,13 +267,8 @@ func (j *JobsService) RetryJob() server.ServerTool {
 	}
 }
 
-func (j *JobsService) retryJob(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var args retryJobArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
-	job, _, err := j.client.Jobs.RetryJob(args.ProjectID.Value(), args.JobID, gitlab.WithContext(ctx))
+func (j *JobsTools) retryJob(ctx context.Context, client *gitlab.Client, args retryJobArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	job, _, err := client.Jobs.RetryJob(args.ProjectID.Value(), args.JobID, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("RetryJob(%q, %d): %w", args.ProjectID.Value(), args.JobID, err)
 	}
@@ -320,9 +283,9 @@ type triggerManualJobArgs struct {
 
 // TriggerManualJob returns a ServerTool for manually triggering a job.
 // The tool accepts a project ID, job ID, and optional job variables as parameters.
-func (j *JobsService) TriggerManualJob() server.ServerTool {
+func (j *JobsTools) TriggerManualJob() server.ServerTool {
 	return server.ServerTool{
-		Handler: j.triggerManualJob,
+		Handler: ClientHandler(j.triggerManualJob),
 		Tool: mcpargs.NewTool("trigger_manual_job", triggerManualJobArgs{},
 			mcp.WithDescription("Trigger a manual job for a project"),
 			mcp.WithDestructiveHintAnnotation(false),
@@ -331,13 +294,8 @@ func (j *JobsService) TriggerManualJob() server.ServerTool {
 	}
 }
 
-func (j *JobsService) triggerManualJob(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var args triggerManualJobArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
-	job, _, err := j.client.Jobs.PlayJob(args.ProjectID.Value(), args.JobID, nil, gitlab.WithContext(ctx))
+func (j *JobsTools) triggerManualJob(ctx context.Context, client *gitlab.Client, args triggerManualJobArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	job, _, err := client.Jobs.PlayJob(args.ProjectID.Value(), args.JobID, nil, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("PlayJob(%q, %d): %w", args.ProjectID.Value(), args.JobID, err)
 	}
