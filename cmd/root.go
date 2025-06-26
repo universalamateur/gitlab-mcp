@@ -68,13 +68,6 @@ func (c *rootCommand) run(cmd *cobra.Command, _ []string) error {
 		server.WithRecovery(),
 	)
 
-	user, _, err := client.Users.CurrentUser()
-	if err != nil {
-		return fmt.Errorf("CurrentUser: %w", err)
-	}
-
-	tools := tools.New(client, user.Username)
-
 	tools.AddTo(s)
 
 	opts := []server.StdioOption{

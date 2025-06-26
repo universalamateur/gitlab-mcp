@@ -405,10 +405,8 @@ func TestListUserEvents(t *testing.T) {
 
 			tt.setupMock(gitlabClient.MockUsers, tt.wantEvents)
 
-			eventsService := new(EventsTools)
-
 			srv := mcptest.NewUnstartedServer(t)
-			srv.AddTools(eventsService.ListUserEvents())
+			AddTo(srv)
 
 			if err := srv.Start(ctx); err != nil {
 				t.Fatalf("failed to start MCP test server: %v", err)

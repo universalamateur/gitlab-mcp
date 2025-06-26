@@ -242,7 +242,7 @@ func TestGetIssue(t *testing.T) {
 			tt.setupMock(gitlabClient.MockIssues, gitlabClient.MockDiscussions)
 
 			srv := mcptest.NewUnstartedServer(t)
-			new(IssuesTools).AddTo(srv)
+			AddTo(srv)
 
 			if err := srv.Start(ctx); err != nil {
 				t.Fatalf("failed to start MCP test server: %v", err)
@@ -617,7 +617,7 @@ func TestListUserIssues(t *testing.T) {
 			tt.setupMock(gitlabClient.MockIssues)
 
 			srv := mcptest.NewUnstartedServer(t)
-			new(IssuesTools).AddTo(srv)
+			AddTo(srv)
 
 			if err := srv.Start(ctx); err != nil {
 				t.Fatalf("failed to start MCP test server: %v", err)
@@ -1004,7 +1004,7 @@ func TestListGroupIssues(t *testing.T) {
 			tt.setupMock(gitlabClient.MockIssues)
 
 			srv := mcptest.NewUnstartedServer(t)
-			new(IssuesTools).AddTo(srv)
+			AddTo(srv)
 
 			if err := srv.Start(ctx); err != nil {
 				t.Fatalf("failed to start MCP test server: %v", err)
@@ -1396,7 +1396,7 @@ func TestListProjectIssues(t *testing.T) {
 			tt.setupMock(gitlabClient.MockIssues)
 
 			srv := mcptest.NewUnstartedServer(t)
-			new(IssuesTools).AddTo(srv)
+			AddTo(srv)
 
 			if err := srv.Start(ctx); err != nil {
 				t.Fatalf("failed to start MCP test server: %v", err)

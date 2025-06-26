@@ -90,11 +90,10 @@ func TestListGroupEpics(t *testing.T) {
 	var (
 		gitlabClient = fakeGitlabClient()
 		ctx          = glctx.WithClient(t.Context(), gitlabClient)
-		epicTools    = new(EpicTools)
 	)
 
 	srv := mcptest.NewUnstartedServer(t)
-	epicTools.AddTo(srv)
+	AddTo(srv)
 
 	if err := srv.Start(ctx); err != nil {
 		t.Fatalf("failed to start MCP test server: %v", err)
@@ -135,11 +134,10 @@ func TestGetEpic(t *testing.T) {
 	var (
 		gitlabClient = fakeGitlabClient()
 		ctx          = glctx.WithClient(t.Context(), gitlabClient)
-		epicTools    = new(EpicTools)
 	)
 
 	srv := mcptest.NewUnstartedServer(t)
-	epicTools.AddTo(srv)
+	AddTo(srv)
 
 	if err := srv.Start(ctx); err != nil {
 		t.Fatalf("failed to start MCP test server: %v", err)
@@ -175,11 +173,10 @@ func TestGetEpicLinks(t *testing.T) {
 	var (
 		gitlabClient = fakeGitlabClient()
 		ctx          = glctx.WithClient(t.Context(), gitlabClient)
-		epicTools    = new(EpicTools)
 	)
 
 	srv := mcptest.NewUnstartedServer(t)
-	epicTools.AddTo(srv)
+	AddTo(srv)
 
 	if err := srv.Start(ctx); err != nil {
 		t.Fatalf("failed to start MCP test server: %v", err)
@@ -220,11 +217,10 @@ func TestListEpicIssues(t *testing.T) {
 	var (
 		gitlabClient = fakeGitlabClient()
 		ctx          = glctx.WithClient(t.Context(), gitlabClient)
-		epicTools    = new(EpicTools)
 	)
 
 	srv := mcptest.NewUnstartedServer(t)
-	epicTools.AddTo(srv)
+	AddTo(srv)
 
 	if err := srv.Start(ctx); err != nil {
 		t.Fatalf("failed to start MCP test server: %v", err)

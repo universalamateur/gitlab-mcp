@@ -183,7 +183,7 @@ func TestGetUser(t *testing.T) {
 			tt.setupMock(gitlabClient.MockUsers)
 
 			srv := mcptest.NewUnstartedServer(t)
-			new(UsersTools).AddTo(srv)
+			AddTo(srv)
 
 			if err := srv.Start(ctx); err != nil {
 				t.Fatalf("failed to start MCP test server: %v", err)
@@ -360,7 +360,7 @@ func TestGetUserStatus(t *testing.T) {
 			tt.setupMock(gitlabClient.MockUsers)
 
 			srv := mcptest.NewUnstartedServer(t)
-			new(UsersTools).AddTo(srv)
+			AddTo(srv)
 
 			if err := srv.Start(ctx); err != nil {
 				t.Fatalf("failed to start MCP test server: %v", err)
@@ -574,7 +574,7 @@ func TestSetUserStatus(t *testing.T) {
 			tt.setupMock(gitlabClient.MockUsers)
 
 			srv := mcptest.NewUnstartedServer(t)
-			new(UsersTools).AddTo(srv)
+			AddTo(srv)
 
 			if err := srv.Start(ctx); err != nil {
 				t.Fatalf("failed to start MCP test server: %v", err)

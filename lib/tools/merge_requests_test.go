@@ -282,7 +282,7 @@ func TestGetMergeRequest(t *testing.T) {
 			tt.setupMock(gitlabClient.MockMergeRequests, gitlabClient.MockDiscussions)
 
 			srv := mcptest.NewUnstartedServer(t)
-			new(MergeRequestsTools).AddTo(srv)
+			AddTo(srv)
 
 			if err := srv.Start(ctx); err != nil {
 				t.Fatalf("failed to start MCP test server: %v", err)
@@ -489,7 +489,7 @@ func TestListUserMergeRequests(t *testing.T) {
 			}
 
 			srv := mcptest.NewUnstartedServer(t)
-			new(MergeRequestsTools).AddTo(srv)
+			AddTo(srv)
 
 			if err := srv.Start(ctx); err != nil {
 				t.Fatalf("failed to start MCP test server: %v", err)
@@ -645,7 +645,7 @@ func TestListProjectMergeRequests(t *testing.T) {
 			}
 
 			srv := mcptest.NewUnstartedServer(t)
-			new(MergeRequestsTools).AddTo(srv)
+			AddTo(srv)
 
 			if err := srv.Start(ctx); err != nil {
 				t.Fatalf("failed to start MCP test server: %v", err)
@@ -799,7 +799,7 @@ func TestListGroupMergeRequests(t *testing.T) {
 			}
 
 			srv := mcptest.NewUnstartedServer(t)
-			new(MergeRequestsTools).AddTo(srv)
+			AddTo(srv)
 
 			if err := srv.Start(ctx); err != nil {
 				t.Fatalf("failed to start MCP test server: %v", err)
@@ -1027,7 +1027,7 @@ func TestListDraftNotes(t *testing.T) {
 			tt.setupMock(gitlabClient.MockDraftNotes)
 
 			srv := mcptest.NewUnstartedServer(t)
-			new(MergeRequestsTools).AddTo(srv)
+			AddTo(srv)
 
 			if err := srv.Start(ctx); err != nil {
 				t.Fatalf("failed to start MCP test server: %v", err)

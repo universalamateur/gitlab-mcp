@@ -28,74 +28,23 @@ const maxPerPage = 100
 // ErrArgumentType is an error indicating that the argument provided is of an invalid type.
 var ErrArgumentType = errors.New("invalid argument type")
 
-// Tools is the main entry point for GitLab API tools, providing access to
-// GitLab epics, issues, and merge requests functionality.
-type Tools struct {
-	// Discussions provides access to GitLab discussion-related operations.
-	Discussions DiscussionServiceInterface
-
-	// Epics provides access to GitLab epic-related operations.
-	Epics EpicServiceInterface
-
-	// Events provides tools to look up events
-	Events EventsServiceInterface
-
-	// Issues provides access to GitLab issue-related operations.
-	Issues IssuesServiceInterface
-
-	// Jobs provides access to pipeline job-related operations.
-	Jobs JobsServiceInterface
-
-	// MergeRequests provides access to GitLab merge request-related operations.
-	MergeRequests MergeRequestsServiceInterface
-
-	// Repositories provides access to GitLab repository-related operations.
-	Repositories RepositoryServiceInterface
-
-	// Snippets provides access to GitLab snippet-related operations.
-	Snippets SnippetsServiceInterface
-
-	// Todos provides access to GitLab todo-related operations.
-	Todos TodosServiceInterface
-
-	// Users provides tools for looking up user IDs, a user's activity and status, etc.
-	Users UsersServiceInterface
-}
-
-// New creates a new instance of Tools with the provided GitLab client and current user.
-// It initializes all the service interfaces for epics, issues, and merge requests.
-func New(client *gitlab.Client, currentUser string) *Tools {
-	return &Tools{
-		Discussions:   new(DiscussionTools),
-		Epics:         new(EpicTools),
-		Events:        new(EventsTools),
-		Issues:        new(IssuesTools),
-		Jobs:          new(JobsTools),
-		MergeRequests: new(MergeRequestsTools),
-		Repositories:  new(RepositoryTools),
-		Snippets:      new(SnippetsTools),
-		Todos:         new(TodosTools),
-		Users:         new(UsersTools),
-	}
-}
-
+// ToolAdder defines an interface for adding tools to an MCP server.
 type ToolAdder interface {
 	AddTools(tools ...server.ServerTool)
 }
 
-// AddTo registers all GitLab tools with the provided MCPServer.
-// It calls AddTo on all service interfaces to register their respective tools.
-func (s *Tools) AddTo(srv ToolAdder) {
-	s.Discussions.AddTo(srv)
-	s.Epics.AddTo(srv)
-	s.Events.AddTo(srv)
-	s.Issues.AddTo(srv)
-	s.Jobs.AddTo(srv)
-	s.MergeRequests.AddTo(srv)
-	s.Repositories.AddTo(srv)
-	s.Snippets.AddTo(srv)
-	s.Todos.AddTo(srv)
-	s.Users.AddTo(srv)
+// AddTo registers all implemented GitLab tools with the provided MCPServer.
+func AddTo(srv ToolAdder) {
+	new(DiscussionTools).AddTo(srv)
+	new(EpicTools).AddTo(srv)
+	new(EventsTools).AddTo(srv)
+	new(IssuesTools).AddTo(srv)
+	new(JobsTools).AddTo(srv)
+	new(MergeRequestsTools).AddTo(srv)
+	new(RepositoryTools).AddTo(srv)
+	new(SnippetsTools).AddTo(srv)
+	new(TodosTools).AddTo(srv)
+	new(UsersTools).AddTo(srv)
 }
 
 // ClientHandler wraps a tool handler function with a GitLab client,

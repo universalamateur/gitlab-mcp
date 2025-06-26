@@ -223,7 +223,7 @@ func TestListUserTodos(t *testing.T) {
 			tt.setupMock(gitlabClient.MockTodos)
 
 			srv := mcptest.NewUnstartedServer(t)
-			new(TodosTools).AddTo(srv)
+			AddTo(srv)
 
 			if err := srv.Start(ctx); err != nil {
 				t.Fatalf("failed to start MCP test server: %v", err)
@@ -270,7 +270,7 @@ func TestCompleteTodoItem(t *testing.T) {
 		}, nil)
 
 	srv := mcptest.NewUnstartedServer(t)
-	new(TodosTools).AddTo(srv)
+	AddTo(srv)
 
 	if err := srv.Start(ctx); err != nil {
 		t.Fatalf("failed to start MCP test server: %v", err)
@@ -312,7 +312,7 @@ func TestCompleteAllTodoItems(t *testing.T) {
 		}, nil)
 
 	srv := mcptest.NewUnstartedServer(t)
-	new(TodosTools).AddTo(srv)
+	AddTo(srv)
 
 	if err := srv.Start(ctx); err != nil {
 		t.Fatalf("failed to start MCP test server: %v", err)

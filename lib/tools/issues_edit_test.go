@@ -360,7 +360,7 @@ func TestEditIssue(t *testing.T) {
 			tt.setupMock(gitlabClient.MockIssues, tt.initialIssueState, tt.wantResult)
 
 			srv := mcptest.NewUnstartedServer(t)
-			new(IssuesTools).AddTo(srv)
+			AddTo(srv)
 
 			if err := srv.Start(ctx); err != nil {
 				t.Fatalf("failed to start MCP test server: %v", err)

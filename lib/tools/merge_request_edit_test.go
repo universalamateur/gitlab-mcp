@@ -541,7 +541,7 @@ func TestEditMergeRequest(t *testing.T) {
 			tt.setupMock(gitlabClient.MockMergeRequests, tt.wantResult)
 
 			srv := mcptest.NewUnstartedServer(t)
-			new(MergeRequestsTools).AddTo(srv)
+			AddTo(srv)
 
 			if err := srv.Start(ctx); err != nil {
 				t.Fatalf("failed to start MCP test server: %v", err)
