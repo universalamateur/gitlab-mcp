@@ -5,6 +5,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+	"net/http"
+	"strings"
 
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/spf13/cobra"
@@ -26,6 +29,11 @@ func New() *cobra.Command {
 }
 
 type rootCommand struct {
+	//  MCP flags
+	transport  string
+	listenAddr string
+
+	// GitLab flags
 	baseURL  glclient.BaseURLFlag
 	clientID string
 }
@@ -43,6 +51,12 @@ func newRootCommand() *cobra.Command {
 	}
 
 	fs := cmd.Flags()
+
+	// MCP flags
+	fs.StringVar(&rc.transport, "transport", "stdio", "Transport protocol to use for communication with the MCP server")
+	fs.StringVar(&rc.listenAddr, "listen-addr", ":8080", "Address to listen on, in the form of 'host:port'.")
+
+	// GitLab flags
 	fs.Var(&rc.baseURL, "base-url", "Custom GitLab instance URL")
 	fs.StringVar(&rc.clientID, "client-id", "", "OAuth client ID for custom GitLab instance")
 
@@ -50,16 +64,6 @@ func newRootCommand() *cobra.Command {
 }
 
 func (c *rootCommand) run(cmd *cobra.Command, _ []string) error {
-	cfg, err := glclient.NewConfig(cmd.Flags())
-	if err != nil {
-		return fmt.Errorf("glclient.NewConfig: %w", err)
-	}
-
-	client, err := glclient.New(cmd.Context(), cfg)
-	if err != nil {
-		return fmt.Errorf("creating GitLab client: %w", err)
-	}
-
 	// Create a new MCP server
 	s := server.NewMCPServer(
 		"GitLab",
@@ -71,6 +75,29 @@ func (c *rootCommand) run(cmd *cobra.Command, _ []string) error {
 
 	tools.AddTo(s)
 
+	switch strings.ToLower(c.transport) {
+	case "stdio":
+		return c.serveStdio(s, cmd)
+
+	case "http":
+		return c.serveHTTP(s)
+
+	default:
+		return fmt.Errorf("unknown transport protocol: %q", c.transport)
+	}
+}
+
+func (c *rootCommand) serveStdio(srv *server.MCPServer, cmd *cobra.Command) error {
+	cfg, err := glclient.ConfigFromFlags(cmd.Context(), cmd.Flags())
+	if err != nil {
+		return fmt.Errorf("glclient.NewConfig: %w", err)
+	}
+
+	client, err := glclient.New(cfg)
+	if err != nil {
+		return fmt.Errorf("creating GitLab client: %w", err)
+	}
+
 	opts := []server.StdioOption{
 		server.WithStdioContextFunc(func(ctx context.Context) context.Context {
 			return glctx.WithClient(ctx, client)
@@ -78,7 +105,7 @@ func (c *rootCommand) run(cmd *cobra.Command, _ []string) error {
 	}
 
 	// Start the server
-	err = server.ServeStdio(s, opts...)
+	err = server.ServeStdio(srv, opts...)
 
 	switch {
 	case errors.Is(err, context.Canceled):
@@ -89,4 +116,37 @@ func (c *rootCommand) run(cmd *cobra.Command, _ []string) error {
 	}
 
 	return nil
+}
+
+func (c *rootCommand) serveHTTP(mcpSrv *server.MCPServer) error {
+	opts := []server.StreamableHTTPOption{
+		server.WithHTTPContextFunc(httpContextFunc(glclient.ServerConfig{
+			BaseURL: c.baseURL.String(),
+		})),
+	}
+
+	httpMCPServer := server.NewStreamableHTTPServer(mcpSrv, opts...)
+
+	mux := &http.ServeMux{}
+
+	mux.Handle("/mcp", httpMCPServer)
+
+	log.Printf("Listening on %s", c.listenAddr)
+	return http.ListenAndServe(c.listenAddr, mux)
+}
+
+func httpContextFunc(serverConfig glclient.ServerConfig) server.HTTPContextFunc {
+	return func(ctx context.Context, r *http.Request) context.Context {
+		clientConfig, err := glclient.ConfigFromRequest(r, serverConfig)
+		if err != nil {
+			return glctx.WithClientError(ctx, fmt.Errorf("ConfigFromRequest: %w", err))
+		}
+
+		client, err := glclient.New(clientConfig)
+		if err != nil {
+			return glctx.WithClientError(ctx, fmt.Errorf("creating GitLab client: %w", err))
+		}
+
+		return glctx.WithClient(ctx, client)
+	}
 }
