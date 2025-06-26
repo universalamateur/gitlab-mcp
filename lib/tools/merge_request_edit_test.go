@@ -11,6 +11,8 @@ import (
 	"github.com/mark3labs/mcp-go/mcptest"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	glabtest "gitlab.com/gitlab-org/api/client-go/testing"
+
+	"gitlab.com/fforster/gitlab-mcp/lib/glctx"
 )
 
 func TestEditMergeRequest(t *testing.T) {
@@ -535,14 +537,15 @@ func TestEditMergeRequest(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gitlabClient := glabtest.NewTestClient(t)
+			ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
 
 			tt.setupMock(gitlabClient.MockMergeRequests, tt.wantResult)
 
-			mergeRequestsService := NewMergeRequestsTools(gitlabClient.Client, "test_user")
+			srv := mcptest.NewUnstartedServer(t)
+			AddTo(srv)
 
-			srv, err := mcptest.NewServer(t, mergeRequestsService.EditMergeRequest())
-			if err != nil {
-				t.Fatalf("failed to create server: %v", err)
+			if err := srv.Start(ctx); err != nil {
+				t.Fatalf("failed to start MCP test server: %v", err)
 			}
 			defer srv.Close()
 

@@ -13,6 +13,8 @@ import (
 	"github.com/mark3labs/mcp-go/mcptest"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	glabtest "gitlab.com/gitlab-org/api/client-go/testing"
+
+	"gitlab.com/fforster/gitlab-mcp/lib/glctx"
 )
 
 // timeComparer allows cmp to compare time.Time values.
@@ -236,13 +238,15 @@ func TestGetIssue(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gitlabClient := glabtest.NewTestClient(t)
+			ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
+
 			tt.setupMock(gitlabClient.MockIssues, gitlabClient.MockDiscussions)
 
-			issuesService := NewIssuesTools(gitlabClient.Client, "test_user")
+			srv := mcptest.NewUnstartedServer(t)
+			AddTo(srv)
 
-			srv, err := mcptest.NewServer(t, issuesService.GetIssue())
-			if err != nil {
-				t.Fatalf("failed to create server: %v", err)
+			if err := srv.Start(ctx); err != nil {
+				t.Fatalf("failed to start MCP test server: %v", err)
 			}
 			defer srv.Close()
 
@@ -603,13 +607,21 @@ func TestListUserIssues(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gitlabClient := glabtest.NewTestClient(t)
+			ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
+
+			gitlabClient.MockUsers.EXPECT().
+				CurrentUser(gomock.Any()).
+				Return(&gitlab.User{Username: "test_user"}, &gitlab.Response{
+					Response: &http.Response{StatusCode: http.StatusOK},
+				}, nil).AnyTimes()
+
 			tt.setupMock(gitlabClient.MockIssues)
 
-			issuesService := NewIssuesTools(gitlabClient.Client, "test_user")
+			srv := mcptest.NewUnstartedServer(t)
+			AddTo(srv)
 
-			srv, err := mcptest.NewServer(t, issuesService.ListUserIssues())
-			if err != nil {
-				t.Fatalf("failed to create server: %v", err)
+			if err := srv.Start(ctx); err != nil {
+				t.Fatalf("failed to start MCP test server: %v", err)
 			}
 			defer srv.Close()
 
@@ -988,13 +1000,15 @@ func TestListGroupIssues(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gitlabClient := glabtest.NewTestClient(t)
+			ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
+
 			tt.setupMock(gitlabClient.MockIssues)
 
-			issuesService := NewIssuesTools(gitlabClient.Client, "test_user")
+			srv := mcptest.NewUnstartedServer(t)
+			AddTo(srv)
 
-			srv, err := mcptest.NewServer(t, issuesService.ListGroupIssues())
-			if err != nil {
-				t.Fatalf("failed to create server: %v", err)
+			if err := srv.Start(ctx); err != nil {
+				t.Fatalf("failed to start MCP test server: %v", err)
 			}
 			defer srv.Close()
 
@@ -1378,13 +1392,15 @@ func TestListProjectIssues(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gitlabClient := glabtest.NewTestClient(t)
+			ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
+
 			tt.setupMock(gitlabClient.MockIssues)
 
-			issuesService := NewIssuesTools(gitlabClient.Client, "test_user")
+			srv := mcptest.NewUnstartedServer(t)
+			AddTo(srv)
 
-			srv, err := mcptest.NewServer(t, issuesService.ListProjectIssues())
-			if err != nil {
-				t.Fatalf("failed to create server: %v", err)
+			if err := srv.Start(ctx); err != nil {
+				t.Fatalf("failed to start MCP test server: %v", err)
 			}
 			defer srv.Close()
 

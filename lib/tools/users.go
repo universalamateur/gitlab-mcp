@@ -16,7 +16,7 @@ import (
 // It provides methods for retrieving user information, status, activities, and memberships.
 type UsersServiceInterface interface {
 	// AddTo registers all user-related tools with the provided MCPServer.
-	AddTo(srv *server.MCPServer)
+	AddTo(srv ToolAdder)
 
 	// GetUser returns a tool for fetching information about a specific user or the current user.
 	GetUser() server.ServerTool
@@ -28,23 +28,12 @@ type UsersServiceInterface interface {
 	SetUserStatus() server.ServerTool
 }
 
-// NewUsersTools creates a new instance of UsersServiceInterface with the provided GitLab client
-// and current user. It returns an implementation that can be used to interact with GitLab's user API.
-func NewUsersTools(client *gitlab.Client, currentUser string) *UsersService {
-	return &UsersService{
-		client:      client,
-		currentUser: currentUser,
-	}
-}
-
-type UsersService struct {
-	client      *gitlab.Client
-	currentUser string
-}
+// UsersTools implements tools for user-related GitLab operations.
+type UsersTools struct{}
 
 // AddTo registers all user-related tools with the provided MCPServer.
 // It adds tools for retrieving user information, status, activities, and memberships.
-func (u *UsersService) AddTo(srv *server.MCPServer) {
+func (u *UsersTools) AddTo(srv ToolAdder) {
 	srv.AddTools(
 		u.GetUser(),
 		u.GetUserStatus(),
@@ -58,9 +47,9 @@ type getUserArgs struct {
 
 // GetUser returns a ServerTool for fetching information about a specific user or the current user.
 // If no user ID is provided, it returns information about the authenticated user.
-func (u *UsersService) GetUser() server.ServerTool {
+func (u *UsersTools) GetUser() server.ServerTool {
 	return server.ServerTool{
-		Handler: u.getUser,
+		Handler: ClientHandler(u.getUser),
 		Tool: mcpargs.NewTool("get_user", getUserArgs{},
 			mcp.WithDescription("Get information about a specific user or the current user. In particular, this tool can be used to resolve a username to an ID."),
 			mcp.WithReadOnlyHintAnnotation(true),
@@ -68,15 +57,10 @@ func (u *UsersService) GetUser() server.ServerTool {
 	}
 }
 
-func (u *UsersService) getUser(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var args getUserArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
+func (u *UsersTools) getUser(ctx context.Context, client *gitlab.Client, args getUserArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// Get current user
 	if args.UserID.IsZero() {
-		user, _, err := u.client.Users.CurrentUser(gitlab.WithContext(ctx))
+		user, _, err := client.Users.CurrentUser(gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("CurrentUser: %w", err)
 		}
@@ -86,7 +70,7 @@ func (u *UsersService) getUser(ctx context.Context, request mcp.CallToolRequest)
 
 	switch {
 	case args.UserID.Integer != 0:
-		user, _, err := u.client.Users.GetUser(args.UserID.Integer, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
+		user, _, err := client.Users.GetUser(args.UserID.Integer, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("GetUser(%d): %w", args.UserID.Integer, err)
 		}
@@ -99,7 +83,7 @@ func (u *UsersService) getUser(ctx context.Context, request mcp.CallToolRequest)
 			Username: gitlab.Ptr(id),
 		}
 
-		users, _, err := u.client.Users.ListUsers(&opts, gitlab.WithContext(ctx))
+		users, _, err := client.Users.ListUsers(&opts, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("ListUsers(username=%q): %w", id, err)
 		}
@@ -120,9 +104,9 @@ type getUserStatusArgs struct {
 }
 
 // GetUserStatus returns a ServerTool for fetching a user's status.
-func (u *UsersService) GetUserStatus() server.ServerTool {
+func (u *UsersTools) GetUserStatus() server.ServerTool {
 	return server.ServerTool{
-		Handler: u.getUserStatus,
+		Handler: ClientHandler(u.getUserStatus),
 		Tool: mcpargs.NewTool("get_user_status", getUserStatusArgs{},
 			mcp.WithDescription("Get a user's status"),
 			mcp.WithReadOnlyHintAnnotation(true),
@@ -130,18 +114,13 @@ func (u *UsersService) GetUserStatus() server.ServerTool {
 	}
 }
 
-func (u *UsersService) getUserStatus(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var args getUserStatusArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
+func (u *UsersTools) getUserStatus(ctx context.Context, client *gitlab.Client, args getUserStatusArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	userID := args.UserID.Value()
 	if s, ok := userID.(string); ok {
 		userID = strings.TrimPrefix(s, "@")
 	}
 
-	status, _, err := u.client.Users.GetUserStatus(userID, gitlab.WithContext(ctx))
+	status, _, err := client.Users.GetUserStatus(userID, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("GetUserStatus(%v): %w", userID, err)
 	}
@@ -156,9 +135,9 @@ type setUserStatusArgs struct {
 }
 
 // SetUserStatus returns a ServerTool for setting a user's status.
-func (u *UsersService) SetUserStatus() server.ServerTool {
+func (u *UsersTools) SetUserStatus() server.ServerTool {
 	return server.ServerTool{
-		Handler: u.setUserStatus,
+		Handler: ClientHandler(u.setUserStatus),
 		Tool: mcpargs.NewTool("set_user_status", setUserStatusArgs{},
 			mcp.WithDescription("Set the current user's status"),
 			mcp.WithDestructiveHintAnnotation(false),
@@ -167,12 +146,7 @@ func (u *UsersService) SetUserStatus() server.ServerTool {
 	}
 }
 
-func (u *UsersService) setUserStatus(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var args setUserStatusArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
+func (u *UsersTools) setUserStatus(ctx context.Context, client *gitlab.Client, args setUserStatusArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	opt := &gitlab.UserStatusOptions{}
 
 	// Set optional parameters
@@ -188,7 +162,7 @@ func (u *UsersService) setUserStatus(ctx context.Context, request mcp.CallToolRe
 		opt.Availability = gitlab.Ptr(gitlab.AvailabilityValue(args.Availability))
 	}
 
-	status, _, err := u.client.Users.SetUserStatus(opt, gitlab.WithContext(ctx))
+	status, _, err := client.Users.SetUserStatus(opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("SetUserStatus: %w", err)
 	}

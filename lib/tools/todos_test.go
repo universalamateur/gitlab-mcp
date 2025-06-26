@@ -10,6 +10,8 @@ import (
 	"github.com/mark3labs/mcp-go/mcptest"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	glabtest "gitlab.com/gitlab-org/api/client-go/testing"
+
+	"gitlab.com/fforster/gitlab-mcp/lib/glctx"
 )
 
 func TestListUserTodos(t *testing.T) {
@@ -217,15 +219,23 @@ func TestListUserTodos(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gitlabClient := glabtest.NewTestClient(t)
+			ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
+
 			tt.setupMock(gitlabClient.MockTodos)
 
-			todoTools := NewTodosTools(gitlabClient.Client)
+			srv := mcptest.NewUnstartedServer(t)
+			AddTo(srv)
 
-			// Test direct function call
+			if err := srv.Start(ctx); err != nil {
+				t.Fatalf("failed to start MCP test server: %v", err)
+			}
+			defer srv.Close()
+
 			var req mcp.CallToolRequest
+			req.Params.Name = "list_user_todos"
 			req.Params.Arguments = tt.args
 
-			result, err := todoTools.listUserTodos(t.Context(), req)
+			result, err := srv.Client().CallTool(t.Context(), req)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -248,10 +258,11 @@ func TestListUserTodos(t *testing.T) {
 }
 
 func TestCompleteTodoItem(t *testing.T) {
-	mockClient := glabtest.NewTestClient(t)
+	gitlabClient := glabtest.NewTestClient(t)
+	ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
 
 	// Expect MarkTodoAsDone to be called with the todo ID
-	mockClient.MockTodos.EXPECT().
+	gitlabClient.MockTodos.EXPECT().
 		MarkTodoAsDone(gomock.Eq(1), gomock.Any()).
 		Return(&gitlab.Response{
 			Response: &http.Response{
@@ -259,15 +270,13 @@ func TestCompleteTodoItem(t *testing.T) {
 			},
 		}, nil)
 
-	todoTools := NewTodosTools(mockClient.Client)
+	srv := mcptest.NewUnstartedServer(t)
+	AddTo(srv)
 
-	srv, err := mcptest.NewServer(t, todoTools.CompleteTodoItem())
-	if err != nil {
-		t.Fatal(err)
+	if err := srv.Start(ctx); err != nil {
+		t.Fatalf("failed to start MCP test server: %v", err)
 	}
 	defer srv.Close()
-
-	client := srv.Client()
 
 	var req mcp.CallToolRequest
 	req.Params.Name = "complete_todo_item"
@@ -275,7 +284,7 @@ func TestCompleteTodoItem(t *testing.T) {
 		"id": 1,
 	}
 
-	result, err := client.CallTool(t.Context(), req)
+	result, err := srv.Client().CallTool(t.Context(), req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -291,10 +300,11 @@ func TestCompleteTodoItem(t *testing.T) {
 }
 
 func TestCompleteAllTodoItems(t *testing.T) {
-	mockClient := glabtest.NewTestClient(t)
+	gitlabClient := glabtest.NewTestClient(t)
+	ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
 
 	// Expect MarkAllTodosAsDone to be called
-	mockClient.MockTodos.EXPECT().
+	gitlabClient.MockTodos.EXPECT().
 		MarkAllTodosAsDone(gomock.Any()).
 		Return(&gitlab.Response{
 			Response: &http.Response{
@@ -302,21 +312,19 @@ func TestCompleteAllTodoItems(t *testing.T) {
 			},
 		}, nil)
 
-	todoTools := NewTodosTools(mockClient.Client)
+	srv := mcptest.NewUnstartedServer(t)
+	AddTo(srv)
 
-	srv, err := mcptest.NewServer(t, todoTools.CompleteAllTodoItems())
-	if err != nil {
-		t.Fatal(err)
+	if err := srv.Start(ctx); err != nil {
+		t.Fatalf("failed to start MCP test server: %v", err)
 	}
 	defer srv.Close()
-
-	client := srv.Client()
 
 	var req mcp.CallToolRequest
 	req.Params.Name = "complete_all_todo_items"
 	req.Params.Arguments = map[string]any{}
 
-	result, err := client.CallTool(t.Context(), req)
+	result, err := srv.Client().CallTool(t.Context(), req)
 	if err != nil {
 		t.Fatal(err)
 	}

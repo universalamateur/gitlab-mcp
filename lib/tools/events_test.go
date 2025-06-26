@@ -12,6 +12,8 @@ import (
 	"github.com/mark3labs/mcp-go/mcptest"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	glabtest "gitlab.com/gitlab-org/api/client-go/testing"
+
+	"gitlab.com/fforster/gitlab-mcp/lib/glctx"
 )
 
 func TestListUserEvents(t *testing.T) {
@@ -61,15 +63,6 @@ func TestListUserEvents(t *testing.T) {
 			name: "list events for current user",
 			args: map[string]any{},
 			setupMock: func(mockUsers *glabtest.MockUsersServiceInterface, events []*gitlab.ContributionEvent) {
-				// Mock CurrentUser call
-				mockUsers.EXPECT().
-					CurrentUser(gomock.Any()).
-					Return(&gitlab.User{
-						ID:       100,
-						Username: testUser,
-						Name:     "Test User",
-					}, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil)
-
 				// Mock ListUserContributionEvents call
 				mockUsers.EXPECT().
 					ListUserContributionEvents(gomock.Any(), gomock.Any(), gomock.Any()).
@@ -308,13 +301,15 @@ func TestListUserEvents(t *testing.T) {
 							return nil, nil, fmt.Errorf("expected username %q, got %v", testUser, uid)
 						}
 
-						if opts.Page == 0 {
+						switch opts.Page {
+						case 0:
 							// First page
 							return events[:1], &gitlab.Response{
 								Response: &http.Response{StatusCode: http.StatusOK},
 								NextPage: 2,
 							}, nil
-						} else if opts.Page == 2 {
+
+						case 2:
 							// Second page
 							return events[1:], &gitlab.Response{
 								Response: &http.Response{StatusCode: http.StatusOK},
@@ -375,16 +370,6 @@ func TestListUserEvents(t *testing.T) {
 			wantError: true,
 		},
 		{
-			name: "CurrentUser API error",
-			args: map[string]any{}, // No username provided, so it should call CurrentUser
-			setupMock: func(mockUsers *glabtest.MockUsersServiceInterface, events []*gitlab.ContributionEvent) {
-				mockUsers.EXPECT().
-					CurrentUser(gomock.Any()).
-					Return(nil, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusUnauthorized}}, fmt.Errorf("unauthorized"))
-			},
-			wantError: true,
-		},
-		{
 			name: "ListUserContributionEvents API error",
 			args: map[string]any{
 				"username": testUser,
@@ -407,15 +392,23 @@ func TestListUserEvents(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gitlabClient := glabtest.NewTestClient(t)
+			ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
+
+			// Mock CurrentUser call
+			gitlabClient.MockUsers.EXPECT().
+				CurrentUser(gomock.Any()).
+				Return(&gitlab.User{
+					ID:       100,
+					Username: testUser,
+					Name:     "Test User",
+				}, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil)
 
 			tt.setupMock(gitlabClient.MockUsers, tt.wantEvents)
 
-			eventsService := &EventsService{
-				client: gitlabClient.Client,
-			}
+			srv := mcptest.NewUnstartedServer(t)
+			AddTo(srv)
 
-			srv, err := mcptest.NewServer(t, eventsService.ListUserEvents())
-			if err != nil {
+			if err := srv.Start(ctx); err != nil {
 				t.Fatalf("failed to start MCP test server: %v", err)
 			}
 			defer srv.Close()
