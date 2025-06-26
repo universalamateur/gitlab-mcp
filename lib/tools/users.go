@@ -16,7 +16,7 @@ import (
 // It provides methods for retrieving user information, status, activities, and memberships.
 type UsersServiceInterface interface {
 	// AddTo registers all user-related tools with the provided MCPServer.
-	AddTo(srv *server.MCPServer)
+	AddTo(srv ToolAdder)
 
 	// GetUser returns a tool for fetching information about a specific user or the current user.
 	GetUser() server.ServerTool
@@ -44,7 +44,7 @@ type UsersService struct {
 
 // AddTo registers all user-related tools with the provided MCPServer.
 // It adds tools for retrieving user information, status, activities, and memberships.
-func (u *UsersService) AddTo(srv *server.MCPServer) {
+func (u *UsersService) AddTo(srv ToolAdder) {
 	srv.AddTools(
 		u.GetUser(),
 		u.GetUserStatus(),

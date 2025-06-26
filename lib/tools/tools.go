@@ -10,6 +10,7 @@ package tools
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,6 +18,8 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	"gitlab.com/fforster/gitlab-mcp/lib/glctx"
+	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
@@ -64,9 +67,9 @@ type Tools struct {
 func New(client *gitlab.Client, currentUser string) *Tools {
 	return &Tools{
 		Discussions:   new(DiscussionTools),
-		Epics:         NewEpicTools(client),
+		Epics:         new(EpicTools),
 		Events:        new(EventsTools),
-		Issues:        NewIssuesTools(client, currentUser),
+		Issues:        new(IssuesTools),
 		Jobs:          NewJobsTools(client),
 		MergeRequests: NewMergeRequestsTools(client, currentUser),
 		Repositories:  NewRepositoryTools(client),
@@ -76,9 +79,13 @@ func New(client *gitlab.Client, currentUser string) *Tools {
 	}
 }
 
+type ToolAdder interface {
+	AddTools(tools ...server.ServerTool)
+}
+
 // AddTo registers all GitLab tools with the provided MCPServer.
 // It calls AddTo on all service interfaces to register their respective tools.
-func (s *Tools) AddTo(srv *server.MCPServer) {
+func (s *Tools) AddTo(srv ToolAdder) {
 	s.Discussions.AddTo(srv)
 	s.Epics.AddTo(srv)
 	s.Events.AddTo(srv)
@@ -89,6 +96,47 @@ func (s *Tools) AddTo(srv *server.MCPServer) {
 	s.Snippets.AddTo(srv)
 	s.Todos.AddTo(srv)
 	s.Users.AddTo(srv)
+}
+
+// ClientHandler wraps a tool handler function with a GitLab client,
+// initializing the client from the provided context before calling the handler.
+func ClientHandler[A any](hndl func(ctx context.Context, client *gitlab.Client, args A, req mcp.CallToolRequest) (*mcp.CallToolResult, error)) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		client, err := glctx.Client(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("glctx.Client: %w", err)
+		}
+
+		var args A
+		if err := mcpargs.Unmarshal(req.GetArguments(), &args); err != nil {
+			return nil, fmt.Errorf("mcpargs.Unmarshal: %w", err)
+		}
+
+		return hndl(ctx, client, args, req)
+	}
+}
+
+// ClientUserHandler wraps a tool handler function with a GitLab client,
+// initializing the client from the provided context before calling the handler.
+func ClientUserHandler[A any](hndl func(ctx context.Context, client *gitlab.Client, args A, currentUser *gitlab.User, req mcp.CallToolRequest) (*mcp.CallToolResult, error)) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		client, err := glctx.Client(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("glctx.Client: %w", err)
+		}
+
+		var args A
+		if err := mcpargs.Unmarshal(req.GetArguments(), &args); err != nil {
+			return nil, fmt.Errorf("mcpargs.Unmarshal: %w", err)
+		}
+
+		user, _, err := client.Users.CurrentUser(gitlab.WithContext(ctx))
+		if err != nil {
+			return nil, fmt.Errorf("CurrentUser: %w", err)
+		}
+
+		return hndl(ctx, client, args, user, req)
+	}
 }
 
 // newToolResultJSON encodes the provided value as JSON and returns it as a tool result.

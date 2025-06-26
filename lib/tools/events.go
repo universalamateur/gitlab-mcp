@@ -8,13 +8,12 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 
-	"gitlab.com/fforster/gitlab-mcp/lib/glctx"
 	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
 
 type EventsServiceInterface interface {
 	// AddTo registers all user events related tools with the provided MCPServer.
-	AddTo(srv *server.MCPServer)
+	AddTo(srv ToolAdder)
 
 	ListUserEvents() server.ServerTool
 }
@@ -24,7 +23,7 @@ type EventsTools struct{}
 
 // AddTo registers all user events related tools with the provided MCPServer.
 // It adds tools for listing, retrieving, and managing issues and their related merge requests.
-func (e *EventsTools) AddTo(srv *server.MCPServer) {
+func (e *EventsTools) AddTo(srv ToolAdder) {
 	srv.AddTools(
 		e.ListUserEvents(),
 	)
@@ -40,7 +39,7 @@ type listEventArgs struct {
 
 func (e *EventsTools) ListUserEvents() server.ServerTool {
 	return server.ServerTool{
-		Handler: e.listUserEvents,
+		Handler: ClientUserHandler(e.listUserEvents),
 		Tool: mcpargs.NewTool("list_user_events", listEventArgs{},
 			mcp.WithDescription("Use this tool to review event activity of a user."+
 				"Events can include a wide range of actions including things like joining projects, "+
@@ -54,24 +53,9 @@ const (
 	sortOrderDescending = "desc"
 )
 
-func (e *EventsTools) listUserEvents(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	client, err := glctx.Client(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("glctx.Client: %w", err)
-	}
-
-	var args listEventArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, fmt.Errorf("mcpargs.Unmarshal: %w", err)
-	}
-
+func (e *EventsTools) listUserEvents(ctx context.Context, client *gitlab.Client, args listEventArgs, currentUser *gitlab.User, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	if args.Username == "" {
-		u, _, err := client.Users.CurrentUser(gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, fmt.Errorf("CurrentUser: %w", err)
-		}
-
-		args.Username = u.Username
+		args.Username = currentUser.Username
 	}
 
 	opts, err := listContributionEventsOptions(args)

@@ -15,7 +15,7 @@ import (
 // It provides methods for accessing and manipulating repository files and contents.
 type RepositoryServiceInterface interface {
 	// AddTo registers all repository file-related tools with the provided MCPServer.
-	AddTo(srv *server.MCPServer)
+	AddTo(srv ToolAdder)
 
 	// ListRepositoryDirectory returns a tool for listing repository files and directories.
 	ListRepositoryDirectory() server.ServerTool
@@ -36,7 +36,7 @@ type RepositoryService struct {
 
 // AddTo registers all repository file-related tools with the provided MCPServer.
 // It adds tools for listing repository tree and retrieving file contents.
-func (r *RepositoryService) AddTo(srv *server.MCPServer) {
+func (r *RepositoryService) AddTo(srv ToolAdder) {
 	srv.AddTools(
 		r.ListRepositoryDirectory(),
 		r.GetRepositoryFileContents(),

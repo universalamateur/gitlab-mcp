@@ -9,14 +9,13 @@ import (
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/fforster/gitlab-mcp/lib/discussions"
-	"gitlab.com/fforster/gitlab-mcp/lib/glctx"
 	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
 
 // DiscussionServiceInterface defines the interface for discussion-related GitLab operations.
 type DiscussionServiceInterface interface {
 	// AddTo registers all discussion-related tools with the provided MCPServer.
-	AddTo(srv *server.MCPServer)
+	AddTo(srv ToolAdder)
 
 	// Discussion tools
 	NewDiscussion() server.ServerTool
@@ -31,7 +30,7 @@ type DiscussionServiceInterface interface {
 type DiscussionTools struct{}
 
 // AddTo registers all discussion-related tools with the provided MCPServer.
-func (d *DiscussionTools) AddTo(srv *server.MCPServer) {
+func (d *DiscussionTools) AddTo(srv ToolAdder) {
 	srv.AddTools(
 		d.NewDiscussion(),
 		d.ListDiscussions(),
@@ -87,7 +86,7 @@ type newDiscussionArgs struct {
 
 func (d *DiscussionTools) NewDiscussion() server.ServerTool {
 	return server.ServerTool{
-		Handler: d.newDiscussion,
+		Handler: ClientHandler(d.newDiscussion),
 		Tool: mcpargs.NewTool("discussion_new", newDiscussionArgs{},
 			mcp.WithDescription("Creates a new discussion thread on a GitLab resource"),
 			mcp.WithDestructiveHintAnnotation(false),
@@ -96,17 +95,7 @@ func (d *DiscussionTools) NewDiscussion() server.ServerTool {
 	}
 }
 
-func (d *DiscussionTools) newDiscussion(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	client, err := glctx.Client(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("glctx.Client: %w", err)
-	}
-
-	var args newDiscussionArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
+func (d *DiscussionTools) newDiscussion(ctx context.Context, client *gitlab.Client, args newDiscussionArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	manager, err := d.discussionManager(client, args.ResourceType, args.ParentID, args.ResourceID)
 	if err != nil {
 		return nil, err
@@ -129,7 +118,7 @@ type listDiscussionsArgs struct {
 
 func (d *DiscussionTools) ListDiscussions() server.ServerTool {
 	return server.ServerTool{
-		Handler: d.listDiscussions,
+		Handler: ClientHandler(d.listDiscussions),
 		Tool: mcpargs.NewTool("discussion_list", listDiscussionsArgs{},
 			mcp.WithDescription("Lists all discussions for a GitLab resource"),
 			mcp.WithReadOnlyHintAnnotation(true),
@@ -137,17 +126,7 @@ func (d *DiscussionTools) ListDiscussions() server.ServerTool {
 	}
 }
 
-func (d *DiscussionTools) listDiscussions(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	client, err := glctx.Client(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("glctx.Client: %w", err)
-	}
-
-	var args listDiscussionsArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
+func (d *DiscussionTools) listDiscussions(ctx context.Context, client *gitlab.Client, args listDiscussionsArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	manager, err := d.discussionManager(client, args.ResourceType, args.ParentID, args.ResourceID)
 	if err != nil {
 		return nil, err
@@ -171,7 +150,7 @@ type addDiscussionNoteArgs struct {
 
 func (d *DiscussionTools) AddDiscussionNote() server.ServerTool {
 	return server.ServerTool{
-		Handler: d.addDiscussionNote,
+		Handler: ClientHandler(d.addDiscussionNote),
 		Tool: mcpargs.NewTool("discussion_add_note", addDiscussionNoteArgs{},
 			mcp.WithDescription("Adds a new note (i.e. a reply) to an existing discussion thread"),
 			mcp.WithDestructiveHintAnnotation(false),
@@ -180,17 +159,7 @@ func (d *DiscussionTools) AddDiscussionNote() server.ServerTool {
 	}
 }
 
-func (d *DiscussionTools) addDiscussionNote(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	client, err := glctx.Client(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("glctx.Client: %w", err)
-	}
-
-	var args addDiscussionNoteArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
+func (d *DiscussionTools) addDiscussionNote(ctx context.Context, client *gitlab.Client, args addDiscussionNoteArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	manager, err := d.discussionManager(client, args.ResourceType, args.ParentID, args.ResourceID)
 	if err != nil {
 		return nil, err
@@ -215,7 +184,7 @@ type modifyDiscussionNoteArgs struct {
 
 func (d *DiscussionTools) ModifyDiscussionNote() server.ServerTool {
 	return server.ServerTool{
-		Handler: d.modifyDiscussionNote,
+		Handler: ClientHandler(d.modifyDiscussionNote),
 		Tool: mcpargs.NewTool("discussion_modify_note", modifyDiscussionNoteArgs{},
 			mcp.WithDescription("Modifies an existing note in a discussion thread"),
 			mcp.WithDestructiveHintAnnotation(false),
@@ -224,17 +193,7 @@ func (d *DiscussionTools) ModifyDiscussionNote() server.ServerTool {
 	}
 }
 
-func (d *DiscussionTools) modifyDiscussionNote(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	client, err := glctx.Client(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("glctx.Client: %w", err)
-	}
-
-	var args modifyDiscussionNoteArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
+func (d *DiscussionTools) modifyDiscussionNote(ctx context.Context, client *gitlab.Client, args modifyDiscussionNoteArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	manager, err := d.discussionManager(client, args.ResourceType, args.ParentID, args.ResourceID)
 	if err != nil {
 		return nil, err
@@ -258,7 +217,7 @@ type deleteDiscussionNoteArgs struct {
 
 func (d *DiscussionTools) DeleteDiscussionNote() server.ServerTool {
 	return server.ServerTool{
-		Handler: d.deleteDiscussionNote,
+		Handler: ClientHandler(d.deleteDiscussionNote),
 		Tool: mcpargs.NewTool("discussion_delete_note", deleteDiscussionNoteArgs{},
 			mcp.WithDescription("Deletes a note from a discussion thread"),
 			mcp.WithDestructiveHintAnnotation(true),
@@ -267,17 +226,7 @@ func (d *DiscussionTools) DeleteDiscussionNote() server.ServerTool {
 	}
 }
 
-func (d *DiscussionTools) deleteDiscussionNote(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	client, err := glctx.Client(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("glctx.Client: %w", err)
-	}
-
-	var args deleteDiscussionNoteArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
+func (d *DiscussionTools) deleteDiscussionNote(ctx context.Context, client *gitlab.Client, args deleteDiscussionNoteArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	manager, err := d.discussionManager(client, args.ResourceType, args.ParentID, args.ResourceID)
 	if err != nil {
 		return nil, err
@@ -300,7 +249,7 @@ type resolveDiscussionArgs struct {
 
 func (d *DiscussionTools) ResolveDiscussion() server.ServerTool {
 	return server.ServerTool{
-		Handler: d.resolveDiscussion,
+		Handler: ClientHandler(d.resolveDiscussion),
 		Tool: mcpargs.NewTool("discussion_resolve", resolveDiscussionArgs{},
 			mcp.WithDescription("Resolves or unresolves a discussion thread in a merge request"),
 			mcp.WithDestructiveHintAnnotation(false),
@@ -309,17 +258,7 @@ func (d *DiscussionTools) ResolveDiscussion() server.ServerTool {
 	}
 }
 
-func (d *DiscussionTools) resolveDiscussion(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	client, err := glctx.Client(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("glctx.Client: %w", err)
-	}
-
-	var args resolveDiscussionArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
+func (d *DiscussionTools) resolveDiscussion(ctx context.Context, client *gitlab.Client, args resolveDiscussionArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// This is specific to merge requests only
 	manager, err := d.discussionManager(client, discussionResourceTypeMergeRequest,
 		args.ProjectID, mcpargs.ID{Integer: args.MergeRequestIID})
@@ -368,7 +307,7 @@ type newPositionDiscussionArgs struct {
 
 func (d *DiscussionTools) NewPositionDiscussion() server.ServerTool {
 	return server.ServerTool{
-		Handler: d.newDiffDiscussion,
+		Handler: ClientHandler(d.newDiffDiscussion),
 		Tool: mcpargs.NewTool("discussion_new_with_position", newPositionDiscussionArgs{},
 			mcp.WithDescription("Creates a new discussion on a specific position in a merge request diff"),
 			mcp.WithDestructiveHintAnnotation(false),
@@ -377,17 +316,7 @@ func (d *DiscussionTools) NewPositionDiscussion() server.ServerTool {
 	}
 }
 
-func (d *DiscussionTools) newDiffDiscussion(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	client, err := glctx.Client(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("glctx.Client: %w", err)
-	}
-
-	var args newPositionDiscussionArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
+func (d *DiscussionTools) newDiffDiscussion(ctx context.Context, client *gitlab.Client, args newPositionDiscussionArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// Create merge request discussion manager
 	manager, err := d.discussionManager(client, args.ResourceType, args.ProjectID, args.ResourceID)
 	if err != nil {

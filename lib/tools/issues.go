@@ -23,7 +23,7 @@ import (
 // It provides methods for retrieving and listing issues and related merge requests.
 type IssuesServiceInterface interface {
 	// AddTo registers all issue-related tools with the provided MCPServer.
-	AddTo(srv *server.MCPServer)
+	AddTo(srv ToolAdder)
 
 	// ListUserIssues returns a tool for listing all issues assigned to a user.
 	ListUserIssues() server.ServerTool
@@ -47,19 +47,7 @@ type IssuesServiceInterface interface {
 	EditIssue() server.ServerTool
 }
 
-// NewIssuesTools creates a new instance of IssuesServiceInterface with the provided GitLab client
-// and current user. It returns an implementation that can be used to interact with GitLab's issue API.
-func NewIssuesTools(client *gitlab.Client, currentUser string) *IssuesService {
-	return &IssuesService{
-		client:      client,
-		currentUser: currentUser,
-	}
-}
-
-type IssuesService struct {
-	client      *gitlab.Client
-	currentUser string
-}
+type IssuesTools struct{}
 
 const (
 	defaultIssueState  = "opened"
@@ -68,7 +56,7 @@ const (
 
 // AddTo registers all issue-related tools with the provided MCPServer.
 // It adds tools for listing, retrieving, and managing issues and their related merge requests.
-func (i *IssuesService) AddTo(srv *server.MCPServer) {
+func (i *IssuesTools) AddTo(srv ToolAdder) {
 	srv.AddTools(
 		i.ListUserIssues(),
 		i.ListGroupIssues(),
@@ -93,9 +81,9 @@ type listUserIssuesArgs struct {
 
 // ListUserIssues returns a ServerTool for listing all issues assigned to a user.
 // The tool accepts optional assignee and state filter parameters.
-func (i *IssuesService) ListUserIssues() server.ServerTool {
+func (i *IssuesTools) ListUserIssues() server.ServerTool {
 	return server.ServerTool{
-		Handler: i.listUserIssues,
+		Handler: ClientUserHandler(i.listUserIssues),
 		Tool: mcpargs.NewTool("list_user_issues", listUserIssuesArgs{},
 			mcp.WithDescription("Lists all issues assigned to a user"),
 			mcp.WithReadOnlyHintAnnotation(true),
@@ -103,21 +91,16 @@ func (i *IssuesService) ListUserIssues() server.ServerTool {
 	}
 }
 
-func (i *IssuesService) listUserIssues(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var args listUserIssuesArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
+func (i *IssuesTools) listUserIssues(ctx context.Context, client *gitlab.Client, args listUserIssuesArgs, currentUser *gitlab.User, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	opt := gitlab.ListIssuesOptions{
 		ListOptions: newListOptions(request),
 		Scope:       gitlab.Ptr("all"),
 	}
 
 	// Parse optional parameters
-	assignee := i.currentUser
-	if args.Assignee != "" {
-		assignee = args.Assignee
+	assignee := args.Assignee
+	if assignee == "" {
+		assignee = currentUser.Username
 	}
 
 	opt.Labels = newLabelOptions(args.Labels)
@@ -149,7 +132,7 @@ func (i *IssuesService) listUserIssues(ctx context.Context, request mcp.CallTool
 		opts.Page = page
 	}
 
-	iter := gliter.All(ctx, i.client.Issues.ListIssues, opt, nextPage)
+	iter := gliter.All(ctx, client.Issues.ListIssues, opt, nextPage)
 	iter = gliter.Limited(iter, args.Limit)
 
 	var issues []*gitlab.Issue
@@ -186,9 +169,9 @@ type listGroupIssuesArgs struct {
 
 // ListGroupIssues returns a ServerTool for listing all issues within a specific group.
 // The tool accepts a group ID and optional filter parameters.
-func (i *IssuesService) ListGroupIssues() server.ServerTool {
+func (i *IssuesTools) ListGroupIssues() server.ServerTool {
 	return server.ServerTool{
-		Handler: i.listGroupIssues,
+		Handler: ClientHandler(i.listGroupIssues),
 		Tool: mcpargs.NewTool("list_group_issues", listGroupIssuesArgs{},
 			mcp.WithDescription("Get a list of a group's issues"),
 			mcp.WithReadOnlyHintAnnotation(true),
@@ -196,12 +179,7 @@ func (i *IssuesService) ListGroupIssues() server.ServerTool {
 	}
 }
 
-func (i *IssuesService) listGroupIssues(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var args listGroupIssuesArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
+func (i *IssuesTools) listGroupIssues(ctx context.Context, client *gitlab.Client, args listGroupIssuesArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	opt, err := listGroupIssuesOptions(args)
 	if err != nil {
 		return nil, fmt.Errorf("invalid filter options: %w", err)
@@ -217,7 +195,7 @@ func (i *IssuesService) listGroupIssues(ctx context.Context, request mcp.CallToo
 		opts.Page = page
 	}
 
-	iter := gliter.AllWithID(ctx, args.GroupID.Value(), i.client.Issues.ListGroupIssues, *opt, nextPage)
+	iter := gliter.AllWithID(ctx, args.GroupID.Value(), client.Issues.ListGroupIssues, *opt, nextPage)
 	iter = gliter.Limited(iter, args.Limit)
 
 	var issues []*gitlab.Issue
@@ -255,9 +233,9 @@ type listProjectIssuesArgs struct {
 
 // ListProjectIssues returns a ServerTool for listing all issues within a specific project.
 // The tool accepts a project ID and optional filter parameters.
-func (i *IssuesService) ListProjectIssues() server.ServerTool {
+func (i *IssuesTools) ListProjectIssues() server.ServerTool {
 	return server.ServerTool{
-		Handler: i.listProjectIssues,
+		Handler: ClientHandler(i.listProjectIssues),
 		Tool: mcpargs.NewTool("list_project_issues", listProjectIssuesArgs{},
 			mcp.WithDescription("Get a list of a project's issues"),
 			mcp.WithReadOnlyHintAnnotation(true),
@@ -265,12 +243,7 @@ func (i *IssuesService) ListProjectIssues() server.ServerTool {
 	}
 }
 
-func (i *IssuesService) listProjectIssues(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var args listProjectIssuesArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
+func (i *IssuesTools) listProjectIssues(ctx context.Context, client *gitlab.Client, args listProjectIssuesArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	opt, err := listProjectIssuesOptions(args)
 	if err != nil {
 		return nil, fmt.Errorf("invalid filter options: %w", err)
@@ -286,7 +259,7 @@ func (i *IssuesService) listProjectIssues(ctx context.Context, request mcp.CallT
 		opts.Page = page
 	}
 
-	iter := gliter.AllWithID(ctx, args.ProjectID.Value(), i.client.Issues.ListProjectIssues, *opt, nextPage)
+	iter := gliter.AllWithID(ctx, args.ProjectID.Value(), client.Issues.ListProjectIssues, *opt, nextPage)
 	iter = gliter.Limited(iter, args.Limit)
 
 	var issues []*gitlab.Issue
@@ -485,9 +458,9 @@ type getIssueArgs struct {
 
 // GetIssue returns a ServerTool for fetching a specific issue by its ID, including its discussions.
 // If fetching discussions fails, an error is returned.
-func (i *IssuesService) GetIssue() server.ServerTool {
+func (i *IssuesTools) GetIssue() server.ServerTool {
 	return server.ServerTool{
-		Handler: i.getIssue,
+		Handler: ClientHandler(i.getIssue),
 		Tool: mcpargs.NewTool("get_issue", getIssueArgs{},
 			mcp.WithDescription("Get a single project issue, including its discussions. Returns an error if any part fails."),
 			mcp.WithReadOnlyHintAnnotation(true),
@@ -495,12 +468,7 @@ func (i *IssuesService) GetIssue() server.ServerTool {
 	}
 }
 
-func (i *IssuesService) getIssue(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var args getIssueArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
+func (i *IssuesTools) getIssue(ctx context.Context, client *gitlab.Client, args getIssueArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var (
 		ret   detailedIssue
 		wg    sync.WaitGroup
@@ -514,7 +482,7 @@ func (i *IssuesService) getIssue(ctx context.Context, request mcp.CallToolReques
 
 		var err error
 
-		ret.Issue, _, err = i.client.Issues.GetIssue(args.ProjectID.Value(), args.IssueIID, gitlab.WithContext(ctx))
+		ret.Issue, _, err = client.Issues.GetIssue(args.ProjectID.Value(), args.IssueIID, gitlab.WithContext(ctx))
 		if err != nil {
 			errCh <- fmt.Errorf("GetIssue(%q, %d): %w", args.ProjectID.Value(), args.IssueIID, err)
 			return
@@ -525,7 +493,7 @@ func (i *IssuesService) getIssue(ctx context.Context, request mcp.CallToolReques
 		defer wg.Done()
 
 		// Fetch discussions for the issue
-		discMgr, err := discussions.NewIssueDiscussion(i.client, args.ProjectID, args.IssueIID)
+		discMgr, err := discussions.NewIssueDiscussion(client, args.ProjectID, args.IssueIID)
 		if err != nil {
 			errCh <- fmt.Errorf("failed to create issue discussion manager for issue %d in project %s: %w", args.IssueIID, args.ProjectID.Value(), err)
 			return
@@ -574,9 +542,9 @@ type listMergeRequestsRelatedToIssueArgs struct {
 
 // ListMergeRequestsRelatedToIssue returns a ServerTool for listing all merge requests related to a specific issue.
 // The tool accepts a project ID and an issue internal ID as parameters.
-func (i *IssuesService) ListMergeRequestsRelatedToIssue() server.ServerTool {
+func (i *IssuesTools) ListMergeRequestsRelatedToIssue() server.ServerTool {
 	return server.ServerTool{
-		Handler: i.listMergeRequestsRelatedToIssue,
+		Handler: ClientHandler(i.listMergeRequestsRelatedToIssue),
 		Tool: mcpargs.NewTool("list_merge_requests_related_to_issue", listMergeRequestsRelatedToIssueArgs{},
 			mcp.WithDescription("Get all merge requests that are related to the specified issue"),
 			mcp.WithReadOnlyHintAnnotation(true),
@@ -584,12 +552,7 @@ func (i *IssuesService) ListMergeRequestsRelatedToIssue() server.ServerTool {
 	}
 }
 
-func (i *IssuesService) listMergeRequestsRelatedToIssue(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var args listMergeRequestsRelatedToIssueArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
+func (i *IssuesTools) listMergeRequestsRelatedToIssue(ctx context.Context, client *gitlab.Client, args listMergeRequestsRelatedToIssueArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var (
 		opt = gitlab.ListMergeRequestsRelatedToIssueOptions{
 			PerPage: maxPerPage,
@@ -598,7 +561,7 @@ func (i *IssuesService) listMergeRequestsRelatedToIssue(ctx context.Context, req
 	)
 
 	for {
-		mrs, resp, err := i.client.Issues.ListMergeRequestsRelatedToIssue(args.ProjectID.Value(), args.IssueIID, &opt, gitlab.WithContext(ctx))
+		mrs, resp, err := client.Issues.ListMergeRequestsRelatedToIssue(args.ProjectID.Value(), args.IssueIID, &opt, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("ListMergeRequestsRelatedToIssue(%q, %d): %w", args.ProjectID.Value(), args.IssueIID, err)
 		}
@@ -628,9 +591,9 @@ type createIssueArgs struct {
 
 // CreateIssue returns a ServerTool for creating a new issue.
 // The tool accepts project ID, title, and other optional issue parameters.
-func (i *IssuesService) CreateIssue() server.ServerTool {
+func (i *IssuesTools) CreateIssue() server.ServerTool {
 	return server.ServerTool{
-		Handler: i.createIssue,
+		Handler: ClientHandler(i.createIssue),
 		Tool: mcpargs.NewTool("create_issue", createIssueArgs{},
 			mcp.WithDescription("Creates a new GitLab issue"),
 			mcp.WithDestructiveHintAnnotation(false),
@@ -639,12 +602,7 @@ func (i *IssuesService) CreateIssue() server.ServerTool {
 	}
 }
 
-func (i *IssuesService) createIssue(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var args createIssueArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
+func (i *IssuesTools) createIssue(ctx context.Context, client *gitlab.Client, args createIssueArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	opt := &gitlab.CreateIssueOptions{
 		Title: gitlab.Ptr(args.Title),
 	}
@@ -669,7 +627,7 @@ func (i *IssuesService) createIssue(ctx context.Context, request mcp.CallToolReq
 		opt.Confidential = gitlab.Ptr(args.Confidential)
 	}
 
-	issue, _, err := i.client.Issues.CreateIssue(args.ProjectID.Value(), opt, gitlab.WithContext(ctx))
+	issue, _, err := client.Issues.CreateIssue(args.ProjectID.Value(), opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("CreateIssue(%q): %w", args.ProjectID.Value(), err)
 	}
@@ -694,9 +652,9 @@ type editIssueArgs struct {
 
 // EditIssue returns a ServerTool for updating an existing issue.
 // The tool accepts project ID, issue IID, and other parameters to update the issue.
-func (i *IssuesService) EditIssue() server.ServerTool {
+func (i *IssuesTools) EditIssue() server.ServerTool {
 	return server.ServerTool{
-		Handler: i.editIssue,
+		Handler: ClientHandler(i.editIssue),
 		Tool: mcpargs.NewTool("edit_issue", editIssueArgs{},
 			mcp.WithDescription("Updates an existing GitLab issue. You can modify the issue's title and description, add or remove labels, assign or unassign users, change the milestone, close or reopen the issue, and control confidentiality and discussion settings."),
 			mcp.WithDestructiveHintAnnotation(false),
@@ -705,14 +663,9 @@ func (i *IssuesService) EditIssue() server.ServerTool {
 	}
 }
 
-func (i *IssuesService) editIssue(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var args editIssueArgs
-	if err := mcpargs.Unmarshal(request.GetArguments(), &args); err != nil {
-		return nil, err //nolint:wrapcheck
-	}
-
+func (i *IssuesTools) editIssue(ctx context.Context, client *gitlab.Client, args editIssueArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// First, fetch the issue to check if it's confidential
-	issue, _, err := i.client.Issues.GetIssue(args.ProjectID.Value(), args.IssueIID, gitlab.WithContext(ctx))
+	issue, _, err := client.Issues.GetIssue(args.ProjectID.Value(), args.IssueIID, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("GetIssue(%q, %d): %w", args.ProjectID.Value(), args.IssueIID, err)
 	}
@@ -757,7 +710,7 @@ func (i *IssuesService) editIssue(ctx context.Context, request mcp.CallToolReque
 		opt.DiscussionLocked = gitlab.Ptr(args.DiscussionLocked)
 	}
 
-	issue, _, err = i.client.Issues.UpdateIssue(args.ProjectID.Value(), args.IssueIID, opt, gitlab.WithContext(ctx))
+	issue, _, err = client.Issues.UpdateIssue(args.ProjectID.Value(), args.IssueIID, opt, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("UpdateIssue(%q, %d): %w", args.ProjectID.Value(), args.IssueIID, err)
 	}

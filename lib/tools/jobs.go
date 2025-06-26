@@ -17,7 +17,7 @@ import (
 // It provides methods for retrieving and managing jobs and their artifacts.
 type JobsServiceInterface interface {
 	// AddTo registers all job-related tools with the provided MCPServer.
-	AddTo(srv *server.MCPServer)
+	AddTo(srv ToolAdder)
 
 	// ListPipelineJobs returns a tool for listing all jobs in a specific pipeline.
 	ListPipelineJobs() server.ServerTool
@@ -53,7 +53,7 @@ type JobsService struct {
 
 // AddTo registers all job-related tools with the provided MCPServer.
 // It adds tools for listing, retrieving, and managing jobs and their artifacts.
-func (j *JobsService) AddTo(srv *server.MCPServer) {
+func (j *JobsService) AddTo(srv ToolAdder) {
 	srv.AddTools(
 		j.ListPipelineJobs(),
 		j.ListDownstreamPipelines(),

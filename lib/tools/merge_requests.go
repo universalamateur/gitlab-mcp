@@ -22,7 +22,7 @@ const defaultMergeRequestsLimit = 1000
 // approvals, commits, changes, participants, pipelines, and dependencies.
 type MergeRequestsServiceInterface interface { //nolint:interfacebloat
 	// AddTo registers all merge request-related tools with the provided MCPServer.
-	AddTo(srv *server.MCPServer)
+	AddTo(srv ToolAdder)
 
 	// ListUserMergeRequests returns a tool for listing all merge requests authored by or assigned to a specific user for review.
 	ListUserMergeRequests() server.ServerTool
@@ -83,7 +83,7 @@ type MergeRequestsService struct {
 
 // AddTo registers all merge request-related tools with the provided MCPServer.
 // It adds tools for listing, retrieving, and managing merge requests and their associated data.
-func (m *MergeRequestsService) AddTo(srv *server.MCPServer) {
+func (m *MergeRequestsService) AddTo(srv ToolAdder) {
 	srv.AddTools(
 		m.ListUserMergeRequests(),
 		m.ListProjectMergeRequests(),

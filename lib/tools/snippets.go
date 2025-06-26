@@ -15,7 +15,7 @@ import (
 // It provides methods for retrieving, listing, creating, updating, and deleting snippets.
 type SnippetsServiceInterface interface {
 	// AddTo registers all snippet-related tools with the provided MCPServer.
-	AddTo(srv *server.MCPServer)
+	AddTo(srv ToolAdder)
 
 	// ListUserSnippets returns a tool for listing snippets owned by the current user.
 	ListUserSnippets() server.ServerTool
@@ -61,7 +61,7 @@ type SnippetsService struct {
 
 // AddTo registers all snippet-related tools with the provided MCPServer.
 // It adds tools for listing, retrieving, creating, updating, and deleting snippets.
-func (s *SnippetsService) AddTo(srv *server.MCPServer) {
+func (s *SnippetsService) AddTo(srv ToolAdder) {
 	srv.AddTools(
 		s.ListUserSnippets(),
 		s.ListAllSnippets(),

@@ -17,7 +17,7 @@ const defaultTodosLimit = 100
 // TodosServiceInterface defines the interface for todo-related GitLab operations.
 type TodosServiceInterface interface {
 	// AddTo registers all todo-related tools with the provided MCPServer.
-	AddTo(srv *server.MCPServer)
+	AddTo(srv ToolAdder)
 
 	// ListUserTodos returns a tool for listing all todos for the current user.
 	ListUserTodos() server.ServerTool
@@ -33,7 +33,7 @@ type TodosService struct {
 }
 
 // AddTo registers all todo-related tools with the provided MCPServer.
-func (t *TodosService) AddTo(srv *server.MCPServer) {
+func (t *TodosService) AddTo(srv ToolAdder) {
 	srv.AddTools(
 		t.ListUserTodos(),
 		t.CompleteTodoItem(),
