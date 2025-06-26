@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/mcptest"
+	"gitlab.com/fforster/gitlab-mcp/lib/glctx"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 	glabtest "gitlab.com/gitlab-org/api/client-go/testing"
 )
@@ -177,13 +178,15 @@ func TestGetUser(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gitlabClient := glabtest.NewTestClient(t)
+			ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
+
 			tt.setupMock(gitlabClient.MockUsers)
 
-			usersService := NewUsersTools(gitlabClient.Client, "test_user")
+			srv := mcptest.NewUnstartedServer(t)
+			new(UsersTools).AddTo(srv)
 
-			srv, err := mcptest.NewServer(t, usersService.GetUser())
-			if err != nil {
-				t.Fatalf("failed to create server: %v", err)
+			if err := srv.Start(ctx); err != nil {
+				t.Fatalf("failed to start MCP test server: %v", err)
 			}
 			defer srv.Close()
 
@@ -352,13 +355,15 @@ func TestGetUserStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gitlabClient := glabtest.NewTestClient(t)
+			ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
+
 			tt.setupMock(gitlabClient.MockUsers)
 
-			usersService := NewUsersTools(gitlabClient.Client, "test_user")
+			srv := mcptest.NewUnstartedServer(t)
+			new(UsersTools).AddTo(srv)
 
-			srv, err := mcptest.NewServer(t, usersService.GetUserStatus())
-			if err != nil {
-				t.Fatalf("failed to create server: %v", err)
+			if err := srv.Start(ctx); err != nil {
+				t.Fatalf("failed to start MCP test server: %v", err)
 			}
 			defer srv.Close()
 
@@ -564,13 +569,15 @@ func TestSetUserStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gitlabClient := glabtest.NewTestClient(t)
+			ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
+
 			tt.setupMock(gitlabClient.MockUsers)
 
-			usersService := NewUsersTools(gitlabClient.Client, "test_user")
+			srv := mcptest.NewUnstartedServer(t)
+			new(UsersTools).AddTo(srv)
 
-			srv, err := mcptest.NewServer(t, usersService.SetUserStatus())
-			if err != nil {
-				t.Fatalf("failed to create server: %v", err)
+			if err := srv.Start(ctx); err != nil {
+				t.Fatalf("failed to start MCP test server: %v", err)
 			}
 			defer srv.Close()
 
