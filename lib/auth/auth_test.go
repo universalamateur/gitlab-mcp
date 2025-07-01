@@ -14,69 +14,92 @@ import (
 	"golang.org/x/oauth2"
 )
 
+var cmpOpts = []cmp.Option{
+	cmpopts.IgnoreUnexported(oauth2.Config{}),
+	cmpopts.IgnoreUnexported(oauth2.Token{}),
+}
+
 func TestConfig(t *testing.T) {
 	tests := []struct {
-		name         string
-		baseURL      string
-		wantEndpoint oauth2.Endpoint
+		name     string
+		baseURL  string
+		clientID string
+		want     *oauth2.Config
 	}{
 		{
-			name:    "Default GitLab.com",
-			baseURL: "",
-			wantEndpoint: oauth2.Endpoint{
-				AuthURL:       "https://gitlab.com/oauth/authorize",
-				TokenURL:      "https://gitlab.com/oauth/token",
-				DeviceAuthURL: "https://gitlab.com/oauth/authorize_device",
+			name:     "Default GitLab.com",
+			baseURL:  "",
+			clientID: "",
+			want: &oauth2.Config{
+				ClientID: DefaultClientID,
+				Endpoint: oauth2.Endpoint{
+					AuthURL:       "https://gitlab.com/oauth/authorize",
+					TokenURL:      "https://gitlab.com/oauth/token",
+					DeviceAuthURL: "https://gitlab.com/oauth/authorize_device",
+				},
+				Scopes: []string{"api"},
 			},
 		},
 		{
-			name:    "Custom GitLab instance",
-			baseURL: "https://gitlab.example.com",
-			wantEndpoint: oauth2.Endpoint{
-				AuthURL:       "https://gitlab.example.com/oauth/authorize",
-				TokenURL:      "https://gitlab.example.com/oauth/token",
-				DeviceAuthURL: "https://gitlab.example.com/oauth/authorize_device",
+			name:     "Custom GitLab instance",
+			baseURL:  "https://gitlab.example.com",
+			clientID: "your-client-id",
+			want: &oauth2.Config{
+				ClientID: "your-client-id",
+				Endpoint: oauth2.Endpoint{
+					AuthURL:       "https://gitlab.example.com/oauth/authorize",
+					TokenURL:      "https://gitlab.example.com/oauth/token",
+					DeviceAuthURL: "https://gitlab.example.com/oauth/authorize_device",
+				},
+				Scopes: []string{"api"},
 			},
 		},
 		{
-			name:    "Custom GitLab instance with trailing slash",
-			baseURL: "https://gitlab.example.com/",
-			wantEndpoint: oauth2.Endpoint{
-				AuthURL:       "https://gitlab.example.com/oauth/authorize",
-				TokenURL:      "https://gitlab.example.com/oauth/token",
-				DeviceAuthURL: "https://gitlab.example.com/oauth/authorize_device",
+			name:     "Custom GitLab instance with trailing slash",
+			baseURL:  "https://gitlab.example.com/",
+			clientID: "your-client-id",
+			want: &oauth2.Config{
+				ClientID: "your-client-id",
+				Endpoint: oauth2.Endpoint{
+					AuthURL:       "https://gitlab.example.com/oauth/authorize",
+					TokenURL:      "https://gitlab.example.com/oauth/token",
+					DeviceAuthURL: "https://gitlab.example.com/oauth/authorize_device",
+				},
+				Scopes: []string{"api"},
 			},
 		},
 		{
-			name:    "Custom GitLab instance with API suffix",
-			baseURL: "https://gitlab.example.com/api/v4",
-			wantEndpoint: oauth2.Endpoint{
-				AuthURL:       "https://gitlab.example.com/oauth/authorize",
-				TokenURL:      "https://gitlab.example.com/oauth/token",
-				DeviceAuthURL: "https://gitlab.example.com/oauth/authorize_device",
+			name:     "Custom GitLab instance with API suffix",
+			baseURL:  "https://gitlab.example.com/api/v4",
+			clientID: "your-client-id",
+			want: &oauth2.Config{
+				ClientID: "your-client-id",
+				Endpoint: oauth2.Endpoint{
+					AuthURL:       "https://gitlab.example.com/oauth/authorize",
+					TokenURL:      "https://gitlab.example.com/oauth/token",
+					DeviceAuthURL: "https://gitlab.example.com/oauth/authorize_device",
+				},
+				Scopes: []string{"api"},
 			},
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			config := Config(tc.baseURL)
+			config := Config(tc.baseURL, tc.clientID)
 
-			if diff := cmp.Diff(tc.wantEndpoint, config.Endpoint); diff != "" {
-				t.Errorf("Config(%q) endpoint mismatch (-want/+got):\n%s", tc.baseURL, diff)
+			if diff := cmp.Diff(tc.want, config, cmpOpts...); diff != "" {
+				t.Errorf("Config(%q) mismatch (-want/+got):\n%s", tc.baseURL, diff)
 			}
 		})
 	}
-}
-
-var cmpOpts = []cmp.Option{
-	cmpopts.IgnoreUnexported(oauth2.Token{}),
 }
 
 func TestFileBackedToken(t *testing.T) {
 	// Define test cases
 	tests := []struct {
 		name            string
+		issuer          string
 		initialToken    *oauth2.Token
 		refreshedToken  *oauth2.Token
 		tokenSourceErr  error
@@ -85,7 +108,8 @@ func TestFileBackedToken(t *testing.T) {
 		wantFileWrites  int
 	}{
 		{
-			name: "Basic token retrieval and refresh",
+			name:   "Basic token retrieval and refresh",
+			issuer: "https://gitlab.example.com",
 			initialToken: &oauth2.Token{
 				AccessToken:  "initial-access-token",
 				RefreshToken: "initial-refresh-token",
@@ -97,7 +121,24 @@ func TestFileBackedToken(t *testing.T) {
 			wantFileWrites: 1,
 		},
 		{
-			name: "No refresh token change means no file update",
+			name:   "Legacy token retrieval and refresh",
+			issuer: "https://gitlab.com",
+			initialToken: &oauth2.Token{
+				AccessToken:  "initial-access-token",
+				RefreshToken: "initial-refresh-token",
+			},
+			refreshedToken: &oauth2.Token{
+				AccessToken:  "new-access-token",
+				RefreshToken: "new-refresh-token",
+			},
+			modifyFS: func(fs *mockFS, filename string) {
+				fs.files[filename] = []byte(`{"access_token":"initial-access-token","refresh_token":"initial-refresh-token"}`)
+			},
+			wantFileWrites: 1,
+		},
+		{
+			name:   "No refresh token change means no file update",
+			issuer: "https://gitlab.example.com",
 			initialToken: &oauth2.Token{
 				AccessToken:  "initial-access-token",
 				RefreshToken: "same-refresh-token",
@@ -109,21 +150,24 @@ func TestFileBackedToken(t *testing.T) {
 			wantFileWrites: 0,
 		},
 		{
-			name: "File doesn't exist",
+			name:   "File doesn't exist",
+			issuer: "https://gitlab.example.com",
 			modifyFS: func(fs *mockFS, filename string) {
 				delete(fs.files, filename)
 			},
 			wantErrContains: fs.ErrNotExist.Error(),
 		},
 		{
-			name: "Invalid JSON in token file",
+			name:   "Invalid JSON in token file",
+			issuer: "https://gitlab.example.com",
 			modifyFS: func(fs *mockFS, filename string) {
 				fs.files[filename] = []byte("not valid json")
 			},
 			wantErrContains: "json.Unmarshal",
 		},
 		{
-			name: "TokenSource error",
+			name:   "TokenSource error",
+			issuer: "https://gitlab.example.com",
 			initialToken: &oauth2.Token{
 				AccessToken:  "initial-access-token",
 				RefreshToken: "initial-refresh-token",
@@ -138,7 +182,11 @@ func TestFileBackedToken(t *testing.T) {
 			const filename = "token.json"
 
 			// Setup mock filesystem
-			fs, err := newMockFS(filename, tc.initialToken)
+			fs, err := newJSONMockFS(filename, storedTokens{
+				Tokens: map[string]*oauth2.Token{
+					tc.issuer: tc.initialToken,
+				},
+			})
 			if err != nil {
 				t.Fatalf("NewMockFS(): %v", err)
 			}
@@ -158,6 +206,7 @@ func TestFileBackedToken(t *testing.T) {
 			// Create fileBackedToken
 			fileToken := &fileBackedToken{
 				ctx:        t.Context(),
+				issuer:     tc.issuer,
 				filename:   filename,
 				config:     mockCfg,
 				fileSystem: fs,
@@ -193,9 +242,14 @@ func TestFileBackedToken(t *testing.T) {
 				t.Errorf("Got %d file write(s), want %d file write(s)", fs.writeCount, tc.wantFileWrites)
 			}
 
-			wantFileToken := tc.initialToken
+			wantFileToken := storedTokens{
+				Tokens: map[string]*oauth2.Token{
+					tc.issuer: tc.initialToken,
+				},
+			}
+
 			if tc.wantFileWrites != 0 {
-				wantFileToken = tc.refreshedToken
+				wantFileToken.Tokens[tc.issuer] = tc.refreshedToken
 			}
 
 			wantData, err := json.Marshal(wantFileToken)
@@ -208,6 +262,147 @@ func TestFileBackedToken(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestStoreToken(t *testing.T) {
+	// Define test cases
+	tests := []struct {
+		name               string
+		filename           string
+		issuer             string
+		token              *oauth2.Token
+		initialFileContent []byte
+		checkError         func(error) error
+		want               storedTokens
+	}{
+		{
+			name:     "File does not exist",
+			filename: "token.json",
+			issuer:   "https://gitlab.example.com",
+			token: &oauth2.Token{
+				AccessToken:  "access_token",
+				RefreshToken: "refresh_token",
+			},
+			checkError: wantSuccess,
+			want: storedTokens{
+				Tokens: map[string]*oauth2.Token{
+					"https://gitlab.example.com": {
+						AccessToken:  "access_token",
+						RefreshToken: "refresh_token",
+					},
+				},
+			},
+		},
+		{
+			name:     "File is empty",
+			filename: "token.json",
+			issuer:   "https://gitlab.example.com",
+			token: &oauth2.Token{
+				AccessToken:  "access_token",
+				RefreshToken: "refresh_token",
+			},
+			initialFileContent: []byte(""),
+			checkError:         wantErrorType(&json.SyntaxError{}),
+		},
+		{
+			name:     "Previous tokens are preserved",
+			filename: "token.json",
+			issuer:   "https://gitlab.example.com",
+			token: &oauth2.Token{
+				AccessToken:  "access_token",
+				RefreshToken: "refresh_token",
+			},
+			initialFileContent: func() []byte {
+				stored := storedTokens{
+					Tokens: map[string]*oauth2.Token{
+						"https://gitlab.com": {
+							AccessToken:  "other_access_token",
+							RefreshToken: "other_refresh_token",
+						},
+					},
+				}
+
+				data, err := json.Marshal(stored)
+				if err != nil {
+					panic(err)
+				}
+
+				return data
+			}(),
+			checkError: wantSuccess,
+			want: storedTokens{
+				Tokens: map[string]*oauth2.Token{
+					"https://gitlab.com": {
+						AccessToken:  "other_access_token",
+						RefreshToken: "other_refresh_token",
+					},
+					"https://gitlab.example.com": {
+						AccessToken:  "access_token",
+						RefreshToken: "refresh_token",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// Setup mock filesystem
+			fs := &mockFS{
+				files: make(map[string][]byte),
+			}
+
+			if tc.initialFileContent != nil {
+				fs.files[tc.filename] = tc.initialFileContent
+			}
+
+			// Call StoreToken
+			err := StoreToken(tc.filename, tc.issuer, tc.token, withFileSystem(fs))
+
+			if chkErr := tc.checkError(err); chkErr != nil {
+				t.Error(chkErr)
+			}
+
+			if err != nil {
+				return
+			}
+
+			// Read the file content
+			data, err := fs.ReadFile(tc.filename)
+			if err != nil {
+				t.Fatalf("ReadFile(%q): %v", tc.filename, err)
+			}
+
+			// Parse the stored tokens
+			var stored storedTokens
+			if err := json.Unmarshal(data, &stored); err != nil {
+				t.Fatalf("json.Unmarshal(): %v", err)
+			}
+
+			// Verify the result
+			if diff := cmp.Diff(tc.want, stored, cmpOpts...); diff != "" {
+				t.Errorf("StoreToken result mismatch (-want/+got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func wantErrorType[E error](wantType E) func(error) error {
+	return func(gotErr error) error {
+		if !errors.As(gotErr, &wantType) {
+			return fmt.Errorf("got error type %T, want %T", gotErr, wantType)
+		}
+
+		return nil
+	}
+}
+
+func wantSuccess(err error) error {
+	if err != nil {
+		return fmt.Errorf("got error %v, want success", err)
+	}
+
+	return nil
 }
 
 // mockTokenSource is a test implementation of oauth2.TokenSource.
@@ -255,8 +450,8 @@ type mockFS struct {
 	writeCount int
 }
 
-func newMockFS(filename string, token *oauth2.Token) (*mockFS, error) {
-	data, err := json.Marshal(token)
+func newJSONMockFS(filename string, v any) (*mockFS, error) {
+	data, err := json.Marshal(v)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal token: %w", err)
 	}

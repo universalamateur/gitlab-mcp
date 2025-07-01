@@ -9,10 +9,12 @@ import (
 	"golang.org/x/oauth2"
 
 	"gitlab.com/fforster/gitlab-mcp/lib/auth"
+	"gitlab.com/fforster/gitlab-mcp/lib/glclient"
 )
 
 type authCommand struct {
-	baseURL string
+	baseURL  glclient.BaseURLFlag
+	clientID string
 }
 
 func newAuthCommand() *cobra.Command {
@@ -27,7 +29,8 @@ func newAuthCommand() *cobra.Command {
 	}
 
 	fs := cmd.Flags()
-	fs.StringVar(&ac.baseURL, "base-url", os.Getenv("GITLAB_URL"), "Custom GitLab instance URL")
+	fs.Var(&ac.baseURL, "base-url", "Custom GitLab instance URL")
+	fs.StringVar(&ac.clientID, "client-id", auth.DefaultClientID, "OAuth client ID for custom GitLab instance")
 
 	return cmd
 }
@@ -38,7 +41,7 @@ func (ac *authCommand) run(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
 	// Create a new OAuth2 config
-	config := auth.Config(ac.baseURL)
+	config := auth.Config(ac.baseURL.String(), ac.clientID)
 
 	da, err := config.DeviceAuth(ctx)
 	if err != nil {
@@ -65,7 +68,7 @@ func (ac *authCommand) run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to obtain device access token: %w", err)
 	}
 
-	if err := storeToken(token); err != nil {
+	if err := storeToken(ac.baseURL.String(), token); err != nil {
 		return fmt.Errorf("failed to store token: %w", err)
 	}
 
@@ -74,14 +77,14 @@ func (ac *authCommand) run(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func storeToken(token *oauth2.Token) error {
+func storeToken(baseURL string, token *oauth2.Token) error {
 	filename := auth.TokenPath()
 
 	if err := os.MkdirAll(filepath.Dir(filename), 0700); err != nil {
 		return fmt.Errorf("MkdirAll(%q): %w", filepath.Dir(filename), err)
 	}
 
-	if err := auth.StoreToken(filename, token); err != nil {
+	if err := auth.StoreToken(filename, baseURL, token); err != nil {
 		return fmt.Errorf("StoreToken(): %w", err)
 	}
 
