@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"strings"
@@ -133,7 +134,6 @@ func (c *rootCommand) serveStdio(srv *server.MCPServer, cmd *cobra.Command) erro
 	return nil
 }
 
-//nolint:funlen
 func (c *rootCommand) serveHTTP(ctx context.Context, mcpSrv *server.MCPServer) error {
 	opts := []server.StreamableHTTPOption{
 		server.WithHTTPContextFunc(httpContextFunc(glclient.ServerConfig{
@@ -142,10 +142,30 @@ func (c *rootCommand) serveHTTP(ctx context.Context, mcpSrv *server.MCPServer) e
 	}
 
 	httpMCPServer := server.NewStreamableHTTPServer(mcpSrv, opts...)
+	resURL := resourceURL(c.listenAddr)
+
+	clientID, err := auth.ClientID(c.clientID, c.baseURL.String())
+	if err != nil {
+		return fmt.Errorf("auth.ClientID: %w", err)
+	}
+
+	authServer, err := auth.LoadAuthorizationServer(ctx, c.baseURL.String())
+	if err != nil {
+		return fmt.Errorf("auth.LoadAuthorizationServer: %w", err)
+	}
+
+	resourceConfig := auth.NewProtectedResource(resURL.String(),
+		auth.WithAuthorizationServers(*authServer),
+		auth.WithClientID(clientID),
+	)
 
 	mux := http.NewServeMux()
 
-	mux.Handle("/mcp", auth.Wrap(httpMCPServer))
+	if err := resourceConfig.RegisterMetadataHandler(mux); err != nil {
+		return fmt.Errorf("RegisterMetadataHandler: %w", err)
+	}
+
+	mux.Handle("/mcp", resourceConfig.Wrap(httpMCPServer))
 
 	httpServer := &http.Server{
 		Addr:         c.listenAddr,
@@ -222,5 +242,40 @@ func httpContextFunc(serverConfig glclient.ServerConfig) server.HTTPContextFunc 
 		}
 
 		return glctx.WithClient(ctx, client)
+	}
+}
+
+func resourceURL(listenAddr string) *url.URL {
+	var host, port string
+
+	switch idx := strings.LastIndex(listenAddr, ":"); idx {
+	case -1:
+		host = listenAddr
+
+	default:
+		host = listenAddr[:idx]
+		port = listenAddr[idx+1:]
+	}
+
+	if port == "" || port == "443" || port == "https" {
+		return &url.URL{
+			Scheme: "https",
+			Host:   host,
+			Path:   "/mcp",
+		}
+	}
+
+	if host == "localhost" || host == "" {
+		return &url.URL{
+			Scheme: "http",
+			Host:   "localhost:" + port,
+			Path:   "/mcp",
+		}
+	}
+
+	return &url.URL{
+		Scheme: "https",
+		Host:   host + ":" + port,
+		Path:   "/mcp",
 	}
 }
