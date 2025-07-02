@@ -158,5 +158,11 @@ func (fs osFS) WriteFile(filename string, data []byte, perm fs.FileMode) error {
 		return fmt.Errorf("os.MkdirAll(%q): %w", dir, err)
 	}
 
+	if info, err := os.Stat(filename); err == nil && info.Mode().Perm() != perm {
+		if err := os.Chmod(filename, perm); err != nil {
+			return fmt.Errorf("os.Chmod(%q): %w", filename, err)
+		}
+	}
+
 	return os.WriteFile(filename, data, perm) //nolint:wrapcheck
 }
