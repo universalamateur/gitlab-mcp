@@ -133,7 +133,7 @@ func New(ctx context.Context, cfg *Config) (*gitlab.Client, error) {
 		as := gitlab.OAuthTokenSource{
 			TokenSource: auth.FileTokenSource(ctx, cfg.BaseURL, cfg.OAuthTokenFile, auth.Config(cfg.BaseURL, cfg.ClientID)),
 		}
-		client, err = gitlab.NewAuthSourceClient(as)
+		client, err = gitlab.NewAuthSourceClient(as, clientOptions...)
 
 	case cfg.AccessToken != "":
 		client, err = gitlab.NewClient(cfg.AccessToken, clientOptions...)

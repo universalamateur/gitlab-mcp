@@ -109,6 +109,27 @@ func (t *fileBackedToken) Token() (*oauth2.Token, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
+	storedToken, err := t.load()
+	if err != nil {
+		return nil, err
+	}
+
+	refreshedToken, err := t.config.TokenSource(t.ctx, storedToken).Token()
+	if err != nil {
+		return nil, fmt.Errorf("config.TokenSource(): %w", err)
+	}
+
+	if storedToken.AccessToken != refreshedToken.AccessToken ||
+		storedToken.RefreshToken != refreshedToken.RefreshToken {
+		if err := StoreToken(t.filename, t.issuer, refreshedToken); err != nil {
+			return nil, fmt.Errorf("StoreToken(filename=%q, issuer=%q): %w", t.filename, t.issuer, err)
+		}
+	}
+
+	return refreshedToken, nil
+}
+
+func (t *fileBackedToken) load() (*oauth2.Token, error) {
 	data, err := t.fileSystem.ReadFile(t.filename)
 	if err != nil {
 		return nil, fmt.Errorf("ReadFile(%q): %w", t.filename, err)
@@ -119,30 +140,12 @@ func (t *fileBackedToken) Token() (*oauth2.Token, error) {
 		return nil, fmt.Errorf("parseStoredTokens(): %w", err)
 	}
 
-	storedToken, ok := stored.Tokens[t.issuer]
+	token, ok := stored.Tokens[t.issuer]
 	if !ok {
 		return nil, fmt.Errorf("%w for issuer %q", ErrTokenNotFound, t.issuer)
 	}
 
-	refreshedToken, err := t.config.TokenSource(t.ctx, storedToken).Token()
-	if err != nil {
-		return nil, fmt.Errorf("config.TokenSource(): %w", err)
-	}
-
-	if storedToken.RefreshToken != refreshedToken.RefreshToken {
-		stored.Tokens[t.issuer] = refreshedToken
-
-		data, err := json.Marshal(stored)
-		if err != nil {
-			return nil, fmt.Errorf("json.Marshal(): %w", err)
-		}
-
-		if err := t.fileSystem.WriteFile(t.filename, data, 0600); err != nil {
-			return nil, fmt.Errorf("WriteFile(%q): %w", t.filename, err)
-		}
-	}
-
-	return refreshedToken, nil
+	return token, nil
 }
 
 func parseStoredTokens(data []byte) (storedTokens, error) {
