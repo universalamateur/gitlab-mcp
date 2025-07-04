@@ -156,7 +156,12 @@ func New(ctx context.Context, cfg *Config) (*gitlab.Client, error) {
 type BaseURLFlag url.URL
 
 func (f *BaseURLFlag) String() string {
-	return (*url.URL)(f).String()
+	s := (*url.URL)(f).String()
+	if s == "" {
+		return DefaultBaseURL()
+	}
+
+	return s
 }
 
 // Set sets the value of the flag.
