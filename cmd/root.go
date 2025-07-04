@@ -9,7 +9,6 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/spf13/cobra"
 
-	"gitlab.com/fforster/gitlab-mcp/lib/auth"
 	"gitlab.com/fforster/gitlab-mcp/lib/build"
 	"gitlab.com/fforster/gitlab-mcp/lib/glclient"
 	"gitlab.com/fforster/gitlab-mcp/lib/glctx"
@@ -45,7 +44,7 @@ func newRootCommand() *cobra.Command {
 
 	fs := cmd.Flags()
 	fs.Var(&rc.baseURL, "base-url", "Custom GitLab instance URL")
-	fs.StringVar(&rc.clientID, "client-id", auth.DefaultClientID, "OAuth client ID for custom GitLab instance")
+	fs.StringVar(&rc.clientID, "client-id", "", "OAuth client ID for custom GitLab instance")
 
 	return cmd
 }

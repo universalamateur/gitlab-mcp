@@ -17,22 +17,53 @@ import (
 )
 
 const (
-	DefaultClientID = "039e1e052b348d4e45e55bd50bd5cd1fa28b6ee3d044962587fd78bf68ceae4f"
-	defaultIssuer   = "https://gitlab.com"
+	defaultIssuer = "https://gitlab.com"
 )
+
+var wellKnownClientIDs = map[string]string{
+	defaultIssuer:            "039e1e052b348d4e45e55bd50bd5cd1fa28b6ee3d044962587fd78bf68ceae4f",
+	"https://ops.gitlab.net": "31cdb7e8369904a9c45ae5491cb5e1c6152b2080b888a7b427256e34add04e58",
+}
+
+var (
+	ErrTokenNotFound    = errors.New("OAuth token not found")
+	ErrClientIDNotFound = errors.New("OAuth client ID not found")
+)
+
+// ClientID returns the client ID for the given issuer.
+// If clientID is not empty, it is returned.
+// If issuer is empty, it defaults to defaultIssuer.
+// If issuer is unknown, ErrClientIDNotFound is returned.
+func ClientID(clientID, issuer string) (string, error) {
+	if clientID != "" {
+		return clientID, nil
+	}
+
+	if issuer == "" {
+		issuer = defaultIssuer
+	}
+
+	id, ok := wellKnownClientIDs[issuer]
+	if !ok {
+		return "", fmt.Errorf("%w for issuer %q; use the `--client-id` flag to provide a custom client ID", ErrClientIDNotFound, issuer)
+	}
+
+	return id, nil
+}
 
 // Config creates an OAuth2 config for the GitLab instance at baseURL.
 // If baseURL is empty, it defaults to gitlab.com.
-func Config(baseURL, clientID string) *oauth2.Config {
-	if clientID == "" {
-		clientID = DefaultClientID
+func Config(baseURL, clientID string) (*oauth2.Config, error) {
+	clientID, err := ClientID(clientID, baseURL)
+	if err != nil {
+		return nil, err
 	}
 
 	return &oauth2.Config{
 		ClientID: clientID,
 		Endpoint: endpoint(baseURL),
 		Scopes:   []string{"api"},
-	}
+	}, nil
 }
 
 func endpoint(baseURL string) oauth2.Endpoint {
@@ -91,8 +122,6 @@ func FileTokenSource(ctx context.Context, issuer, filename string, config *oauth
 	return oauth2.ReuseTokenSource(nil, src)
 }
 
-var ErrTokenNotFound = errors.New("token not found")
-
 //nolint:containedctx // We have to implement the TokenSource interface, which does not accept a context.
 type fileBackedToken struct {
 	ctx      context.Context
@@ -121,7 +150,7 @@ func (t *fileBackedToken) Token() (*oauth2.Token, error) {
 
 	if storedToken.AccessToken != refreshedToken.AccessToken ||
 		storedToken.RefreshToken != refreshedToken.RefreshToken {
-		if err := StoreToken(t.filename, t.issuer, refreshedToken); err != nil {
+		if err := StoreToken(t.filename, t.issuer, refreshedToken, withFileSystem(t.fileSystem)); err != nil {
 			return nil, fmt.Errorf("StoreToken(filename=%q, issuer=%q): %w", t.filename, t.issuer, err)
 		}
 	}
@@ -142,7 +171,7 @@ func (t *fileBackedToken) load() (*oauth2.Token, error) {
 
 	token, ok := stored.Tokens[t.issuer]
 	if !ok {
-		return nil, fmt.Errorf("%w for issuer %q", ErrTokenNotFound, t.issuer)
+		return nil, fmt.Errorf("%w for issuer %q; run `gitlab-mcp auth` to generate a token", ErrTokenNotFound, t.issuer)
 	}
 
 	return token, nil

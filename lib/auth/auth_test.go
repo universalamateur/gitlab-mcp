@@ -31,7 +31,7 @@ func TestConfig(t *testing.T) {
 			baseURL:  "",
 			clientID: "",
 			want: &oauth2.Config{
-				ClientID: DefaultClientID,
+				ClientID: wellKnownClientIDs[defaultIssuer],
 				Endpoint: oauth2.Endpoint{
 					AuthURL:       "https://gitlab.com/oauth/authorize",
 					TokenURL:      "https://gitlab.com/oauth/token",
@@ -86,7 +86,10 @@ func TestConfig(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			config := Config(tc.baseURL, tc.clientID)
+			config, err := Config(tc.baseURL, tc.clientID)
+			if err != nil {
+				t.Fatalf("Config(%q, %q): %v", tc.baseURL, tc.clientID, err)
+			}
 
 			if diff := cmp.Diff(tc.want, config, cmpOpts...); diff != "" {
 				t.Errorf("Config(%q) mismatch (-want/+got):\n%s", tc.baseURL, diff)
@@ -137,15 +140,15 @@ func TestFileBackedToken(t *testing.T) {
 			wantFileWrites: 1,
 		},
 		{
-			name:   "No refresh token change means no file update",
+			name:   "No token change means no file update",
 			issuer: "https://gitlab.example.com",
 			initialToken: &oauth2.Token{
-				AccessToken:  "initial-access-token",
+				AccessToken:  "same-access-token",
 				RefreshToken: "same-refresh-token",
 			},
 			refreshedToken: &oauth2.Token{
-				AccessToken:  "new-access-token",
-				RefreshToken: "same-refresh-token", // Same refresh token
+				AccessToken:  "same-access-token",
+				RefreshToken: "same-refresh-token",
 			},
 			wantFileWrites: 0,
 		},

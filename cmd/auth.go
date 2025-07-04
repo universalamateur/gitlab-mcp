@@ -27,7 +27,7 @@ func newAuthCommand() *cobra.Command {
 
 	fs := cmd.Flags()
 	fs.Var(&ac.baseURL, "base-url", "Custom GitLab instance URL")
-	fs.StringVar(&ac.clientID, "client-id", auth.DefaultClientID, "OAuth client ID for custom GitLab instance")
+	fs.StringVar(&ac.clientID, "client-id", "", "OAuth client ID for custom GitLab instance")
 
 	return cmd
 }
@@ -37,8 +37,13 @@ func newAuthCommand() *cobra.Command {
 func (ac *authCommand) run(cmd *cobra.Command, args []string) error {
 	ctx := cmd.Context()
 
+	baseURL := ac.baseURL.String()
+
 	// Create a new OAuth2 config
-	config := auth.Config(ac.baseURL.String(), ac.clientID)
+	config, err := auth.Config(baseURL, ac.clientID)
+	if err != nil {
+		return fmt.Errorf("auth.Config(%q, %q): %w", baseURL, ac.clientID, err)
+	}
 
 	da, err := config.DeviceAuth(ctx)
 	if err != nil {
@@ -65,7 +70,7 @@ func (ac *authCommand) run(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to obtain device access token: %w", err)
 	}
 
-	if err := auth.StoreToken(auth.TokenPath(), ac.baseURL.String(), token); err != nil {
+	if err := auth.StoreToken(auth.TokenPath(), baseURL, token); err != nil {
 		return fmt.Errorf("failed to store token: %w", err)
 	}
 
