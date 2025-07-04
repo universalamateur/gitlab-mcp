@@ -18,13 +18,12 @@ import (
 const defaultBaseURL = "https://gitlab.com"
 
 var (
-	// ErrMissingToken is returned when GITLAB_TOKEN environment variable is not set.
-	ErrMissingToken = errors.New("no authentication token available. Run `gitlab-mcp auth` to generate a token")
 	// ErrInvalidScheme is returned when GitLab URL doesn't use HTTPS.
 	ErrInvalidScheme = errors.New("GITLAB_URL must use https scheme")
-
 	// ErrConfig is returned when configuration is invalid.
-	ErrConfig = errors.New("invalid configuration")
+	ErrConfig = errors.New("invalid OAuth configuration")
+	// ErrFlagNotFound is returned when a flag is not found.
+	ErrFlagNotFound = errors.New("flag not found")
 )
 
 // DefaultBaseURL returns the default GitLab URL or the URL specified by the GITLAB_URL environment variable.
@@ -43,8 +42,6 @@ type Config struct {
 	ClientID       string
 }
 
-var ErrFlagNotFound = errors.New("flag not found")
-
 // NewConfig creates a new configuration by reading environment variables.
 func NewConfig(fs *pflag.FlagSet) (*Config, error) {
 	f := fs.Lookup("base-url")
@@ -59,10 +56,6 @@ func NewConfig(fs *pflag.FlagSet) (*Config, error) {
 	clientID, err := fs.GetString("client-id")
 	if err != nil {
 		return nil, fmt.Errorf("determining client ID from flags: %w", err)
-	}
-
-	if baseURL != "" && clientID == "" {
-		return nil, fmt.Errorf("%w: --client-id must be provided with --base-url", ErrConfig)
 	}
 
 	cfg := &Config{
@@ -94,7 +87,7 @@ func (c *Config) configureToken() error {
 		return nil
 	}
 
-	return ErrMissingToken
+	return fmt.Errorf("%w: the token file %q does not exist; run `gitlab-mcp auth` to create it", auth.ErrTokenNotFound, tokenFile)
 }
 
 func (c *Config) validateBaseURL() error {
@@ -130,16 +123,21 @@ func New(ctx context.Context, cfg *Config) (*gitlab.Client, error) {
 
 	switch {
 	case cfg.OAuthTokenFile != "":
-		as := gitlab.OAuthTokenSource{
-			TokenSource: auth.FileTokenSource(ctx, cfg.BaseURL, cfg.OAuthTokenFile, auth.Config(cfg.BaseURL, cfg.ClientID)),
+		authConfig, authErr := auth.Config(cfg.BaseURL, cfg.ClientID)
+		if authErr != nil {
+			return nil, fmt.Errorf("auth.Config(%q, %q): %w", cfg.BaseURL, cfg.ClientID, authErr)
 		}
-		client, err = gitlab.NewAuthSourceClient(as)
+
+		as := gitlab.OAuthTokenSource{
+			TokenSource: auth.FileTokenSource(ctx, cfg.BaseURL, cfg.OAuthTokenFile, authConfig),
+		}
+		client, err = gitlab.NewAuthSourceClient(as, clientOptions...)
 
 	case cfg.AccessToken != "":
 		client, err = gitlab.NewClient(cfg.AccessToken, clientOptions...)
 
 	default:
-		return nil, ErrMissingToken
+		return nil, fmt.Errorf("%w: provide either an OAuth token file or an access token", ErrConfig)
 	}
 
 	if err != nil {
@@ -156,7 +154,12 @@ func New(ctx context.Context, cfg *Config) (*gitlab.Client, error) {
 type BaseURLFlag url.URL
 
 func (f *BaseURLFlag) String() string {
-	return (*url.URL)(f).String()
+	s := (*url.URL)(f).String()
+	if s == "" {
+		return DefaultBaseURL()
+	}
+
+	return s
 }
 
 // Set sets the value of the flag.
