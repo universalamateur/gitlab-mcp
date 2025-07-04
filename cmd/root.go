@@ -5,11 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/spf13/cobra"
 
+	"gitlab.com/fforster/gitlab-mcp/lib/auth"
 	"gitlab.com/fforster/gitlab-mcp/lib/build"
 	"gitlab.com/fforster/gitlab-mcp/lib/glclient"
 	"gitlab.com/fforster/gitlab-mcp/lib/glctx"
@@ -27,7 +27,8 @@ func New() *cobra.Command {
 }
 
 type rootCommand struct {
-	baseURL string
+	baseURL  glclient.BaseURLFlag
+	clientID string
 }
 
 // newRootCommand returns the root command for the CLI.
@@ -43,7 +44,8 @@ func newRootCommand() *cobra.Command {
 	}
 
 	fs := cmd.Flags()
-	fs.StringVar(&rc.baseURL, "base-url", os.Getenv("GITLAB_URL"), "Custom GitLab instance URL")
+	fs.Var(&rc.baseURL, "base-url", "Custom GitLab instance URL")
+	fs.StringVar(&rc.clientID, "client-id", auth.DefaultClientID, "OAuth client ID for custom GitLab instance")
 
 	return cmd
 }

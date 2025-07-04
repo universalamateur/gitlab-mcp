@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -15,13 +16,20 @@ import (
 	"golang.org/x/oauth2/endpoints"
 )
 
-const ClientID = "039e1e052b348d4e45e55bd50bd5cd1fa28b6ee3d044962587fd78bf68ceae4f"
+const (
+	DefaultClientID = "039e1e052b348d4e45e55bd50bd5cd1fa28b6ee3d044962587fd78bf68ceae4f"
+	defaultIssuer   = "https://gitlab.com"
+)
 
 // Config creates an OAuth2 config for the GitLab instance at baseURL.
 // If baseURL is empty, it defaults to gitlab.com.
-func Config(baseURL string) *oauth2.Config {
+func Config(baseURL, clientID string) *oauth2.Config {
+	if clientID == "" {
+		clientID = DefaultClientID
+	}
+
 	return &oauth2.Config{
-		ClientID: ClientID,
+		ClientID: clientID,
 		Endpoint: endpoint(baseURL),
 		Scopes:   []string{"api"},
 	}
@@ -67,9 +75,14 @@ func TokenPath() string {
 // The token is refreshed automatically. New tokens are automatically written to the file.
 //
 //nolint:ireturn // Return type is determined by oauth2.ReuseTokenSource.
-func FileTokenSource(ctx context.Context, filename string, config *oauth2.Config) oauth2.TokenSource {
+func FileTokenSource(ctx context.Context, issuer, filename string, config *oauth2.Config) oauth2.TokenSource {
+	if issuer == "" {
+		issuer = defaultIssuer
+	}
+
 	src := &fileBackedToken{
 		ctx:        ctx,
+		issuer:     issuer,
 		filename:   filename,
 		config:     config,
 		fileSystem: osFS{},
@@ -78,9 +91,12 @@ func FileTokenSource(ctx context.Context, filename string, config *oauth2.Config
 	return oauth2.ReuseTokenSource(nil, src)
 }
 
+var ErrTokenNotFound = errors.New("token not found")
+
 //nolint:containedctx // We have to implement the TokenSource interface, which does not accept a context.
 type fileBackedToken struct {
 	ctx      context.Context
+	issuer   string
 	filename string
 	config   interface {
 		TokenSource(ctx context.Context, t *oauth2.Token) oauth2.TokenSource
@@ -98,18 +114,25 @@ func (t *fileBackedToken) Token() (*oauth2.Token, error) {
 		return nil, fmt.Errorf("ReadFile(%q): %w", t.filename, err)
 	}
 
-	var storedToken oauth2.Token
-	if err := json.Unmarshal(data, &storedToken); err != nil {
-		return nil, fmt.Errorf("json.Unmarshal(): %w", err)
+	stored, err := parseStoredTokens(data)
+	if err != nil {
+		return nil, fmt.Errorf("parseStoredTokens(): %w", err)
 	}
 
-	refreshedToken, err := t.config.TokenSource(t.ctx, &storedToken).Token()
+	storedToken, ok := stored.Tokens[t.issuer]
+	if !ok {
+		return nil, fmt.Errorf("%w for issuer %q", ErrTokenNotFound, t.issuer)
+	}
+
+	refreshedToken, err := t.config.TokenSource(t.ctx, storedToken).Token()
 	if err != nil {
 		return nil, fmt.Errorf("config.TokenSource(): %w", err)
 	}
 
 	if storedToken.RefreshToken != refreshedToken.RefreshToken {
-		data, err := json.Marshal(refreshedToken)
+		stored.Tokens[t.issuer] = refreshedToken
+
+		data, err := json.Marshal(stored)
 		if err != nil {
 			return nil, fmt.Errorf("json.Marshal(): %w", err)
 		}
@@ -122,16 +145,98 @@ func (t *fileBackedToken) Token() (*oauth2.Token, error) {
 	return refreshedToken, nil
 }
 
-// StoreToken writes the provided token to the specified file.
-func StoreToken(filename string, token *oauth2.Token) error {
-	fs := osFS{}
+func parseStoredTokens(data []byte) (storedTokens, error) {
+	stored, err := parseLegacyToken(data)
+	if !errors.Is(err, errNotLegacyToken) {
+		return stored, err
+	}
 
-	data, err := json.Marshal(token)
+	if err := json.Unmarshal(data, &stored); err != nil {
+		return storedTokens{}, fmt.Errorf("json.Unmarshal(): %w", err)
+	}
+
+	return stored, nil
+}
+
+var errNotLegacyToken = errors.New("not a legacy token")
+
+// parseLegacyToken parses data directly as an *oauth2.Token and converts it to the storedTokens format.
+// If data does not represent an *oauth2.Token, it returns a errNotLegacyToken error.
+func parseLegacyToken(data []byte) (storedTokens, error) {
+	var token oauth2.Token
+	if err := json.Unmarshal(data, &token); err != nil {
+		return storedTokens{}, fmt.Errorf("json.Unmarshal legacy token: %w", err)
+	}
+
+	if token.AccessToken == "" {
+		return storedTokens{}, errNotLegacyToken
+	}
+
+	// Convert legacy single token to new format with default issuer
+	stored := storedTokens{
+		Tokens: map[string]*oauth2.Token{
+			defaultIssuer: &token,
+		},
+	}
+
+	return stored, nil
+}
+
+type storedTokens struct {
+	Tokens map[string]*oauth2.Token `json:"tokens"`
+}
+
+type storeTokenOptions struct {
+	fs fileSystem
+}
+
+type storeTokenOption func(*storeTokenOptions)
+
+func withFileSystem(fs fileSystem) storeTokenOption {
+	return func(opts *storeTokenOptions) {
+		opts.fs = fs
+	}
+}
+
+// StoreToken writes the provided token to the specified file.
+func StoreToken(filename, issuer string, token *oauth2.Token, options ...storeTokenOption) error {
+	var (
+		opts = storeTokenOptions{
+			fs: osFS{},
+		}
+		stored storedTokens
+	)
+
+	for _, opt := range options {
+		opt(&opts)
+	}
+
+	data, err := opts.fs.ReadFile(filename)
+
+	switch {
+	case errors.Is(err, os.ErrNotExist):
+		// no-op
+	case err != nil:
+		return fmt.Errorf("ReadFile(%q): %w", filename, err)
+	default:
+		stored, err = parseStoredTokens(data)
+		if err != nil {
+			return fmt.Errorf("parseStoredTokens(): %w", err)
+		}
+	}
+
+	if stored.Tokens == nil {
+		stored.Tokens = make(map[string]*oauth2.Token)
+	}
+
+	stored.Tokens[issuer] = token
+
+	data, err = json.Marshal(stored)
 	if err != nil {
 		return fmt.Errorf("json.Marshal(): %w", err)
 	}
 
-	if err := fs.WriteFile(filename, data, 0600); err != nil {
+	if err := opts.fs.WriteFile(filename, data, 0600); err != nil {
 		return fmt.Errorf("WriteFile(%q): %w", filename, err)
 	}
 
