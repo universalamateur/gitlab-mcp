@@ -43,11 +43,13 @@ type Config struct {
 	ClientID       string
 }
 
+var ErrFlagNotFound = errors.New("flag not found")
+
 // NewConfig creates a new configuration by reading environment variables.
 func NewConfig(fs *pflag.FlagSet) (*Config, error) {
 	f := fs.Lookup("base-url")
 	if f == nil {
-		return nil, fmt.Errorf("missing --base-url flag")
+		return nil, fmt.Errorf("%w: --base-url", ErrFlagNotFound)
 	}
 
 	baseURL := f.Value.String()

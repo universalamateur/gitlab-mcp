@@ -91,6 +91,8 @@ func FileTokenSource(ctx context.Context, issuer, filename string, config *oauth
 	return oauth2.ReuseTokenSource(nil, src)
 }
 
+var ErrTokenNotFound = errors.New("token not found")
+
 //nolint:containedctx // We have to implement the TokenSource interface, which does not accept a context.
 type fileBackedToken struct {
 	ctx      context.Context
@@ -119,7 +121,7 @@ func (t *fileBackedToken) Token() (*oauth2.Token, error) {
 
 	storedToken, ok := stored.Tokens[t.issuer]
 	if !ok {
-		return nil, fmt.Errorf("no token found for issuer %q", t.issuer)
+		return nil, fmt.Errorf("%w for issuer %q", ErrTokenNotFound, t.issuer)
 	}
 
 	refreshedToken, err := t.config.TokenSource(t.ctx, storedToken).Token()
@@ -150,7 +152,7 @@ func parseStoredTokens(data []byte) (storedTokens, error) {
 	}
 
 	if err := json.Unmarshal(data, &stored); err != nil {
-		return storedTokens{}, err
+		return storedTokens{}, fmt.Errorf("json.Unmarshal(): %w", err)
 	}
 
 	return stored, nil

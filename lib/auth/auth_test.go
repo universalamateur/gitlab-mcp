@@ -399,7 +399,7 @@ func wantErrorType[E error](wantType E) func(error) error {
 
 func wantSuccess(err error) error {
 	if err != nil {
-		return fmt.Errorf("got error %v, want success", err)
+		return fmt.Errorf("got error %w, want success", err)
 	}
 
 	return nil
