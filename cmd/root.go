@@ -16,6 +16,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/spf13/cobra"
 
+	"gitlab.com/fforster/gitlab-mcp/lib/auth"
 	"gitlab.com/fforster/gitlab-mcp/lib/build"
 	"gitlab.com/fforster/gitlab-mcp/lib/glclient"
 	"gitlab.com/fforster/gitlab-mcp/lib/glctx"
@@ -136,7 +137,7 @@ func (c *rootCommand) serveHTTP(mcpSrv *server.MCPServer) error {
 
 	mux := &http.ServeMux{}
 
-	mux.Handle("/mcp", httpMCPServer)
+	mux.Handle("/mcp", auth.Wrap(httpMCPServer))
 
 	httpServer := &http.Server{
 		Addr:         c.listenAddr,

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -302,4 +303,18 @@ func (fs osFS) WriteFile(filename string, data []byte, perm fs.FileMode) error {
 	}
 
 	return os.WriteFile(filename, data, perm) //nolint:wrapcheck
+}
+
+// Wrap wraps an HTTP handler to check for the presence of a "Private-Token" header.
+// If the header is present, the request is passed to the wrapped handler.
+// Otherwise, a 401 Unauthorized status is returned.
+func Wrap(hndl http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if req.Header.Get("Private-Token") != "" {
+			hndl.ServeHTTP(w, req)
+			return
+		}
+
+		http.Error(w, "Unauthorized. Please authenticate with a valid Private-Token header.", http.StatusUnauthorized)
+	})
 }
