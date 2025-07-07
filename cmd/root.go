@@ -34,7 +34,7 @@ func New() *cobra.Command {
 }
 
 type rootCommand struct {
-	//  MCP flags
+	// MCP flags
 	transport  string
 	listenAddr string
 
@@ -87,7 +87,7 @@ func (c *rootCommand) run(cmd *cobra.Command, _ []string) error {
 		return c.serveStdio(s, cmd)
 
 	case "http":
-		return c.serveHTTP(s)
+		return c.serveHTTP(cmd.Context(), s)
 
 	default:
 		return fmt.Errorf("%w: %q", ErrInvalidTransport, c.transport)
@@ -126,7 +126,7 @@ func (c *rootCommand) serveStdio(srv *server.MCPServer, cmd *cobra.Command) erro
 }
 
 //nolint:funlen
-func (c *rootCommand) serveHTTP(mcpSrv *server.MCPServer) error {
+func (c *rootCommand) serveHTTP(ctx context.Context, mcpSrv *server.MCPServer) error {
 	opts := []server.StreamableHTTPOption{
 		server.WithHTTPContextFunc(httpContextFunc(glclient.ServerConfig{
 			BaseURL: c.baseURL.String(),
@@ -135,7 +135,7 @@ func (c *rootCommand) serveHTTP(mcpSrv *server.MCPServer) error {
 
 	httpMCPServer := server.NewStreamableHTTPServer(mcpSrv, opts...)
 
-	mux := &http.ServeMux{}
+	mux := http.NewServeMux()
 
 	mux.Handle("/mcp", auth.Wrap(httpMCPServer))
 
@@ -166,7 +166,7 @@ func (c *rootCommand) serveHTTP(mcpSrv *server.MCPServer) error {
 	case <-stop:
 		log.Println("Shutting down server...")
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 
 		if err := httpServer.Shutdown(ctx); err != nil {
@@ -177,6 +177,15 @@ func (c *rootCommand) serveHTTP(mcpSrv *server.MCPServer) error {
 
 	case err := <-errChan:
 		return fmt.Errorf("server error: %w", err)
+
+	case <-ctx.Done():
+		log.Println("Shutting down server...")
+
+		if err := httpServer.Shutdown(ctx); err != nil {
+			return fmt.Errorf("server shutdown error: %w", err)
+		}
+
+		return nil
 	}
 }
 
