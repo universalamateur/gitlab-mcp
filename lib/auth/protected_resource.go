@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"sync"
+	"time"
 )
 
 // ProtectedResource represents an OAuth2 protected resource, as specified in RFC 9728.
@@ -17,6 +19,10 @@ type ProtectedResource struct {
 	AuthorizationServers []AuthorizationServer `json:"authorization_servers,omitempty"`
 
 	clientID string
+
+	validTokens map[string]time.Time
+	lastPurge   time.Time
+	mu          sync.Mutex
 }
 
 type ProtectedResourceOption func(*ProtectedResource)
@@ -51,7 +57,7 @@ func NewProtectedResource(resourceURL string, options ...ProtectedResourceOption
 // RegisterMetadataHandler registers the metadata handler for the protected resource on the provided multiplexer.
 // It ensures that the metadata is served at the well-known URL for OAuth2 protected resources.
 // If parsing the resource identifier fails, an error is returned.
-func (r ProtectedResource) RegisterMetadataHandler(mux *http.ServeMux) error {
+func (r *ProtectedResource) RegisterMetadataHandler(mux *http.ServeMux) error {
 	u, err := r.MetadataURL()
 	if err != nil {
 		return fmt.Errorf("MetadataURL(): %w", err)
@@ -64,7 +70,7 @@ func (r ProtectedResource) RegisterMetadataHandler(mux *http.ServeMux) error {
 
 // MetadataURL returns the URL of the protected resource's metadata.
 // If parsing the resource identifier fails, an error is returned.
-func (r ProtectedResource) MetadataURL() (*url.URL, error) {
+func (r *ProtectedResource) MetadataURL() (*url.URL, error) {
 	const resourceMetadataPath = "/.well-known/oauth-protected-resource"
 
 	u, err := url.Parse(r.Resource)
@@ -78,7 +84,7 @@ func (r ProtectedResource) MetadataURL() (*url.URL, error) {
 }
 
 // MetadataHandler is a HTTP handler that serves the protected resource's metadata.
-func (r ProtectedResource) MetadataHandler(w http.ResponseWriter, req *http.Request) {
+func (r *ProtectedResource) MetadataHandler(w http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		fmt.Fprintf(w, "Method %s not allowed. Use %s instead.", req.Method, http.MethodGet)
@@ -97,12 +103,11 @@ func (r ProtectedResource) MetadataHandler(w http.ResponseWriter, req *http.Requ
 // Wrap wraps the provided HTTP handler with an OAuth2 authorization check.
 // If the request does not have a valid Bearer token or Private-Token header, it responds with an Unauthorized error.
 // The Unauthorized response includes a WWW-Authenticate header including the URL of the protected resource's metadata.
-func (r ProtectedResource) Wrap(hndl http.Handler) http.Handler {
+func (r *ProtectedResource) Wrap(hndl http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		if token := req.Header.Get("Authorization"); token != "" {
 			token = strings.TrimPrefix(token, "Bearer ")
 			if err := r.validateToken(req.Context(), token); err != nil {
-				w.Header().Add("Debug", fmt.Sprintf("validateToken(%q): %v", token, err))
 				http.Error(w, fmt.Sprintf("validateToken: %v", err), http.StatusUnauthorized)
 
 				return
@@ -138,7 +143,11 @@ func (r ProtectedResource) Wrap(hndl http.Handler) http.Handler {
 
 // validateToken validates the provided reference token by calling the introspection endpoint of the
 // authorization server.
-func (r ProtectedResource) validateToken(ctx context.Context, token string) error {
+func (r *ProtectedResource) validateToken(ctx context.Context, token string) error {
+	if r.loadValidToken(token) {
+		return nil
+	}
+
 	if len(r.AuthorizationServers) == 0 {
 		return fmt.Errorf("%w: no authorization server defined for protected resource %q", ErrBadConfig, r.Resource)
 	}
@@ -157,5 +166,61 @@ func (r ProtectedResource) validateToken(ctx context.Context, token string) erro
 		return fmt.Errorf("token introspection: %w", err)
 	}
 
+	r.storeValidToken(token, resp.ExpiresAt)
+
 	return nil
+}
+
+func (r *ProtectedResource) loadValidToken(token string) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.validTokens == nil {
+		return false
+	}
+
+	now := time.Now()
+
+	r.purgeTokens(now)
+
+	t, ok := r.validTokens[token]
+
+	return ok && !t.IsZero() && t.After(now)
+}
+
+// purgeTokens removes expired tokens from the validTokens map.
+// r.mu must be locked when calling this function!
+func (r *ProtectedResource) purgeTokens(now time.Time) {
+	if r.lastPurge.Add(time.Minute).After(now) {
+		return
+	}
+
+	for key, expiresAt := range r.validTokens {
+		if expiresAt.IsZero() || expiresAt.Before(now) {
+			delete(r.validTokens, key)
+		}
+	}
+}
+func (r *ProtectedResource) storeValidToken(token string, expiresAt int64) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.validTokens == nil {
+		r.validTokens = make(map[string]time.Time)
+	}
+
+	if _, ok := r.validTokens[token]; ok {
+		return
+	}
+
+	if expiresAt <= 0 {
+		return
+	}
+
+	t := time.Unix(expiresAt, 0)
+	if t.Before(time.Now()) {
+		return
+	}
+
+	r.validTokens[token] = t
 }
