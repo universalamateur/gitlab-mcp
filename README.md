@@ -291,7 +291,6 @@ Once configured, you can ask Claude to interact with your GitLab instance:
 >
 > Limitations:
 >
-> - No TLS support (plain HTTP only)
 > - Only personal access tokens are supported for authentication, which can be stolen and misused by the server operator
 
 _gitlab-mcp_ has experimental support for the streaming HTTP transport.
@@ -306,9 +305,11 @@ For the time being, this is very strongly discouraged because we only support pe
 To start _gitlab-mcp_ in Streaming HTTP mode, you need to specify the `--transport http` flag.
 The server listens on the address specified by the `--listen-addr` flag (default `:8080`).
 
+Use the `--tls-cert` and `--tls-key` flags to enable TLS support.
+
 ```sh
 $ ./gitlab-mcp --transport http --listen-addr localhost:3001
-2025/07/04 23:34:04 Listening on localhost:3001
+2025/07/04 23:34:04 Listening on localhost:3001 (without TLS)
 ```
 
 ### Connect to the server
@@ -323,7 +324,7 @@ The MCP server listens to the `/mcp` endpoint. With the above example, you would
 
 > [!caution]
 > Do not send Personal Access Tokens over unencrypted network connections.
-> Ensure the server is using the local loopback address, e.g. `localhost`, `::1`, or `127.0.0.1`.
+> Ensure to use an HTTPS URL, or use the local loopback address, e.g. `localhost`, `::1`, or `127.0.0.1`.
 
 _gitlab-mcp_ requires the `Private-Token` HTTP header to be set to your GitLab personal access token for authentication.
 If the header is missing, a `401 Unauthorized` response is returned.

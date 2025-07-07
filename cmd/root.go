@@ -34,9 +34,13 @@ func New() *cobra.Command {
 }
 
 type rootCommand struct {
-	//  MCP flags
+	// MCP flags
 	transport  string
 	listenAddr string
+
+	// TLS flags
+	tlsKey  string
+	tlsCert string
 
 	// GitLab flags
 	baseURL  glclient.BaseURLFlag
@@ -60,6 +64,10 @@ func newRootCommand() *cobra.Command {
 	// MCP flags
 	fs.StringVar(&rc.transport, "transport", "stdio", "Transport protocol to use for communication with the MCP server")
 	fs.StringVar(&rc.listenAddr, "listen-addr", ":8080", "Address to listen on, in the form of 'host:port'.")
+
+	// TLS flags
+	fs.StringVar(&rc.tlsKey, "tls-key", "", "Path to TLS private key file for HTTPS server")
+	fs.StringVar(&rc.tlsCert, "tls-cert", "", "Path to TLS certificate file for HTTPS server")
 
 	// GitLab flags
 	fs.Var(&rc.baseURL, "base-url", "Custom GitLab instance URL")
@@ -87,7 +95,7 @@ func (c *rootCommand) run(cmd *cobra.Command, _ []string) error {
 		return c.serveStdio(s, cmd)
 
 	case "http":
-		return c.serveHTTP(s)
+		return c.serveHTTP(cmd.Context(), s)
 
 	default:
 		return fmt.Errorf("%w: %q", ErrInvalidTransport, c.transport)
@@ -126,7 +134,7 @@ func (c *rootCommand) serveStdio(srv *server.MCPServer, cmd *cobra.Command) erro
 }
 
 //nolint:funlen
-func (c *rootCommand) serveHTTP(mcpSrv *server.MCPServer) error {
+func (c *rootCommand) serveHTTP(ctx context.Context, mcpSrv *server.MCPServer) error {
 	opts := []server.StreamableHTTPOption{
 		server.WithHTTPContextFunc(httpContextFunc(glclient.ServerConfig{
 			BaseURL: c.baseURL.String(),
@@ -135,7 +143,7 @@ func (c *rootCommand) serveHTTP(mcpSrv *server.MCPServer) error {
 
 	httpMCPServer := server.NewStreamableHTTPServer(mcpSrv, opts...)
 
-	mux := &http.ServeMux{}
+	mux := http.NewServeMux()
 
 	mux.Handle("/mcp", auth.Wrap(httpMCPServer))
 
@@ -150,9 +158,21 @@ func (c *rootCommand) serveHTTP(mcpSrv *server.MCPServer) error {
 	errChan := make(chan error, 1)
 
 	go func() {
-		log.Printf("Listening on %s", c.listenAddr)
+		var err error
 
-		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		switch {
+		case c.tlsKey != "" && c.tlsCert != "":
+			log.Printf("Listening on %s (with TLS)", c.listenAddr)
+
+			err = httpServer.ListenAndServeTLS(c.tlsCert, c.tlsKey)
+
+		default:
+			log.Printf("Listening on %s (without TLS)", c.listenAddr)
+
+			err = httpServer.ListenAndServe()
+		}
+
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errChan <- err
 		}
 	}()
@@ -166,7 +186,7 @@ func (c *rootCommand) serveHTTP(mcpSrv *server.MCPServer) error {
 	case <-stop:
 		log.Println("Shutting down server...")
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 
 		if err := httpServer.Shutdown(ctx); err != nil {
@@ -177,6 +197,15 @@ func (c *rootCommand) serveHTTP(mcpSrv *server.MCPServer) error {
 
 	case err := <-errChan:
 		return fmt.Errorf("server error: %w", err)
+
+	case <-ctx.Done():
+		log.Println("Shutting down server...")
+
+		if err := httpServer.Shutdown(ctx); err != nil {
+			return fmt.Errorf("server shutdown error: %w", err)
+		}
+
+		return nil
 	}
 }
 
