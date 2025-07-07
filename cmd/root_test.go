@@ -2,12 +2,16 @@ package cmd
 
 import (
 	"io"
+	"net"
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestRootCommand(t *testing.T) {
+	const port = "8080"
+
 	testCases := []struct {
 		name       string
 		request    *http.Request
@@ -15,12 +19,12 @@ func TestRootCommand(t *testing.T) {
 	}{
 		{
 			name:       "Unauthorized",
-			request:    mustNewRequest(http.MethodGet, "http://localhost:8080/mcp", nil, ""),
+			request:    mustNewRequest(t, http.MethodGet, "http://localhost:"+port+"/mcp", nil, ""),
 			wantStatus: http.StatusUnauthorized,
 		},
 		{
 			name: "With Private-Token header",
-			request: mustNewRequest(http.MethodGet, "http://localhost:8080/mcp", map[string]string{
+			request: mustNewRequest(t, http.MethodGet, "http://localhost:"+port+"/mcp", map[string]string{
 				"Private-Token": `test-private-token`,
 			}, ``),
 			wantStatus: http.StatusAccepted,
@@ -30,18 +34,23 @@ func TestRootCommand(t *testing.T) {
 	// Start MCP server in a Goroutine.
 	cmd := New()
 
-	cmd.ParseFlags([]string{
+	err := cmd.ParseFlags([]string{
 		"--transport", "http",
-		"--listen-addr", "localhost:8080",
+		"--listen-addr", "localhost:" + port,
 		"--base-url", "https://gitlab.example.com",
 		"--client-id", "test-client-id",
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	errCh := make(chan error, 1)
 
 	go func() {
 		errCh <- cmd.ExecuteContext(t.Context())
 	}()
+
+	waitForServer(t, "localhost:"+port)
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -58,15 +67,17 @@ func TestRootCommand(t *testing.T) {
 	}
 }
 
-func mustNewRequest(method, url string, header map[string]string, body string) *http.Request {
+func mustNewRequest(t *testing.T, method, url string, header map[string]string, body string) *http.Request {
+	t.Helper()
+
 	var r io.Reader
 	if body != "" {
 		r = strings.NewReader(body)
 	}
 
-	req, err := http.NewRequest(method, url, r)
+	req, err := http.NewRequestWithContext(t.Context(), method, url, r)
 	if err != nil {
-		panic(err)
+		t.Fatalf("http.NewRequest(%q, %q): %v", method, url, err)
 	}
 
 	for key, value := range header {
@@ -74,4 +85,32 @@ func mustNewRequest(method, url string, header map[string]string, body string) *
 	}
 
 	return req
+}
+
+func waitForServer(t *testing.T, addr string) {
+	t.Helper()
+	t.Logf("Waiting for %q to become available...", addr)
+
+	var (
+		start   = time.Now()
+		backoff = 10 * time.Millisecond
+	)
+
+	for {
+		if deadline, ok := t.Deadline(); ok && time.Now().After(deadline) {
+			t.Fatalf("Timed out waiting for %q to become available", addr)
+		}
+
+		conn, err := net.DialTimeout("tcp", addr, 100*time.Millisecond)
+		if err == nil {
+			conn.Close()
+			t.Logf("%q became available after %s", addr, time.Since(start))
+
+			return
+		}
+
+		time.Sleep(backoff)
+
+		backoff = min(2*backoff, time.Second)
+	}
 }
