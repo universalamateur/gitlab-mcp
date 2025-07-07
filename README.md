@@ -284,6 +284,50 @@ Once configured, you can ask Claude to interact with your GitLab instance:
 - "List all of my pending todos."
 - "List the latest 100 completed todos."
 
+## Streaming HTTP support
+
+> [!warning]
+> Streaming HTTP support in _gitlab-mcp_ is still experimental and not ready for production use.
+>
+> Limitations:
+>
+> - No TLS support (plain HTTP only)
+> - Only personal access tokens are supported for authentication, which can be stolen and misused by the server operator
+
+_gitlab-mcp_ has experimental support for the streaming HTTP transport.
+This allows you to use the GitLab MCP server with other applications that support the MCP protocol over HTTP.
+
+Using the MCP server via HTTP decouples the client and server processes, allowing you to restart or upgrade the server without affecting the client.
+Eventually _gitlab-mcp_ may support multi-tenant installations, enabling multiple users to connect to a single server instance.
+For the time being, this is very strongly discouraged because we only support personal access tokens as an authentication mechanism, which can easily be stolen and misused by the server operator.
+
+### Start the server
+
+To start _gitlab-mcp_ in Streaming HTTP mode, you need to specify the `--transport http` flag.
+The server listens on the address specified by the `--listen-addr` flag (default `:8080`).
+
+```sh
+$ ./gitlab-mcp --transport http --listen-addr localhost:3001
+2025/07/04 23:34:04 Listening on localhost:3001
+```
+
+### Connect to the server
+
+Please follow your IDE's or application's documentation to configure the MCP server with streaming HTTP transport.
+
+The MCP server listens to the `/mcp` endpoint. With the above example, you would configure the IDE or application to connect to `http://localhost:3001/mcp`.
+
+> [!caution]
+> Only send Personal Access Tokens to the _gitlab-mcp_ server if you trust it completely (i.e. you're running it yourself).
+> The server operator can easily steal your access token and act as you on GitLab.
+
+> [!caution]
+> Do not send Personal Access Tokens over unencrypted network connections.
+> Ensure the server is using the local loopback address, e.g. `localhost`, `::1`, or `127.0.0.1`.
+
+_gitlab-mcp_ requires the `Private-Token` HTTP header to be set to your GitLab personal access token for authentication.
+If the header is missing, a `401 Unauthorized` response is returned.
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
