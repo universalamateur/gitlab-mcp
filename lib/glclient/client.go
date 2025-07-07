@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
 	"strings"
 
 	"github.com/spf13/pflag"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
+	"golang.org/x/oauth2"
 
 	"gitlab.com/fforster/gitlab-mcp/lib/auth"
 	"gitlab.com/fforster/gitlab-mcp/lib/build"
@@ -36,14 +38,15 @@ func DefaultBaseURL() string {
 }
 
 type Config struct {
-	AccessToken    string
-	OAuthTokenFile string
-	BaseURL        string // Optional
-	ClientID       string
+	AccessToken string
+	AuthSource  gitlab.AuthSource
+	BaseURL     string // Optional
+	ClientID    string
 }
 
-// NewConfig creates a new configuration by reading environment variables.
-func NewConfig(fs *pflag.FlagSet) (*Config, error) {
+// ConfigFromFlags creates a new configuration by based on the provided flag set.
+// GitLab tokens are determined from the environment or file system.
+func ConfigFromFlags(ctx context.Context, fs *pflag.FlagSet) (*Config, error) {
 	f := fs.Lookup("base-url")
 	if f == nil {
 		return nil, fmt.Errorf("%w: --base-url", ErrFlagNotFound)
@@ -63,31 +66,75 @@ func NewConfig(fs *pflag.FlagSet) (*Config, error) {
 		ClientID: clientID,
 	}
 
-	if err := cfg.configureToken(); err != nil {
+	if err := cfg.validateBaseURL(); err != nil {
 		return nil, err
 	}
 
-	if err := cfg.validateBaseURL(); err != nil {
+	if err := cfg.configureToken(ctx); err != nil {
 		return nil, err
 	}
 
 	return cfg, nil
 }
 
-func (c *Config) configureToken() error {
+func (c *Config) configureToken(ctx context.Context) error {
 	tokenFile := auth.TokenPath()
 
+	authConfig, authErr := auth.Config(c.BaseURL, c.ClientID)
+	if authErr != nil {
+		return fmt.Errorf("auth.Config(%q, %q): %w", c.BaseURL, c.ClientID, authErr)
+	}
+
 	if s, err := os.Stat(tokenFile); err == nil && s.Mode().IsRegular() {
-		c.OAuthTokenFile = tokenFile
+		c.AuthSource = gitlab.OAuthTokenSource{
+			TokenSource: auth.FileTokenSource(ctx, c.BaseURL, tokenFile, authConfig),
+		}
+
 		return nil
 	}
 
 	if pat, havePAT := os.LookupEnv("GITLAB_TOKEN"); havePAT {
 		c.AccessToken = pat
+
 		return nil
 	}
 
 	return fmt.Errorf("%w: the token file %q does not exist; run `gitlab-mcp auth` to create it", auth.ErrTokenNotFound, tokenFile)
+}
+
+// ServerConfig represents the server-side configuration.
+type ServerConfig struct {
+	BaseURL string
+}
+
+// ConfigFromRequest reads configuration from an HTTP request.
+// It looks for the 'Private-Token' headers to set the access token.
+func ConfigFromRequest(r *http.Request, serverConfig ServerConfig) (*Config, error) {
+	clientConfig := &Config{
+		BaseURL: serverConfig.BaseURL,
+	}
+
+	if token := r.Header.Get("Authorization"); token != "" {
+		clientConfig.AuthSource = gitlab.OAuthTokenSource{
+			TokenSource: oauth2.StaticTokenSource(&oauth2.Token{
+				AccessToken: strings.TrimPrefix(token, "Bearer "),
+			}),
+		}
+	}
+
+	if token := r.Header.Get("Private-Token"); token != "" {
+		clientConfig.AccessToken = token
+	}
+
+	if clientConfig.AuthSource == nil && clientConfig.AccessToken == "" {
+		return nil, fmt.Errorf("%w; set the `Authorization` or `Private-Token` header", auth.ErrTokenNotFound)
+	}
+
+	if err := clientConfig.validateBaseURL(); err != nil {
+		return nil, err
+	}
+
+	return clientConfig, nil
 }
 
 func (c *Config) validateBaseURL() error {
@@ -108,7 +155,7 @@ func (c *Config) validateBaseURL() error {
 }
 
 // New creates a GitLab client with proper validation and security checks.
-func New(ctx context.Context, cfg *Config) (*gitlab.Client, error) {
+func New(cfg *Config) (*gitlab.Client, error) {
 	var clientOptions []gitlab.ClientOptionFunc
 
 	// Validate and add custom GitLab URL if provided
@@ -122,16 +169,8 @@ func New(ctx context.Context, cfg *Config) (*gitlab.Client, error) {
 	)
 
 	switch {
-	case cfg.OAuthTokenFile != "":
-		authConfig, authErr := auth.Config(cfg.BaseURL, cfg.ClientID)
-		if authErr != nil {
-			return nil, fmt.Errorf("auth.Config(%q, %q): %w", cfg.BaseURL, cfg.ClientID, authErr)
-		}
-
-		as := gitlab.OAuthTokenSource{
-			TokenSource: auth.FileTokenSource(ctx, cfg.BaseURL, cfg.OAuthTokenFile, authConfig),
-		}
-		client, err = gitlab.NewAuthSourceClient(as, clientOptions...)
+	case cfg.AuthSource != nil:
+		client, err = gitlab.NewAuthSourceClient(cfg.AuthSource, clientOptions...)
 
 	case cfg.AccessToken != "":
 		client, err = gitlab.NewClient(cfg.AccessToken, clientOptions...)
