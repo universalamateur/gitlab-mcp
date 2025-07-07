@@ -77,7 +77,6 @@ func TestLoadAuthorizationServer(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-
 			mux := http.NewServeMux()
 
 			srv := httptest.NewServer(mux)
@@ -264,7 +263,10 @@ func (h *fakeIntrospectionHandler) ServeHTTP(w http.ResponseWriter, r *http.Requ
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, fmt.Sprintf("json.NewEncoder: %v", err), http.StatusInternalServerError)
+	}
 }
 
 func basicAuth(user, pass string) string {

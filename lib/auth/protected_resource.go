@@ -3,8 +3,8 @@ package auth
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"path"
@@ -87,7 +87,11 @@ func (r ProtectedResource) MetadataHandler(w http.ResponseWriter, req *http.Requ
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(r)
+
+	if err := json.NewEncoder(w).Encode(r); err != nil {
+		log.Printf("ProtectedResource.MetadataHandler: json.NewEncoder: %v", err)
+		http.Error(w, fmt.Sprintf("json.NewEncoder: %v", err), http.StatusInternalServerError)
+	}
 }
 
 // Wrap wraps the provided HTTP handler with an OAuth2 authorization check.
@@ -105,16 +109,19 @@ func (r ProtectedResource) Wrap(hndl http.Handler) http.Handler {
 			}
 
 			hndl.ServeHTTP(w, req)
+
 			return
 		}
 
 		if req.Header.Get("Private-Token") != "" {
 			hndl.ServeHTTP(w, req)
+
 			return
 		}
 
 		u, err := r.MetadataURL()
 		if err != nil {
+			log.Printf("ProtectedResource.Wrap: MetadataURL(): %v", err)
 			http.Error(w, fmt.Sprintf("MetadataURL(): %v", err), http.StatusInternalServerError)
 		}
 
@@ -133,12 +140,12 @@ func (r ProtectedResource) Wrap(hndl http.Handler) http.Handler {
 // authorization server.
 func (r ProtectedResource) validateToken(ctx context.Context, token string) error {
 	if len(r.AuthorizationServers) == 0 {
-		return errors.New("no authorization servers defined for protected resource")
+		return fmt.Errorf("%w: no authorization server defined for protected resource %q", ErrBadConfig, r.Resource)
 	}
 
 	authServer := r.AuthorizationServers[0]
 	if authServer.IntrospectionEndpoint == "" {
-		return fmt.Errorf("introspection endpoint not defined for authorization server %q", authServer.Issuer)
+		return fmt.Errorf("%w: introspection endpoint not defined for authorization server %q", ErrBadConfig, authServer.Issuer)
 	}
 
 	resp, err := authServer.Introspect(ctx, r.clientID, token)

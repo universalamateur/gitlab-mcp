@@ -52,6 +52,7 @@ func LoadAuthorizationServer(ctx context.Context, issuer string) (*Authorization
 		return nil, fmt.Errorf("http.DefaultClient.Do(%q): %w", u.String(), err)
 	}
 
+	//nolint:errcheck
 	defer func() {
 		io.Copy(io.Discard, resp.Body)
 		resp.Body.Close()
@@ -97,6 +98,7 @@ func (s AuthorizationServer) Introspect(ctx context.Context, clientID, token str
 		return nil, fmt.Errorf("http.DefaultClient.Do: %w", err)
 	}
 
+	//nolint:errcheck
 	defer func() {
 		io.Copy(io.Discard, resp.Body)
 		resp.Body.Close()

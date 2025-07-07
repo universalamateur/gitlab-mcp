@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -81,13 +82,17 @@ func TestMetadataHandler(t *testing.T) {
 	)
 
 	mux := http.NewServeMux()
-	pr.RegisterMetadataHandler(mux)
+
+	if err := pr.RegisterMetadataHandler(mux); err != nil {
+		t.Fatalf("RegisterMetadataHandler: %v", err)
+	}
 
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
 	url := srv.URL + "/.well-known/oauth-protected-resource/mcp"
-	resp, err := srv.Client().Get(url)
+
+	resp, err := srv.Client().Get(url) //nolint:noctx
 	if err != nil {
 		t.Fatalf("GET %s: %v", url, err)
 	}
@@ -109,6 +114,7 @@ func TestMetadataHandler(t *testing.T) {
 	}
 }
 
+//nolint:noctx
 func TestProtectedResource_Wrap(t *testing.T) {
 	cases := []struct {
 		name       string
@@ -163,11 +169,14 @@ func TestProtectedResource_Wrap(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			const clientID = "test-client-id"
-			const token = "test-token"
+			const (
+				clientID = "test-client-id"
+				token    = "test-token"
+			)
 
 			// OAuth authentication server
 			authMux := http.NewServeMux()
+
 			authSrv := httptest.NewServer(authMux)
 			defer authSrv.Close()
 
@@ -178,7 +187,10 @@ func TestProtectedResource_Wrap(t *testing.T) {
 
 			authMux.HandleFunc("/.well-known/oauth-authorization-server", func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(authServer)
+
+				if err := json.NewEncoder(w).Encode(authServer); err != nil {
+					http.Error(w, fmt.Sprintf("json.Encode: %v", err), http.StatusInternalServerError)
+				}
 			})
 
 			authMux.Handle("/oauth/introspect", newIntrospectionHandler(clientID, map[string]Introspection{
@@ -205,7 +217,8 @@ func TestProtectedResource_Wrap(t *testing.T) {
 			defer resourceSrv.Close()
 
 			// Test request to OAuth protected resource
-			req := tc.request(resourceSrv.URL)
+			req := tc.request(resourceSrv.URL).WithContext(t.Context())
+
 			resp, err := resourceSrv.Client().Do(req)
 			if err != nil {
 				t.Fatalf("Client().Do(): %v", err)

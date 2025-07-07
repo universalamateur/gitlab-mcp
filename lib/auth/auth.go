@@ -27,14 +27,14 @@ var wellKnownClientIDs = map[string]string{
 }
 
 var (
-	ErrTokenNotFound    = errors.New("OAuth token not found")
-	ErrClientIDNotFound = errors.New("OAuth client ID not found")
+	ErrTokenNotFound = errors.New("OAuth token not found")
+	ErrBadConfig     = errors.New("bad config")
 )
 
 // ClientID returns the client ID for the given issuer.
 // If clientID is not empty, it is returned.
 // If issuer is empty, it defaults to defaultIssuer.
-// If issuer is unknown, ErrClientIDNotFound is returned.
+// If issuer is unknown, ErrBadConfig is returned.
 func ClientID(clientID, issuer string) (string, error) {
 	if clientID != "" {
 		return clientID, nil
@@ -46,7 +46,7 @@ func ClientID(clientID, issuer string) (string, error) {
 
 	id, ok := wellKnownClientIDs[issuer]
 	if !ok {
-		return "", fmt.Errorf("%w for issuer %q; use the `--client-id` flag to provide a custom client ID", ErrClientIDNotFound, issuer)
+		return "", fmt.Errorf("%w: OAuth client ID not found for issuer %q; use the `--client-id` flag to provide a custom client ID", ErrBadConfig, issuer)
 	}
 
 	return id, nil

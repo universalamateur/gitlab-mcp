@@ -20,8 +20,9 @@ indent_size = unset
 [*.md]
 indent_size = unset
 
+# Rely on gofmt for .go files.
 [*.go]
-indent_style = tab
+indent_style = unset
 
 [{go.mod, go.sum}]
 indent_size = unset

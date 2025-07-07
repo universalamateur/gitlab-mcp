@@ -134,6 +134,7 @@ func (c *rootCommand) serveStdio(srv *server.MCPServer, cmd *cobra.Command) erro
 	return nil
 }
 
+//nolint:funlen
 func (c *rootCommand) serveHTTP(ctx context.Context, mcpSrv *server.MCPServer) error {
 	opts := []server.StreamableHTTPOption{
 		server.WithHTTPContextFunc(httpContextFunc(glclient.ServerConfig{

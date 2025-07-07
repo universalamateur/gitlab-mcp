@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+
 	"gitlab.com/fforster/gitlab-mcp/lib/auth"
 )
 
@@ -19,8 +20,8 @@ func TestRootCommand(t *testing.T) {
 	const port = "8080"
 
 	baseURL := "http://localhost:" + port
-
 	glMux := http.NewServeMux()
+
 	glServer := httptest.NewServer(glMux)
 	defer glServer.Close()
 
@@ -33,12 +34,16 @@ func TestRootCommand(t *testing.T) {
 
 	glMux.HandleFunc("/.well-known/oauth-authorization-server", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(authServerMetadata)
+
+		if err := json.NewEncoder(w).Encode(authServerMetadata); err != nil {
+			http.Error(w, fmt.Sprintf("json.Encode: %v", err), http.StatusInternalServerError)
+		}
 	})
 
 	glMux.HandleFunc("/oauth/introspect", func(w http.ResponseWriter, r *http.Request) {
 		if err := r.ParseForm(); err != nil {
 			http.Error(w, fmt.Sprintf("ParseForm(): %v", err), http.StatusBadRequest)
+
 			return
 		}
 
