@@ -38,6 +38,10 @@ type rootCommand struct {
 	transport  string
 	listenAddr string
 
+	// TLS flags
+	tlsKey  string
+	tlsCert string
+
 	// GitLab flags
 	baseURL  glclient.BaseURLFlag
 	clientID string
@@ -60,6 +64,10 @@ func newRootCommand() *cobra.Command {
 	// MCP flags
 	fs.StringVar(&rc.transport, "transport", "stdio", "Transport protocol to use for communication with the MCP server")
 	fs.StringVar(&rc.listenAddr, "listen-addr", ":8080", "Address to listen on, in the form of 'host:port'.")
+
+	// TLS flags
+	fs.StringVar(&rc.tlsKey, "tls-key", "", "Path to TLS private key file for HTTPS server")
+	fs.StringVar(&rc.tlsCert, "tls-cert", "", "Path to TLS certificate file for HTTPS server")
 
 	// GitLab flags
 	fs.Var(&rc.baseURL, "base-url", "Custom GitLab instance URL")
@@ -150,9 +158,21 @@ func (c *rootCommand) serveHTTP(ctx context.Context, mcpSrv *server.MCPServer) e
 	errChan := make(chan error, 1)
 
 	go func() {
-		log.Printf("Listening on %s", c.listenAddr)
+		var err error
 
-		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		switch {
+		case c.tlsKey != "" && c.tlsCert != "":
+			log.Printf("Listening on %s (with TLS)", c.listenAddr)
+
+			err = httpServer.ListenAndServeTLS(c.tlsCert, c.tlsKey)
+
+		default:
+			log.Printf("Listening on %s (without TLS)", c.listenAddr)
+
+			err = httpServer.ListenAndServe()
+		}
+
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errChan <- err
 		}
 	}()
