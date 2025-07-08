@@ -250,6 +250,7 @@ You can provide these environment variables in one of two ways:
 | `list_group_epics` | Get all epics for a specific group |
 | `list_group_issues` | Get a list of a group's issues |
 | `list_group_merge_requests` | Get all merge requests for this group |
+| `list_issues` | Lists GitLab issues |
 | `list_merge_request_diffs` | Get a list of merge request diff versions |
 | `list_merge_request_pipelines` | Get a list of merge request pipelines |
 | `list_merge_requests_related_to_issue` | Get all merge requests that are related to the specified issue |
@@ -258,7 +259,6 @@ You can provide these environment variables in one of two ways:
 | `list_project_merge_requests` | Get all merge requests for this project |
 | `list_repository_directory` | Get a list of repository files and directories in a project |
 | `list_user_events`  | Get events for users between |
-| `list_user_issues` | Lists all issues assigned to a user |
 | `list_user_merge_requests` | Get all merge requests authored by or assigned to a user for review |
 | `list_user_snippets` | List snippets owned by the current user |
 | `list_user_todos` | Get all todos for the current user, with optional filtering by state (pending, done) and a limit on the number returned (default 100). |

@@ -22,6 +22,19 @@ var timeComparer = cmp.Comparer(func(a, b time.Time) bool {
 	return a.Equal(b)
 })
 
+var assigneeIDComparer = cmp.Comparer(func(a, b gitlab.AssigneeIDValue) bool {
+	aData, err := a.MarshalJSON()
+	if err != nil {
+		panic(err)
+	}
+	bData, err := b.MarshalJSON()
+	if err != nil {
+		panic(err)
+	}
+
+	return string(aData) == string(bData)
+})
+
 func TestGetIssue(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -284,19 +297,18 @@ func TestGetIssue(t *testing.T) {
 	}
 }
 
-func TestListUserIssues(t *testing.T) {
+func TestListIssues(t *testing.T) {
 	// Default options template
 	defaultOpts := gitlab.ListIssuesOptions{
-		AssigneeUsername: gitlab.Ptr("test_user"),
-		State:            gitlab.Ptr(defaultIssueState),
-		Confidential:     gitlab.Ptr(false),
-		Scope:            gitlab.Ptr("all"),
+		State:        gitlab.Ptr(defaultIssueState),
+		Confidential: gitlab.Ptr(false),
+		Scope:        gitlab.Ptr("all"),
 		ListOptions: gitlab.ListOptions{
 			PerPage: maxPerPage,
 		},
 	}
 
-	cmpOpts := []cmp.Option{timeComparer}
+	cmpOpts := []cmp.Option{timeComparer, assigneeIDComparer}
 
 	tests := []struct {
 		name      string
@@ -346,8 +358,81 @@ func TestListUserIssues(t *testing.T) {
 			},
 		},
 		{
-			name: "successful fetch with several filters",
+			name: "issues assigned to current user",
 			args: map[string]any{
+				"assignee": "me",
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
+				mockIssues.EXPECT().
+					ListIssues(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+						wantOpts := defaultOpts
+						wantOpts.Scope = gitlab.Ptr("assigned_to_me")
+
+						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
+						}
+
+						return []*gitlab.Issue{
+								{
+									ID:    2002,
+									IID:   202,
+									Title: "My issue",
+								},
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+								NextPage: 0,
+							}, nil
+					})
+			},
+			want: []*gitlab.Issue{
+				{
+					ID:    2002,
+					IID:   202,
+					Title: "My issue",
+				},
+			},
+		},
+		{
+			name: "issues created by current user",
+			args: map[string]any{
+				"author": "me",
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
+				mockIssues.EXPECT().
+					ListIssues(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+						wantOpts := defaultOpts
+						wantOpts.Scope = gitlab.Ptr("created_by_me")
+
+						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
+						}
+
+						return []*gitlab.Issue{
+								{
+									ID:    2002,
+									IID:   202,
+									Title: "My issue",
+								},
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+								NextPage: 0,
+							}, nil
+					})
+			},
+			want: []*gitlab.Issue{
+				{
+					ID:    2002,
+					IID:   202,
+					Title: "My issue",
+				},
+			},
+		},
+		{
+			name: "arguments author, assignee, labels, milestone",
+			args: map[string]any{
+				"author":    "author_user",
 				"assignee":  "other_user",
 				"labels":    "bug,feature",
 				"milestone": "v1.0",
@@ -357,6 +442,7 @@ func TestListUserIssues(t *testing.T) {
 					ListIssues(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := defaultOpts
+						wantOpts.AuthorUsername = gitlab.Ptr("author_user")
 						wantOpts.AssigneeUsername = gitlab.Ptr("other_user")
 						wantOpts.Labels = &gitlab.LabelOptions{"bug", "feature"}
 						wantOpts.Milestone = gitlab.Ptr("v1.0")
@@ -382,6 +468,76 @@ func TestListUserIssues(t *testing.T) {
 					ID:    2001,
 					IID:   201,
 					Title: "Other user's issue",
+				},
+			},
+		},
+		{
+			name: "numeric user IDs",
+			args: map[string]any{
+				"author":   "5001",
+				"assignee": "5002",
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
+				mockIssues.EXPECT().
+					ListIssues(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+						wantOpts := defaultOpts
+						wantOpts.AuthorID = gitlab.Ptr(5001)
+						wantOpts.AssigneeID = gitlab.AssigneeID(5002)
+
+						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
+						}
+
+						return []*gitlab.Issue{{ID: 5003}}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: 0,
+						}, nil
+					})
+			},
+			want: []*gitlab.Issue{{ID: 5003}},
+		},
+		{
+			name: "arguments created_before, created_after, updated_before, updated_after, due_date",
+			args: map[string]any{
+				"created_after":  "2025-01-01T00:00:00.000Z", // RFC 3339
+				"created_before": "2025-02-01T00:00:00.000Z", // RFC 3339
+				"updated_after":  "2025-03-01 00:00:00",      // custom format
+				"updated_before": "2025-04-01 00:00:00",      // custom format
+				"due_date":       "overdue",
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
+				mockIssues.EXPECT().
+					ListIssues(gomock.Any(), gomock.Any()).
+					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+						wantOpts := defaultOpts
+						wantOpts.CreatedAfter = gitlab.Ptr(time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC))
+						wantOpts.CreatedBefore = gitlab.Ptr(time.Date(2025, time.February, 1, 0, 0, 0, 0, time.UTC))
+						wantOpts.UpdatedAfter = gitlab.Ptr(time.Date(2025, time.March, 1, 0, 0, 0, 0, time.Local))  //nolint:gosmopolitan
+						wantOpts.UpdatedBefore = gitlab.Ptr(time.Date(2025, time.April, 1, 0, 0, 0, 0, time.Local)) //nolint:gosmopolitan
+						wantOpts.DueDate = gitlab.Ptr("overdue")
+
+						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
+							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
+						}
+
+						return []*gitlab.Issue{
+								{
+									ID:    2002,
+									IID:   202,
+									Title: "My issue",
+								},
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+								NextPage: 0,
+							}, nil
+					})
+			},
+			want: []*gitlab.Issue{
+				{
+					ID:    2002,
+					IID:   202,
+					Title: "My issue",
 				},
 			},
 		},
@@ -626,7 +782,7 @@ func TestListUserIssues(t *testing.T) {
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
-			req.Params.Name = "list_user_issues"
+			req.Params.Name = "list_issues"
 			req.Params.Arguments = tt.args
 
 			result, err := srv.Client().CallTool(t.Context(), req)
