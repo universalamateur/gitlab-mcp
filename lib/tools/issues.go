@@ -710,6 +710,7 @@ type editIssueArgs struct {
 	Confidential     bool       `mcp_desc:"If true, enables editing confidential issues or makes a public issue confidential. Default is false. Note: By design, specifying 'false' explicitly does not make confidential issues public - this is a security measure."`
 	DiscussionLocked bool       `mcp_desc:"Flag indicating if the issue's discussion is locked. If true, only project members can add or edit comments"`
 	DueDate          string     `mcp_desc:"Due date of the issue in the format 'YYYY-MM-DD'"`
+	Weight           int        `mcp_desc:"Sets the weight of the issue, which must be a non-negative integer value."`
 }
 
 // EditIssue returns a ServerTool for updating an existing issue.
@@ -779,6 +780,10 @@ func (i *IssuesTools) editIssue(ctx context.Context, client *gitlab.Client, args
 		}
 
 		opt.DueDate = gitlab.Ptr(date)
+	}
+
+	if _, ok := request.GetArguments()["weight"]; ok {
+		opt.Weight = gitlab.Ptr(args.Weight)
 	}
 
 	issue, _, err = client.Issues.UpdateIssue(args.ProjectID.Value(), args.IssueIID, opt, gitlab.WithContext(ctx))

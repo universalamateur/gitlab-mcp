@@ -338,6 +338,34 @@ func TestEditIssue(t *testing.T) {
 			},
 		},
 		{
+			name: "set weight",
+			args: map[string]any{
+				"project_id": "test/project",
+				"issue_iid":  16,
+				"weight":     42,
+			},
+			initialIssueState: &gitlab.Issue{IID: 16},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, initialIssue *gitlab.Issue, ret *gitlab.Issue) {
+				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(16), gomock.Any()).Return(initialIssue, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil)
+				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(16), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
+						wantOpts := &gitlab.UpdateIssueOptions{
+							Weight: gitlab.Ptr(42),
+						}
+
+						if diff := cmp.Diff(wantOpts, opts, isoTimeComparer); diff != "" {
+							return nil, nil, fmt.Errorf("UpdateIssue() options mismatch (-want/+got):\n%s", diff)
+						}
+
+						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+					})
+			},
+			wantResult: &gitlab.Issue{
+				IID:    16,
+				Weight: 42,
+			},
+		},
+		{
 			name: "GetIssue returns error",
 			args: map[string]any{
 				"project_id": "test/project",
