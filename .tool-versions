@@ -5,4 +5,4 @@ goreleaser 2.9 # datasource=docker depName=registry.gitlab.com/gitlab-com/gl-inf
 pre-commit 4.2.0 # datasource=github-releases depName=pre-commit/pre-commit
 python system
 shellcheck 0.10.0 # datasource=docker depName=registry.gitlab.com/gitlab-com/gl-infra/common-ci-tasks-images/shellcheck
-shfmt 3.11.0 # datasource=docker depName=registry.gitlab.com/gitlab-com/gl-infra/common-ci-tasks-images/shfmt
+shfmt 3.12.0 # datasource=docker depName=registry.gitlab.com/gitlab-com/gl-infra/common-ci-tasks-images/shfmt
