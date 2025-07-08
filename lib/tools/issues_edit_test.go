@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/go-cmp/cmp"
@@ -309,6 +310,34 @@ func TestEditIssue(t *testing.T) {
 			wantResult: &gitlab.Issue{IID: 12, DiscussionLocked: true},
 		},
 		{
+			name: "set due date",
+			args: map[string]any{
+				"project_id": "test/project",
+				"issue_iid":  15,
+				"due_date":   "2025-07-01",
+			},
+			initialIssueState: &gitlab.Issue{IID: 15},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, initialIssue *gitlab.Issue, ret *gitlab.Issue) {
+				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(15), gomock.Any()).Return(initialIssue, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil)
+				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(15), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
+						wantOpts := &gitlab.UpdateIssueOptions{
+							DueDate: mustISOTime("2025-07-01"),
+						}
+
+						if diff := cmp.Diff(wantOpts, opts, isoTimeComparer); diff != "" {
+							return nil, nil, fmt.Errorf("UpdateIssue() options mismatch (-want/+got):\n%s", diff)
+						}
+
+						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+					})
+			},
+			wantResult: &gitlab.Issue{
+				IID:     15,
+				DueDate: mustISOTime("2025-07-01"),
+			},
+		},
+		{
 			name: "GetIssue returns error",
 			args: map[string]any{
 				"project_id": "test/project",
@@ -395,9 +424,22 @@ func TestEditIssue(t *testing.T) {
 				t.Fatalf("decode error: %v -- result was: %s", err, result.Content)
 			}
 
-			if diff := cmp.Diff(tt.wantResult, &got); diff != "" {
+			if diff := cmp.Diff(tt.wantResult, &got, isoTimeComparer); diff != "" {
 				t.Errorf("issue mismatch (-want/+got):\n%s", diff)
 			}
 		})
 	}
 }
+
+func mustISOTime(s string) *gitlab.ISOTime {
+	t, err := gitlab.ParseISOTime(s)
+	if err != nil {
+		panic(err)
+	}
+
+	return &t
+}
+
+var isoTimeComparer = cmp.Comparer(func(a, b gitlab.ISOTime) bool {
+	return time.Time(a).Equal(time.Time(b))
+})

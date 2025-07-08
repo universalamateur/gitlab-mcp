@@ -709,6 +709,7 @@ type editIssueArgs struct {
 	StateEvent       string     `mcp_desc:"The state of the issue. Use 'close' to close the issue or 'reopen' to reopen a closed issue. Omit to keep the issue state unchanged" mcp_enum:"close,reopen"`
 	Confidential     bool       `mcp_desc:"If true, enables editing confidential issues or makes a public issue confidential. Default is false. Note: By design, specifying 'false' explicitly does not make confidential issues public - this is a security measure."`
 	DiscussionLocked bool       `mcp_desc:"Flag indicating if the issue's discussion is locked. If true, only project members can add or edit comments"`
+	DueDate          string     `mcp_desc:"Due date of the issue in the format 'YYYY-MM-DD'"`
 }
 
 // EditIssue returns a ServerTool for updating an existing issue.
@@ -769,6 +770,15 @@ func (i *IssuesTools) editIssue(ctx context.Context, client *gitlab.Client, args
 	// Only set these if explicitly provided
 	if _, ok := request.GetArguments()["discussion_locked"]; ok {
 		opt.DiscussionLocked = gitlab.Ptr(args.DiscussionLocked)
+	}
+
+	if args.DueDate != "" {
+		date, err := gitlab.ParseISOTime(args.DueDate)
+		if err != nil {
+			return nil, fmt.Errorf("gitlab.ParseISOTime(%q): %w", args.DueDate, err)
+		}
+
+		opt.DueDate = gitlab.Ptr(date)
 	}
 
 	issue, _, err = client.Issues.UpdateIssue(args.ProjectID.Value(), args.IssueIID, opt, gitlab.WithContext(ctx))
