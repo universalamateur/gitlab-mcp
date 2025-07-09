@@ -90,6 +90,8 @@ func fakeGitlabClient() *gitlab.Client {
 }
 
 func TestListGroupEpics(t *testing.T) {
+	t.Parallel()
+
 	var (
 		gitlabClient = fakeGitlabClient()
 		ctx          = glctx.WithClient(t.Context(), gitlabClient)
@@ -134,6 +136,8 @@ func TestListGroupEpics(t *testing.T) {
 }
 
 func TestGetEpic(t *testing.T) {
+	t.Parallel()
+
 	var (
 		gitlabClient = fakeGitlabClient()
 		ctx          = glctx.WithClient(t.Context(), gitlabClient)
@@ -173,6 +177,8 @@ func TestGetEpic(t *testing.T) {
 }
 
 func TestGetEpicLinks(t *testing.T) {
+	t.Parallel()
+
 	var (
 		gitlabClient = fakeGitlabClient()
 		ctx          = glctx.WithClient(t.Context(), gitlabClient)
@@ -217,6 +223,8 @@ func TestGetEpicLinks(t *testing.T) {
 }
 
 func TestListEpicIssues(t *testing.T) {
+	t.Parallel()
+
 	var (
 		gitlabClient = fakeGitlabClient()
 		ctx          = glctx.WithClient(t.Context(), gitlabClient)
@@ -308,6 +316,8 @@ func resultToString(res *mcp.CallToolResult) (string, error) {
 }
 
 func TestCreateEpic(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name      string
 		args      map[string]any
@@ -410,6 +420,8 @@ func TestCreateEpic(t *testing.T) {
 
 	for i, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			gitlabClient := glabtest.NewTestClient(t)
 			ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
 
