@@ -31,6 +31,9 @@ type EpicServiceInterface interface {
 
 	// CreateEpic creates a new epic.
 	CreateEpic() server.ServerTool
+
+	// EditEpic edits an existing epic.
+	EditEpic() server.ServerTool
 }
 
 type EpicTools struct{}
@@ -44,6 +47,7 @@ func (e *EpicTools) AddTo(srv ToolAdder) {
 		e.GetEpicLinks(),
 		e.ListEpicIssues(),
 		e.CreateEpic(),
+		e.EditEpic(),
 	)
 }
 
@@ -248,6 +252,85 @@ func (e *EpicTools) createEpic(ctx context.Context, client *gitlab.Client, args 
 	epic, _, err := client.Epics.CreateEpic(args.GroupID.Value(), opts, gitlab.WithContext(ctx))
 	if err != nil {
 		return nil, fmt.Errorf("CreateEpic(%q): %w", args.GroupID.Value(), err)
+	}
+
+	return newToolResultJSON(epic)
+}
+
+type editEpicArgs struct {
+	GroupID      mcpargs.ID `mcp_desc:"ID of the group either in owner/namespace format or the numeric group ID" mcp_required:"true"`
+	EpicIID      int        `mcp_desc:"Internal ID of the epic to edit" mcp_required:"true"`
+	Title        string     `mcp_desc:"Changes the title of the epic"`
+	Description  string     `mcp_desc:"Changes the description of the epic. The description uses GitLab Flavored Markdown"`
+	ParentID     int        `mcp_desc:"Global ID of the parent epic"`
+	AddLabels    string     `mcp_desc:"Comma-separated label names to add to the epic"`
+	RemoveLabels string     `mcp_desc:"Comma-separated label names to remove from the epic"`
+	StateEvent   string     `mcp_desc:"The state of the epic. Use 'close' to close the epic or 'reopen' to reopen a closed epic. Omit to keep the epic state unchanged" mcp_enum:"close,reopen"`
+	Confidential bool       `mcp_desc:"If true, enables editing confidential epics or makes a public epic confidential. Default is false. Note: By design, specifying 'false' explicitly does not make confidential epics public - this is a security measure."`
+	DueDate      string     `mcp_desc:"Due date of the epic (format: YYYY-MM-DD)"`
+}
+
+// EditEpic returns a ServerTool for updating an existing epic.
+func (e *EpicTools) EditEpic() server.ServerTool {
+	return server.ServerTool{
+		Handler: ClientHandler(e.editEpic),
+		Tool: mcpargs.NewTool("edit_epic", editEpicArgs{},
+			mcp.WithDescription("Edit an existing GitLab epic"),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithIdempotentHintAnnotation(true),
+		),
+	}
+}
+
+func (e *EpicTools) editEpic(ctx context.Context, client *gitlab.Client, args editEpicArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	// First, fetch the epic to check if it's confidential
+	epic, _, err := client.Epics.GetEpic(args.GroupID.Value(), args.EpicIID, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("GetEpic(%q, %d): %w", args.GroupID.Value(), args.EpicIID, err)
+	}
+
+	if epic.Confidential && !args.Confidential {
+		return mcp.NewToolResultError(fmt.Sprintf("cannot edit epic %d as it is confidential. Ensure it is safe to be shared with the model, then set confidential=true to edit", args.EpicIID)), nil
+	}
+
+	opts := &gitlab.UpdateEpicOptions{}
+
+	if args.Title != "" {
+		opts.Title = gitlab.Ptr(args.Title)
+	}
+
+	if args.Description != "" {
+		opts.Description = gitlab.Ptr(args.Description)
+	}
+
+	if args.ParentID != 0 {
+		opts.ParentID = gitlab.Ptr(args.ParentID)
+	}
+
+	opts.AddLabels = newLabelOptions(args.AddLabels)
+	opts.RemoveLabels = newLabelOptions(args.RemoveLabels)
+
+	if args.StateEvent != "" {
+		opts.StateEvent = gitlab.Ptr(args.StateEvent)
+	}
+
+	if args.Confidential {
+		opts.Confidential = gitlab.Ptr(args.Confidential)
+	}
+
+	if args.DueDate != "" {
+		dueDate, err := gitlab.ParseISOTime(args.DueDate)
+		if err != nil {
+			return nil, fmt.Errorf("gitlab.ParseISOTime(%q): %w", args.DueDate, err)
+		}
+
+		opts.DueDateFixed = gitlab.Ptr(dueDate)
+		opts.DueDateIsFixed = gitlab.Ptr(true)
+	}
+
+	epic, _, err = client.Epics.UpdateEpic(args.GroupID.Value(), args.EpicIID, opts, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("UpdateEpic(%q, %d): %w", args.GroupID.Value(), args.EpicIID, err)
 	}
 
 	return newToolResultJSON(epic)
