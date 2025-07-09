@@ -3,6 +3,7 @@ package tools
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -453,6 +454,174 @@ func TestEditIssue(t *testing.T) {
 			}
 
 			if diff := cmp.Diff(tt.wantResult, &got, isoTimeComparer); diff != "" {
+				t.Errorf("issue mismatch (-want/+got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestIssueTimeTracking(t *testing.T) {
+	tests := []struct {
+		name       string
+		args       map[string]any
+		setupMock  func(mockIssues *glabtest.MockIssuesServiceInterface, ret *gitlab.TimeStats)
+		wantErrors []string
+		wantResult *gitlab.TimeStats
+	}{
+		{
+			name: "set time estimate",
+			args: map[string]any{
+				"project_id":    "test/project",
+				"issue_iid":     1,
+				"time_estimate": 40 * 3600,
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, ret *gitlab.TimeStats) {
+				mockIssues.EXPECT().
+					SetTimeEstimate(gomock.Eq("test/project"), gomock.Eq(1), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int, opts *gitlab.SetTimeEstimateOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.TimeStats, *gitlab.Response, error) {
+						wantOpts := &gitlab.SetTimeEstimateOptions{
+							Duration: gitlab.Ptr(fmt.Sprintf("%ds", 40*3600)),
+						}
+
+						if diff := cmp.Diff(wantOpts, opts); diff != "" {
+							return nil, nil, fmt.Errorf("SetTimeEstimate() options mismatch (-want +got):\n%s", diff)
+						}
+
+						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+					})
+			},
+			wantResult: &gitlab.TimeStats{
+				TimeEstimate: 40 * 3600,
+			},
+		},
+		{
+			name: "reset time estimate",
+			args: map[string]any{
+				"project_id":    "test/project",
+				"issue_iid":     2,
+				"time_estimate": 0,
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, ret *gitlab.TimeStats) {
+				mockIssues.EXPECT().
+					ResetTimeEstimate(gomock.Eq("test/project"), gomock.Eq(2), gomock.Any()).
+					DoAndReturn(func(_ any, _ int, _ ...gitlab.RequestOptionFunc) (*gitlab.TimeStats, *gitlab.Response, error) {
+						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+					})
+			},
+			wantResult: &gitlab.TimeStats{},
+		},
+		{
+			name: "add spent time",
+			args: map[string]any{
+				"project_id":             "test/project",
+				"issue_iid":              1,
+				"add_spent_time_seconds": 3600,
+				"add_spent_time_summary": "Writing unit tests",
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, ret *gitlab.TimeStats) {
+				mockIssues.EXPECT().
+					AddSpentTime(gomock.Eq("test/project"), gomock.Eq(1), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int, opts *gitlab.AddSpentTimeOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.TimeStats, *gitlab.Response, error) {
+						wantOpts := &gitlab.AddSpentTimeOptions{
+							Duration: gitlab.Ptr("3600s"),
+							Summary:  gitlab.Ptr("Writing unit tests"),
+						}
+
+						if diff := cmp.Diff(wantOpts, opts); diff != "" {
+							return nil, nil, fmt.Errorf("AddSpentTime() options mismatch (-want +got):\n%s", diff)
+						}
+
+						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+					})
+			},
+			wantResult: &gitlab.TimeStats{
+				TimeEstimate: 40 * 3600,
+			},
+		},
+		{
+			name: "reset spent time",
+			args: map[string]any{
+				"project_id":       "test/project",
+				"issue_iid":        4,
+				"reset_spent_time": true,
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, ret *gitlab.TimeStats) {
+				mockIssues.EXPECT().
+					ResetSpentTime(gomock.Eq("test/project"), gomock.Eq(4), gomock.Any()).
+					DoAndReturn(func(_ any, _ int, _ ...gitlab.RequestOptionFunc) (*gitlab.TimeStats, *gitlab.Response, error) {
+						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+					})
+			},
+			wantResult: &gitlab.TimeStats{},
+		},
+		{
+			name: "returns all errors",
+			args: map[string]any{
+				"project_id":       "test/project",
+				"issue_iid":        5,
+				"time_estimate":    0,
+				"reset_spent_time": true,
+			},
+			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, ret *gitlab.TimeStats) {
+				mockIssues.EXPECT().
+					ResetTimeEstimate(gomock.Eq("test/project"), gomock.Eq(5), gomock.Any()).
+					DoAndReturn(func(_ any, _ int, _ ...gitlab.RequestOptionFunc) (*gitlab.TimeStats, *gitlab.Response, error) {
+						return nil, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusInternalServerError}}, fmt.Errorf("reset time estimate failure")
+					})
+				mockIssues.EXPECT().
+					ResetSpentTime(gomock.Eq("test/project"), gomock.Eq(5), gomock.Any()).
+					DoAndReturn(func(_ any, _ int, _ ...gitlab.RequestOptionFunc) (*gitlab.TimeStats, *gitlab.Response, error) {
+						return nil, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusInternalServerError}}, fmt.Errorf("reset time spent failure")
+					})
+			},
+			wantErrors: []string{"reset time estimate failure", "reset time spent failure"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gitlabClient := glabtest.NewTestClient(t)
+			ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
+
+			// tt.setupMock now doesn't need expectedUpdateOpts
+			tt.setupMock(gitlabClient.MockIssues, tt.wantResult)
+
+			srv := mcptest.NewUnstartedServer(t)
+			AddTo(srv)
+
+			if err := srv.Start(ctx); err != nil {
+				t.Fatalf("failed to start MCP test server: %v", err)
+			}
+			defer srv.Close()
+
+			var req mcp.CallToolRequest
+			req.Params.Name = "issue_time_tracking"
+			req.Params.Arguments = tt.args
+
+			result, err := srv.Client().CallTool(t.Context(), req)
+
+			if gotErr, wantErr := err != nil, len(tt.wantErrors) != 0; gotErr != wantErr {
+				t.Errorf("issue_time_tracking error mismatch, got: %v (%v), want error: %v", err, result, tt.wantErrors)
+			}
+
+			if gotErr, wantErr := err != nil, len(tt.wantErrors) != 0; gotErr && wantErr {
+				for _, wantErr := range tt.wantErrors {
+					if !strings.Contains(err.Error(), wantErr) {
+						t.Errorf("issue_time_tracking error %q did not contain expected %q", err, wantErr)
+					}
+				}
+			}
+
+			if err != nil {
+				return
+			}
+
+			var got gitlab.TimeStats
+			if err := unmarshalResult(result, &got); err != nil {
+				t.Fatalf("decode error: %v -- result was: %s", err, result.Content)
+			}
+
+			if diff := cmp.Diff(tt.wantResult, &got); diff != "" {
 				t.Errorf("issue mismatch (-want/+got):\n%s", diff)
 			}
 		})

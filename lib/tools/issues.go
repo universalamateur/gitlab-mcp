@@ -45,6 +45,9 @@ type IssuesServiceInterface interface {
 
 	// EditIssue returns a tool for updating an existing issue.
 	EditIssue() server.ServerTool
+
+	// IssueTimeTracking returns a tool for retrieving time tracking information related to issues.
+	IssueTimeTracking() server.ServerTool
 }
 
 type IssuesTools struct{}
@@ -65,6 +68,7 @@ func (i *IssuesTools) AddTo(srv ToolAdder) {
 		i.ListMergeRequestsRelatedToIssue(),
 		i.CreateIssue(),
 		i.EditIssue(),
+		i.IssueTimeTracking(),
 	)
 }
 
@@ -792,6 +796,91 @@ func (i *IssuesTools) editIssue(ctx context.Context, client *gitlab.Client, args
 	}
 
 	return newToolResultJSON(issue)
+}
+
+type issueTimeTrackingArgs struct {
+	ProjectID           mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
+	IssueIID            int        `mcp_desc:"The internal ID of the project issue" mcp_required:"true"`
+	TimeEstimate        int        `mcp_desc:"Sets the estimated time of work for this issue in seconds. Set to zero to clear the estimation."`
+	AddSpentTimeSeconds int        `mcp_desc:"Adds time spent working on this issue in seconds"`
+	AddSpentTimeSummary string     `mcp_desc:"The summary of the time spent working on this issue"`
+	ResetSpentTime      bool       `mcp_desc:"Resets the time spent to 0 seconds"`
+}
+
+// IssueTimeTracking returns a ServerTool for updating time tracking details on an issue.
+func (i *IssuesTools) IssueTimeTracking() server.ServerTool {
+	return server.ServerTool{
+		Handler: ClientHandler(i.issueTimeTracking),
+		Tool: mcpargs.NewTool("issue_time_tracking", issueTimeTrackingArgs{},
+			mcp.WithDescription("Updates time tracking information for an issue, such as the time estimate and spent time."),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithIdempotentHintAnnotation(false),
+		),
+	}
+}
+
+func (i *IssuesTools) issueTimeTracking(ctx context.Context, client *gitlab.Client, args issueTimeTrackingArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	var (
+		lastResult *gitlab.TimeStats
+		errs       error
+	)
+
+	if _, ok := request.GetArguments()["time_estimate"]; ok {
+		switch args.TimeEstimate {
+		case 0:
+			timeStats, _, err := client.Issues.ResetTimeEstimate(args.ProjectID.Value(), args.IssueIID, gitlab.WithContext(ctx))
+			switch err {
+			case nil:
+				lastResult = timeStats
+			default:
+				errs = errors.Join(errs, fmt.Errorf("ResetTimeEstimate(%v, %d): %w", args.ProjectID.Value(), args.IssueIID, err))
+			}
+
+		default:
+			opts := gitlab.SetTimeEstimateOptions{
+				Duration: gitlab.Ptr(fmt.Sprintf("%ds", args.TimeEstimate)),
+			}
+
+			timeStats, _, err := client.Issues.SetTimeEstimate(args.ProjectID.Value(), args.IssueIID, &opts, gitlab.WithContext(ctx))
+			switch err {
+			case nil:
+				lastResult = timeStats
+			default:
+				errs = errors.Join(errs, fmt.Errorf("SetTimeEstimate(%v, %d): %w", args.ProjectID.Value(), args.IssueIID, err))
+			}
+		}
+	}
+
+	if args.ResetSpentTime {
+		timeStats, _, err := client.Issues.ResetSpentTime(args.ProjectID.Value(), args.IssueIID, gitlab.WithContext(ctx))
+		switch err {
+		case nil:
+			lastResult = timeStats
+		default:
+			errs = errors.Join(errs, fmt.Errorf("ResetSpentTime(%v, %d): %w", args.ProjectID.Value(), args.IssueIID, err))
+		}
+	}
+
+	if args.AddSpentTimeSeconds > 0 {
+		opts := gitlab.AddSpentTimeOptions{
+			Duration: gitlab.Ptr(fmt.Sprintf("%ds", args.AddSpentTimeSeconds)),
+			Summary:  gitlab.Ptr(args.AddSpentTimeSummary),
+		}
+
+		timeStats, _, err := client.Issues.AddSpentTime(args.ProjectID.Value(), args.IssueIID, &opts, gitlab.WithContext(ctx))
+		switch err {
+		case nil:
+			lastResult = timeStats
+		default:
+			errs = errors.Join(errs, fmt.Errorf("AddSpentTime(%v, %d): %w", args.ProjectID.Value(), args.IssueIID, err))
+		}
+	}
+
+	if errs != nil {
+		return nil, errs
+	}
+
+	return newToolResultJSON(lastResult)
 }
 
 // parseUserIDs parses a comma-separated string of user IDs.
