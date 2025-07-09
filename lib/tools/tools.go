@@ -39,6 +39,7 @@ func AddTo(srv ToolAdder) {
 	new(DiscussionTools).AddTo(srv)
 	new(EpicTools).AddTo(srv)
 	new(EventsTools).AddTo(srv)
+	new(GroupsTools).AddTo(srv)
 	new(IssuesTools).AddTo(srv)
 	new(JobsTools).AddTo(srv)
 	new(MergeRequestsTools).AddTo(srv)
