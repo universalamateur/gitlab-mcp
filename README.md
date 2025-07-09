@@ -243,6 +243,7 @@ You can provide these environment variables in one of two ways:
 | `get_snippet` | Returns the metadata of a snippet, such as title and description. File content is not returned |
 | `get_user_status` | Get a user's status |
 | `get_user` | Get information about a specific user or the current user. In particular, this tool can be used to resolve a username to an ID. |
+| `issue_time_tracking` | Updates time tracking information for an issue, such as the time estimate and spent time. |
 | `list_all_snippets` | List all snippets the user has access to |
 | `list_draft_notes` | Returns a list of draft notes for the merge request |
 | `list_downstream_pipelines` | Get a list of downstream pipeline triggers for a pipeline |
