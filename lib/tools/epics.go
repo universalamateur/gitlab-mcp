@@ -28,6 +28,9 @@ type EpicServiceInterface interface {
 
 	// ListEpicIssues returns a tool for listing all issues assigned to a specific epic.
 	ListEpicIssues() server.ServerTool
+
+	// CreateEpic creates a new epic.
+	CreateEpic() server.ServerTool
 }
 
 type EpicTools struct{}
@@ -40,6 +43,7 @@ func (e *EpicTools) AddTo(srv ToolAdder) {
 		e.GetEpic(),
 		e.GetEpicLinks(),
 		e.ListEpicIssues(),
+		e.CreateEpic(),
 	)
 }
 
@@ -187,4 +191,64 @@ func (e *EpicTools) listEpicIssues(ctx context.Context, client *gitlab.Client, a
 	}
 
 	return newToolResultJSON(issues)
+}
+
+// createEpicArgs holds the arguments required to create a new epic.
+type createEpicArgs struct {
+	GroupID      mcpargs.ID `mcp_desc:"ID of the group either in owner/namespace format or the numeric group ID" mcp_required:"true"`
+	Title        string     `mcp_desc:"Title of the epic" mcp_required:"true"`
+	Labels       string     `mcp_desc:"Comma-separated set of labels for the epic"`
+	Description  string     `mcp_desc:"Description of the epic"`
+	Confidential bool       `mcp_desc:"Whether the epic is confidential"`
+	DueDate      string     `mcp_desc:"Due date of the epic (format: YYYY-MM-DD)"`
+	ParentID     int        `mcp_desc:"ID of the parent epic"`
+}
+
+// CreateEpic returns a ServerTool for creating a new epic.
+func (e *EpicTools) CreateEpic() server.ServerTool {
+	return server.ServerTool{
+		Handler: ClientHandler(e.createEpic),
+		Tool: mcpargs.NewTool("create_epic", createEpicArgs{},
+			mcp.WithDescription("Creates a new GitLab epic in the specified group"),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithIdempotentHintAnnotation(false),
+		),
+	}
+}
+
+func (e *EpicTools) createEpic(ctx context.Context, client *gitlab.Client, args createEpicArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	opts := &gitlab.CreateEpicOptions{
+		Title: gitlab.Ptr(args.Title),
+	}
+
+	opts.Labels = newLabelOptions(args.Labels)
+
+	if args.Description != "" {
+		opts.Description = gitlab.Ptr(args.Description)
+	}
+
+	if _, ok := request.GetArguments()["confidential"]; ok {
+		opts.Confidential = gitlab.Ptr(args.Confidential)
+	}
+
+	if args.DueDate != "" {
+		dueDate, err := gitlab.ParseISOTime(args.DueDate)
+		if err != nil {
+			return nil, fmt.Errorf("Invalid due_date format: %w", err)
+		}
+
+		opts.DueDateFixed = gitlab.Ptr(dueDate)
+		opts.DueDateIsFixed = gitlab.Ptr(true)
+	}
+
+	if args.ParentID != 0 {
+		opts.ParentID = gitlab.Ptr(args.ParentID)
+	}
+
+	epic, _, err := client.Epics.CreateEpic(args.GroupID.Value(), opts, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("CreateEpic(%q): %w", args.GroupID.Value(), err)
+	}
+
+	return newToolResultJSON(epic)
 }
