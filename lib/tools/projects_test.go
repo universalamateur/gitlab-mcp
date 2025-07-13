@@ -74,7 +74,7 @@ func TestListProjects(t *testing.T) {
 						wantOpts.MinAccessLevel = gitlab.Ptr(gitlab.GuestPermissions)
 						wantOpts.Membership = gitlab.Ptr(true)
 						wantOpts.ListOptions.OrderBy = "id"
-						wantOpts.ListOptions.Sort = "desc"
+						wantOpts.ListOptions.Sort = sortOrderDescending
 
 						if diff := cmp.Diff(&wantOpts, opts); diff != "" {
 							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
@@ -239,7 +239,7 @@ func TestListGroupProjects(t *testing.T) {
 						wantOpts.Owned = gitlab.Ptr(true)
 						wantOpts.MinAccessLevel = gitlab.Ptr(gitlab.GuestPermissions)
 						wantOpts.ListOptions.OrderBy = "id"
-						wantOpts.ListOptions.Sort = "desc"
+						wantOpts.ListOptions.Sort = sortOrderDescending
 
 						if diff := cmp.Diff(&wantOpts, opts); diff != "" {
 							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
