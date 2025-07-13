@@ -230,6 +230,7 @@ You can provide these environment variables in one of two ways:
 | `edit_issue` | Updates an existing GitLab issue. You can modify the issue's title, description, and metadata, and close/reopen issues. |
 | `get_epic_links` | GetEpicLinks gets all child epics of an epic |
 | `get_epic` | Fetches information about an epic by ID |
+| `get_group` | Fetches information about a GitLab group |
 | `get_issue` | Get a single project issue |
 | `get_issues_closed_on_merge` | Get all the issues that would be closed by merging the provided merge request |
 | `get_job` | Get a single job of a project |
@@ -258,9 +259,11 @@ You can provide these environment variables in one of two ways:
 | `list_merge_request_pipelines` | Get a list of merge request pipelines |
 | `list_merge_requests_related_to_issue` | Get all merge requests that are related to the specified issue |
 | `list_pipeline_jobs` | Get a list of jobs for a pipeline |
+| `list_projects` | Get a list of GitLab projects |
 | `list_project_issues` | Get a list of a project's issues |
 | `list_project_merge_requests` | Get all merge requests for this project |
 | `list_repository_directory` | Get a list of repository files and directories in a project |
+| `list_subgroups` | Get a list of subgroups in a GitLab group |
 | `list_user_events`  | Get events for users between |
 | `list_user_merge_requests` | Get all merge requests authored by or assigned to a user for review |
 | `list_user_snippets` | List snippets owned by the current user |
