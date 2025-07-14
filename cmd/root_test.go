@@ -27,7 +27,7 @@ func TestRootCommand(t *testing.T) {
 			request: mustNewRequest(t, http.MethodGet, "http://localhost:"+port+"/mcp", map[string]string{
 				"Private-Token": `test-private-token`,
 			}, ``),
-			wantStatus: http.StatusAccepted,
+			wantStatus: http.StatusOK,
 		},
 	}
 
