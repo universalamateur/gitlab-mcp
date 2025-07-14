@@ -59,9 +59,6 @@ A pre-built Docker image is available:
 ```bash
 # Use with gitlab.com (default)
 docker run -i -e GITLAB_TOKEN=your_gitlab_token registry.gitlab.com/fforster/gitlab-mcp:latest
-
-# Use with custom GitLab instance
-docker run -i -e GITLAB_TOKEN=your_gitlab_token -e GITLAB_URL=https://gitlab.example.com registry.gitlab.com/fforster/gitlab-mcp:latest
 ```
 
 ## Authentication
@@ -90,19 +87,16 @@ The command prints an authentication URL.
 Follow the link and authorize the application to complete the flow.
 _gitlab-mcp_ will automatically detect when you have completed the OAuth flow and will then store the access token in a file.
 
-For custom GitLab instances, use the `--base-url` flag to specify the URL of the GitLab instance.
-For example:
-
-```bash
-gitlab-mcp auth --base-url https://gitlab.example.com
-```
-
 ### Personal Access Token
 
 Alternatively, _gitlab-mcp_ can use a personal access token for authentication.
 Generate one from your [GitLab User Settings](https://gitlab.com/-/user_settings/personal_access_tokens) with the `api` scope, or `read_api` for read-only access.
 
 Once created, ensure the token is available to _gitlab-mcp_ in the environment variable `GITLAB_TOKEN`.
+
+### Self-Managed GitLab Instances
+
+Authentication with self-managed GitLab instances is described in [How to use gitlab-mcp with self-managed GitLab instances](docs/self-managed.md).
 
 ## Usage with Claude Desktop
 
@@ -134,8 +128,6 @@ To use the GitLab MCP server with Claude Desktop, add the following to your Clau
         "--pull=always",
         "-e", "GITLAB_TOKEN",
         "registry.gitlab.com/fforster/gitlab-mcp:latest",
-        "--",
-        "--base-url", "https://gitlab.example.com"
       ],
       "env": {
         "GITLAB_TOKEN": "your_gitlab_token"
@@ -154,7 +146,6 @@ To use the GitLab MCP server with Claude Desktop, add the following to your Clau
 - `--rm` cleans up the container when *gitlab-mcp* exits.
 - `--pull=always` ensures that Docker downloads the latest version of *gitlab-mcp* before running.
 - `-e GITLAB_TOKEN` exports the `GITLAB_TOKEN` environment variable to *gitlab-mcp*.
-- `--base-url` specifies a custom GitLab instance URL (optional).
 
 ### Config file location
 
@@ -169,7 +160,7 @@ GitLab MCP supports the following environment variables:
 
 - **`GITLAB_TOKEN`**: Your GitLab personal access token with `api` (or `read_api` for read-only) scope.
   Prefer to create an OAuth token using `gitlab-mcp auth` instead, which does not require any configuration via environment variables.
-- **`GITLAB_URL`**: Custom GitLab instance URL (defaults to `https://gitlab.com/api/v4`).
+- **`GITLAB_URL`**: GitLab instance URL (defaults to `https://gitlab.com/api/v4`).
   - Must use HTTPS scheme for security
   - Example: `https://gitlab.example.com`
   - Will be overridden by the `--base-url` flag if both are specified
