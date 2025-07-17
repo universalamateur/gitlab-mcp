@@ -78,28 +78,46 @@ func ConfigFromFlags(ctx context.Context, fs *pflag.FlagSet) (*Config, error) {
 }
 
 func (c *Config) configureToken(ctx context.Context) error {
+	oauthErr := c.configureOAuthToken(ctx)
+	if oauthErr == nil {
+		return nil
+	}
+
+	patErr := c.configurePAT()
+	if patErr == nil {
+		return nil
+	}
+
+	return errors.Join(oauthErr, patErr)
+}
+
+func (c *Config) configureOAuthToken(ctx context.Context) error {
 	tokenFile := auth.TokenPath()
 
-	authConfig, authErr := auth.Config(c.BaseURL, c.ClientID)
-	if authErr != nil {
-		return fmt.Errorf("auth.Config(%q, %q): %w", c.BaseURL, c.ClientID, authErr)
+	authConfig, err := auth.Config(c.BaseURL, c.ClientID)
+	if err != nil {
+		return fmt.Errorf("auth.Config(%q, %q): %w", c.BaseURL, c.ClientID, err)
 	}
 
-	if s, err := os.Stat(tokenFile); err == nil && s.Mode().IsRegular() {
-		c.AuthSource = gitlab.OAuthTokenSource{
-			TokenSource: auth.FileTokenSource(ctx, c.BaseURL, tokenFile, authConfig),
-		}
-
-		return nil
+	if s, err := os.Stat(tokenFile); err != nil || !s.Mode().IsRegular() {
+		return fmt.Errorf("%w: token file %q does not exist or is not a regular file", auth.ErrTokenNotFound, tokenFile)
 	}
 
-	if pat, havePAT := os.LookupEnv("GITLAB_TOKEN"); havePAT {
-		c.AccessToken = pat
-
-		return nil
+	c.AuthSource = gitlab.OAuthTokenSource{
+		TokenSource: auth.FileTokenSource(ctx, c.BaseURL, tokenFile, authConfig),
 	}
 
-	return fmt.Errorf("%w: the token file %q does not exist; run `gitlab-mcp auth` to create it", auth.ErrTokenNotFound, tokenFile)
+	return nil
+}
+
+func (c *Config) configurePAT() error {
+	pat, ok := os.LookupEnv("GITLAB_TOKEN")
+	if !ok {
+		return fmt.Errorf("%w: GITLAB_TOKEN environment variable not set", auth.ErrTokenNotFound)
+	}
+
+	c.AccessToken = pat
+	return nil
 }
 
 // ServerConfig represents the server-side configuration.
