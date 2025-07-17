@@ -37,14 +37,14 @@ type rootCommand struct {
 	// MCP flags
 	transport  string
 	listenAddr string
-
-	// TLS flags
-	tlsKey  string
-	tlsCert string
+	tlsKey     string
+	tlsCert    string
 
 	// GitLab flags
-	baseURL  glclient.BaseURLFlag
-	clientID string
+	baseURL   glclient.BaseURLFlag
+	clientID  string
+	authOAuth bool
+	authPAT   bool
 }
 
 // newRootCommand returns the root command for the CLI.
@@ -64,14 +64,14 @@ func newRootCommand() *cobra.Command {
 	// MCP flags
 	fs.StringVar(&rc.transport, "transport", "stdio", "Transport protocol to use for communication with the MCP server")
 	fs.StringVar(&rc.listenAddr, "listen-addr", ":8080", "Address to listen on, in the form of 'host:port'.")
-
-	// TLS flags
 	fs.StringVar(&rc.tlsKey, "tls-key", "", "Path to TLS private key file for HTTPS server")
 	fs.StringVar(&rc.tlsCert, "tls-cert", "", "Path to TLS certificate file for HTTPS server")
 
 	// GitLab flags
 	fs.Var(&rc.baseURL, "base-url", "Custom GitLab instance URL")
 	fs.StringVar(&rc.clientID, "client-id", "", "OAuth client ID for custom GitLab instance")
+	fs.BoolVar(&rc.authOAuth, "oauth", true, "Whether to enable OAuth2 authentication")
+	fs.BoolVar(&rc.authPAT, "pat", true, "Whether to enable Personal Access Token authentication")
 
 	return cmd
 }
@@ -137,7 +137,9 @@ func (c *rootCommand) serveStdio(srv *server.MCPServer, cmd *cobra.Command) erro
 func (c *rootCommand) serveHTTP(ctx context.Context, mcpSrv *server.MCPServer) error {
 	opts := []server.StreamableHTTPOption{
 		server.WithHTTPContextFunc(httpContextFunc(glclient.ServerConfig{
-			BaseURL: c.baseURL.String(),
+			BaseURL:   c.baseURL.String(),
+			AuthOAuth: c.authOAuth,
+			AuthPAT:   c.authPAT,
 		})),
 	}
 

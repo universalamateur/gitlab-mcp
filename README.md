@@ -66,7 +66,11 @@ docker run -i -e GITLAB_TOKEN=your_gitlab_token registry.gitlab.com/fforster/git
 _gitlab-mcp_ offers two authentication methods:
 
 - OAuth2 Token (preferred)
-- Personal Access Token
+- Personal Access Token (PAT)
+
+If both an OAuth token file and a PAT are present, the OAuth token will be used.
+
+If you want to use a PAT despite having an OAuth token file, you can disable the OAuth authentication using the `--oauth=false` flag.
 
 ### OAuth2 Token
 
