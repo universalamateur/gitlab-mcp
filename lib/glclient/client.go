@@ -94,13 +94,13 @@ func (c *Config) configureToken(ctx context.Context) error {
 func (c *Config) configureOAuthToken(ctx context.Context) error {
 	tokenFile := auth.TokenPath()
 
+	if s, err := os.Stat(tokenFile); err != nil || !s.Mode().IsRegular() {
+		return fmt.Errorf("%w: token file %q does not exist or is not a regular file", auth.ErrTokenNotFound, tokenFile)
+	}
+
 	authConfig, err := auth.Config(c.BaseURL, c.ClientID)
 	if err != nil {
 		return fmt.Errorf("auth.Config(%q, %q): %w", c.BaseURL, c.ClientID, err)
-	}
-
-	if s, err := os.Stat(tokenFile); err != nil || !s.Mode().IsRegular() {
-		return fmt.Errorf("%w: token file %q does not exist or is not a regular file", auth.ErrTokenNotFound, tokenFile)
 	}
 
 	c.AuthSource = gitlab.OAuthTokenSource{
