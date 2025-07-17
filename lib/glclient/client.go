@@ -41,6 +41,9 @@ type Config struct {
 	AuthSource gitlab.AuthSource
 	BaseURL    string // Optional
 	ClientID   string
+
+	AuthOAuth bool
+	AuthPAT   bool
 }
 
 // ConfigFromFlags creates a new configuration by based on the provided flag set.
@@ -60,9 +63,22 @@ func ConfigFromFlags(ctx context.Context, fs *pflag.FlagSet) (*Config, error) {
 		return nil, fmt.Errorf("determining client ID from flags: %w", err)
 	}
 
+	authOAuth, err := fs.GetBool("oauth")
+	if err != nil {
+		authOAuth = true
+	}
+
+	authPAT, err := fs.GetBool("pat")
+	if err != nil {
+		authPAT = true
+	}
+
 	cfg := &Config{
 		BaseURL:  baseURL,
 		ClientID: clientID,
+
+		AuthOAuth: authOAuth,
+		AuthPAT:   authPAT,
 	}
 
 	if err := cfg.validateBaseURL(); err != nil {
@@ -91,6 +107,10 @@ func (c *Config) configureToken(ctx context.Context) error {
 }
 
 func (c *Config) configureOAuthToken(ctx context.Context) error {
+	if !c.AuthOAuth {
+		return fmt.Errorf("%w: OAuth token disabled", ErrConfig)
+	}
+
 	tokenFile := auth.TokenPath()
 
 	if s, err := os.Stat(tokenFile); err != nil || !s.Mode().IsRegular() {
@@ -110,6 +130,10 @@ func (c *Config) configureOAuthToken(ctx context.Context) error {
 }
 
 func (c *Config) configurePAT() error {
+	if !c.AuthPAT {
+		return fmt.Errorf("%w: Personal Access Token disabled", ErrConfig)
+	}
+
 	pat, ok := os.LookupEnv("GITLAB_TOKEN")
 	if !ok {
 		return fmt.Errorf("%w: GITLAB_TOKEN environment variable not set", auth.ErrTokenNotFound)
@@ -125,6 +149,9 @@ func (c *Config) configurePAT() error {
 // ServerConfig represents the server-side configuration.
 type ServerConfig struct {
 	BaseURL string
+
+	AuthOAuth bool
+	AuthPAT   bool
 }
 
 // ConfigFromRequest reads configuration from an HTTP request.
@@ -132,6 +159,9 @@ type ServerConfig struct {
 func ConfigFromRequest(r *http.Request, serverConfig ServerConfig) (*Config, error) {
 	clientConfig := &Config{
 		BaseURL: serverConfig.BaseURL,
+
+		AuthOAuth: serverConfig.AuthOAuth,
+		AuthPAT:   serverConfig.AuthPAT,
 	}
 
 	var (
