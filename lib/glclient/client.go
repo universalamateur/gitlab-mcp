@@ -38,10 +38,9 @@ func DefaultBaseURL() string {
 }
 
 type Config struct {
-	AccessToken string
-	AuthSource  gitlab.AuthSource
-	BaseURL     string // Optional
-	ClientID    string
+	AuthSource gitlab.AuthSource
+	BaseURL    string // Optional
+	ClientID   string
 }
 
 // ConfigFromFlags creates a new configuration by based on the provided flag set.
@@ -116,7 +115,10 @@ func (c *Config) configurePAT() error {
 		return fmt.Errorf("%w: GITLAB_TOKEN environment variable not set", auth.ErrTokenNotFound)
 	}
 
-	c.AccessToken = pat
+	c.AuthSource = gitlab.AccessTokenAuthSource{
+		Token: pat,
+	}
+
 	return nil
 }
 
@@ -132,19 +134,25 @@ func ConfigFromRequest(r *http.Request, serverConfig ServerConfig) (*Config, err
 		BaseURL: serverConfig.BaseURL,
 	}
 
-	if token := r.Header.Get("Authorization"); token != "" {
+	var (
+		authorization = r.Header.Get("Authorization")
+		privateToken  = r.Header.Get("Private-Token")
+	)
+
+	switch {
+	case authorization != "":
 		clientConfig.AuthSource = gitlab.OAuthTokenSource{
 			TokenSource: oauth2.StaticTokenSource(&oauth2.Token{
-				AccessToken: strings.TrimPrefix(token, "Bearer "),
+				AccessToken: strings.TrimPrefix(authorization, "Bearer "),
 			}),
 		}
-	}
 
-	if token := r.Header.Get("Private-Token"); token != "" {
-		clientConfig.AccessToken = token
-	}
+	case privateToken != "":
+		clientConfig.AuthSource = gitlab.AccessTokenAuthSource{
+			Token: privateToken,
+		}
 
-	if clientConfig.AuthSource == nil && clientConfig.AccessToken == "" {
+	default:
 		return nil, fmt.Errorf("%w; set the `Authorization` or `Private-Token` header", auth.ErrTokenNotFound)
 	}
 
@@ -176,27 +184,11 @@ func (c *Config) validateBaseURL() error {
 func New(cfg *Config) (*gitlab.Client, error) {
 	var clientOptions []gitlab.ClientOptionFunc
 
-	// Validate and add custom GitLab URL if provided
 	if cfg.BaseURL != "" {
 		clientOptions = append(clientOptions, gitlab.WithBaseURL(cfg.BaseURL))
 	}
 
-	var (
-		client *gitlab.Client
-		err    error
-	)
-
-	switch {
-	case cfg.AuthSource != nil:
-		client, err = gitlab.NewAuthSourceClient(cfg.AuthSource, clientOptions...)
-
-	case cfg.AccessToken != "":
-		client, err = gitlab.NewClient(cfg.AccessToken, clientOptions...)
-
-	default:
-		return nil, fmt.Errorf("%w: provide either an OAuth token file or an access token", ErrConfig)
-	}
-
+	client, err := gitlab.NewAuthSourceClient(cfg.AuthSource, clientOptions...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create GitLab client: %w", err)
 	}
