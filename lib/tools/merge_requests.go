@@ -65,6 +65,9 @@ type MergeRequestsServiceInterface interface { //nolint:interfacebloat
 
 	// ListDraftNotes returns a tool for fetching draft MR notes.
 	ListDraftNotes() server.ServerTool
+
+	// CreateMergeRequest returns a tool for creating a new merge request.
+	CreateMergeRequest() server.ServerTool
 }
 
 type MergeRequestsTools struct{}
@@ -87,6 +90,7 @@ func (m *MergeRequestsTools) AddTo(srv ToolAdder) {
 		m.GetMergeRequestDependencies(),
 		m.EditMergeRequest(),
 		m.ListDraftNotes(),
+		m.CreateMergeRequest(),
 	)
 }
 
@@ -140,7 +144,7 @@ func (m *MergeRequestsTools) listUserMergeRequests(ctx context.Context, client *
 	case "reviewer":
 		opts.ReviewerUsername = gitlab.Ptr(username)
 	default:
-		return nil, fmt.Errorf("%w: invalid role: %q, must be one of 'author' or 'reviewer'", ErrArgumentType, args.Role)
+		return nil, fmt.Errorf("%w: invalid role: %q, must be one of 'author' or 'reviewer'", ErrInvalidArgument, args.Role)
 	}
 
 	if args.State != "" {
@@ -705,7 +709,7 @@ func (m *MergeRequestsTools) editMergeRequest(ctx context.Context, client *gitla
 	case "":
 		// no-op
 	default:
-		return nil, fmt.Errorf("%w: invalid state_event: %q, must be one of 'close' or 'reopen'", ErrArgumentType, args.StateEvent)
+		return nil, fmt.Errorf("%w: invalid state_event: %q, must be one of 'close' or 'reopen'", ErrInvalidArgument, args.StateEvent)
 	}
 
 	// Handle boolean flags using the parseBoolString utility
@@ -726,6 +730,20 @@ func (m *MergeRequestsTools) editMergeRequest(ctx context.Context, client *gitla
 type listDraftNotesArgs struct {
 	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
 	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
+}
+
+type createMergeRequestArgs struct {
+	ProjectID          mcpargs.ID           `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
+	SourceBranch       string               `mcp_desc:"Source branch name" mcp_required:"true"`
+	Title              string               `mcp_desc:"Merge request title" mcp_required:"true"`
+	Description        string               `mcp_desc:"Merge request description"`
+	TargetBranch       string               `mcp_desc:"Target branch name (defaults to project's default branch)"`
+	Labels             string               `mcp_desc:"Comma-separated list of labels"`
+	AssigneeIDs        string               `mcp_desc:"Comma-separated list of user IDs to assign the merge request to"`
+	ReviewerIDs        string               `mcp_desc:"Comma-separated list of user IDs to set as reviewers"`
+	MilestoneID        int                  `mcp_desc:"Global milestone ID to assign the merge request to"`
+	RemoveSourceBranch mcpargs.OptionalBool `mcp_desc:"Whether to remove source branch after merge (defaults to project setting)"`
+	Squash             mcpargs.OptionalBool `mcp_desc:"Whether to squash commits when merging (defaults to project setting)"`
 }
 
 // ListDraftNotes returns a ServerTool for listing all draft notes for a specific merge request.
@@ -766,4 +784,50 @@ func (m *MergeRequestsTools) listDraftNotes(ctx context.Context, client *gitlab.
 	}
 
 	return newToolResultJSON(allNotes)
+}
+
+// CreateMergeRequest returns a ServerTool for creating a new merge request.
+// The tool accepts project ID, source branch, title, and various optional parameters.
+func (m *MergeRequestsTools) CreateMergeRequest() server.ServerTool {
+	return server.ServerTool{
+		Handler: ClientHandler(m.createMergeRequest),
+		Tool: mcpargs.NewTool("create_merge_request", createMergeRequestArgs{},
+			mcp.WithDescription("Creates a new GitLab merge request (MR) using an existing source branch. You can use the `create_commit` tool to create a new source branch containing file changes."),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithIdempotentHintAnnotation(false),
+		),
+	}
+}
+
+func (m *MergeRequestsTools) createMergeRequest(ctx context.Context, client *gitlab.Client, args createMergeRequestArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	opts := &gitlab.CreateMergeRequestOptions{
+		Title:        gitlab.Ptr(args.Title),
+		SourceBranch: gitlab.Ptr(args.SourceBranch),
+	}
+
+	if args.Description != "" {
+		opts.Description = gitlab.Ptr(args.Description)
+	}
+
+	if args.TargetBranch != "" {
+		opts.TargetBranch = gitlab.Ptr(args.TargetBranch)
+	}
+
+	if args.MilestoneID != 0 {
+		opts.MilestoneID = gitlab.Ptr(args.MilestoneID)
+	}
+
+	opts.AssigneeIDs = parseUserIDs(args.AssigneeIDs)
+	opts.ReviewerIDs = parseUserIDs(args.ReviewerIDs)
+	opts.Labels = newLabelOptions(args.Labels)
+
+	opts.RemoveSourceBranch = args.RemoveSourceBranch.Ptr()
+	opts.Squash = args.Squash.Ptr()
+
+	mergeRequest, _, err := client.MergeRequests.CreateMergeRequest(args.ProjectID.Value(), opts, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("CreateMergeRequest(%q): %w", args.ProjectID.Value(), err)
+	}
+
+	return newToolResultJSON(mergeRequest)
 }

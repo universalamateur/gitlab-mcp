@@ -272,7 +272,7 @@ func (s *SnippetsTools) createSnippet(ctx context.Context, client *gitlab.Client
 	case snippetVisibilityPublic:
 		visibilityLevel = gitlab.PublicVisibility
 	default:
-		return nil, fmt.Errorf("%w: invalid visibility level: %s", ErrArgumentType, visibility)
+		return nil, fmt.Errorf("%w: invalid visibility level: %s", ErrInvalidArgument, visibility)
 	}
 
 	opt := &gitlab.CreateSnippetOptions{
@@ -335,7 +335,7 @@ func (s *SnippetsTools) updateSnippet(ctx context.Context, client *gitlab.Client
 	case "delete":
 		fileActionValue = gitlab.FileDelete
 	default:
-		return nil, fmt.Errorf("%w: invalid file action: %q", ErrArgumentType, args.FileAction)
+		return nil, fmt.Errorf("%w: invalid file action: %q", ErrInvalidArgument, args.FileAction)
 	}
 
 	opt.Files = gitlab.Ptr([]*gitlab.UpdateSnippetFileOptions{{
@@ -364,7 +364,7 @@ func (s *SnippetsTools) updateSnippet(ctx context.Context, client *gitlab.Client
 		case snippetVisibilityPublic:
 			visibilityLevel = gitlab.PublicVisibility
 		default:
-			return nil, fmt.Errorf("%w: invalid visibility level: %q", ErrArgumentType, args.Visibility)
+			return nil, fmt.Errorf("%w: invalid visibility level: %q", ErrInvalidArgument, args.Visibility)
 		}
 
 		opt.Visibility = gitlab.Ptr(visibilityLevel)

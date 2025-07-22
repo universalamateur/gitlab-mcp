@@ -2,13 +2,30 @@ package tools
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
+)
+
+// File action constants.
+const (
+	ActionCreate = "create"
+	ActionDelete = "delete"
+	ActionMove   = "move"
+	ActionUpdate = "update"
+)
+
+// Error variables for static wrapping.
+var (
+	ErrInvalidAction        = errors.New("invalid action")
+	ErrPreviousPathRequired = errors.New("previous_path is required when action is move")
+	ErrContentsRequired     = errors.New("contents is required for action")
 )
 
 // RepositoryServiceInterface defines the interface for repository file-related GitLab operations.
@@ -22,6 +39,9 @@ type RepositoryServiceInterface interface {
 
 	// GetRepositoryFileContents returns a tool for retrieving contents of a file either by blob SHA or by file path.
 	GetRepositoryFileContents() server.ServerTool
+
+	// CreateCommit returns a tool for creating a new commit with file changes.
+	CreateCommit() server.ServerTool
 }
 
 // RepositoryTools implements the RepositoryServiceInterface and provides tools
@@ -34,6 +54,7 @@ func (r *RepositoryTools) AddTo(srv ToolAdder) {
 	srv.AddTools(
 		r.ListRepositoryDirectory(),
 		r.GetRepositoryFileContents(),
+		r.CreateCommit(),
 	)
 }
 
@@ -103,6 +124,17 @@ type getRepositoryFileContentsArgs struct {
 	Ref       string     `mcp_desc:"Specifies which branch or tag to use when accessing a file by path; defaults to the project's default branch if not provided"`
 }
 
+type createCommitArgs struct {
+	ProjectID     mcpargs.ID `mcp_desc:"GitLab project ID (numeric or path format)" mcp_required:"true"`
+	Branch        string     `mcp_desc:"Branch name (must not be a protected branch)" mcp_required:"true"`
+	CommitMessage string     `mcp_desc:"Commit message" mcp_required:"true"`
+	Path          string     `mcp_desc:"File path relative to repository root" mcp_required:"true"`
+	Contents      string     `mcp_desc:"File contents (required for create/update actions, optional for move to overwrite content, not used for delete)"`
+	Action        string     `mcp_desc:"File action - one of: create, delete, move, update" mcp_required:"true" mcp_enum:"create,delete,move,update"`
+	PreviousPath  string     `mcp_desc:"Required when action=move - the previous file path"`
+	StartBranch   string     `mcp_desc:"If set, creates a new branch based on StartBranch and commits to it."`
+}
+
 // GetRepositoryFileContents returns a ServerTool for retrieving the contents of a file.
 // The tool accepts either a blob SHA or a file path with optional reference (branch/tag).
 func (r *RepositoryTools) GetRepositoryFileContents() server.ServerTool {
@@ -143,4 +175,85 @@ func (r *RepositoryTools) getRepositoryFileContents(ctx context.Context, client 
 	}
 
 	return mcp.NewToolResultText(string(contents)), nil
+}
+
+// CreateCommit returns a ServerTool for creating a new commit with file changes.
+// The tool accepts project ID, branch, commit message, and file actions.
+func (r *RepositoryTools) CreateCommit() server.ServerTool {
+	return server.ServerTool{
+		Handler: ClientHandler(r.createCommit),
+		Tool: mcpargs.NewTool("create_commit", createCommitArgs{},
+			mcp.WithDescription("Creates a new commit using GitLab's Commits API with support for file actions: create, delete, move, update."),
+			mcp.WithDestructiveHintAnnotation(false),
+			mcp.WithIdempotentHintAnnotation(false),
+		),
+	}
+}
+
+func (r *RepositoryTools) createCommit(ctx context.Context, client *gitlab.Client, args createCommitArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	commitOptions, err := r.newCreateCommitOptions(args)
+	if err != nil {
+		return mcp.NewToolResultError(err.Error()), nil
+	}
+
+	commit, _, err := client.Commits.CreateCommit(args.ProjectID.Value(), commitOptions, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("CreateCommit(%q): %w", args.ProjectID.Value(), err)
+	}
+
+	return newToolResultJSON(commit)
+}
+
+func (r *RepositoryTools) newCreateCommitOptions(args createCommitArgs) (*gitlab.CreateCommitOptions, error) {
+	// Validate action
+	validActions := []gitlab.FileActionValue{
+		gitlab.FileCreate,
+		gitlab.FileDelete,
+		gitlab.FileMove,
+		gitlab.FileUpdate,
+	}
+
+	if !slices.Contains(validActions, gitlab.FileActionValue(args.Action)) {
+		return nil, fmt.Errorf("%w: %s. Must be one of: %q", ErrInvalidArgument, args.Action, validActions)
+	}
+
+	// Build commit action
+	commitAction := &gitlab.CommitActionOptions{
+		Action:   gitlab.Ptr(gitlab.FileActionValue(args.Action)),
+		FilePath: gitlab.Ptr(args.Path),
+	}
+
+	// Set action-specific fields
+	switch args.Action {
+	case ActionCreate, ActionUpdate:
+		if args.Contents == "" {
+			return nil, fmt.Errorf("%w: %s", ErrContentsRequired, args.Action)
+		}
+
+		commitAction.Content = gitlab.Ptr(args.Contents)
+	case ActionMove:
+		if args.PreviousPath == "" {
+			return nil, ErrPreviousPathRequired
+		}
+
+		commitAction.PreviousPath = gitlab.Ptr(args.PreviousPath)
+
+		if args.Contents != "" {
+			commitAction.Content = gitlab.Ptr(args.Contents)
+		}
+	}
+
+	// Return complete options
+	opts := &gitlab.CreateCommitOptions{
+		Branch:        gitlab.Ptr(args.Branch),
+		CommitMessage: gitlab.Ptr(args.CommitMessage),
+		Actions:       []*gitlab.CommitActionOptions{commitAction},
+	}
+
+	// Add StartBranch if provided
+	if args.StartBranch != "" {
+		opts.StartBranch = gitlab.Ptr(args.StartBranch)
+	}
+
+	return opts, nil
 }
