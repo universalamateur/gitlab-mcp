@@ -73,7 +73,7 @@ func (d *DiscussionTools) discussionManager(client *gitlab.Client, resourceType 
 		return discussions.NewCommitDiscussion(client, parentID, resourceID.String)
 
 	default:
-		return nil, fmt.Errorf("%w: unsupported resource type: %s", ErrArgumentType, resourceType)
+		return nil, fmt.Errorf("%w: unsupported resource type: %s", ErrInvalidArgument, resourceType)
 	}
 }
 
@@ -269,7 +269,7 @@ func (d *DiscussionTools) resolveDiscussion(ctx context.Context, client *gitlab.
 	// Type assertion is needed here as Resolve is not part of the common interface
 	resolvableMgr, ok := manager.(discussions.ResolvableManager)
 	if !ok {
-		return nil, fmt.Errorf("%w: expected merge request discussion manager, got another type", ErrArgumentType)
+		return nil, fmt.Errorf("%w: expected merge request discussion manager, got another type", ErrInvalidArgument)
 	}
 
 	discussion, err := resolvableMgr.ResolveDiscussion(ctx, args.DiscussionID, args.Resolved)
@@ -325,7 +325,7 @@ func (d *DiscussionTools) newDiffDiscussion(ctx context.Context, client *gitlab.
 
 	positionManager, ok := manager.(discussions.PositionedManager)
 	if !ok {
-		return nil, fmt.Errorf("%w: expected positioned discussion manager, got another type", ErrArgumentType)
+		return nil, fmt.Errorf("%w: expected positioned discussion manager, got another type", ErrInvalidArgument)
 	}
 
 	// Create position object

@@ -95,7 +95,7 @@ func (u *UsersTools) getUser(ctx context.Context, client *gitlab.Client, args ge
 		return newToolResultJSON(users[0])
 
 	default:
-		return nil, fmt.Errorf("%w: user ID: %#v", ErrArgumentType, args.UserID)
+		return nil, fmt.Errorf("%w: user ID: %#v", ErrInvalidArgument, args.UserID)
 	}
 }
 

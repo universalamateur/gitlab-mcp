@@ -26,8 +26,8 @@ import (
 
 const maxPerPage = 100
 
-// ErrArgumentType is an error indicating that the argument provided is of an invalid type.
-var ErrArgumentType = errors.New("invalid argument type")
+// ErrInvalidArgument is an error indicating that the argument provided is invalid.
+var ErrInvalidArgument = errors.New("invalid argument")
 
 // ToolAdder defines an interface for adding tools to an MCP server.
 type ToolAdder interface {
