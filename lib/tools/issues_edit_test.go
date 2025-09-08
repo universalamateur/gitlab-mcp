@@ -427,6 +427,7 @@ func TestEditIssue(t *testing.T) {
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "edit_issue"
 			req.Params.Arguments = tt.args
 
@@ -595,6 +596,7 @@ func TestIssueTimeTracking(t *testing.T) {
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "issue_time_tracking"
 			req.Params.Arguments = tt.args
 

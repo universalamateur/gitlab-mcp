@@ -68,6 +68,7 @@ func TestGetGroup(t *testing.T) {
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "get_group"
 			req.Params.Arguments = tt.args
 
@@ -215,6 +216,7 @@ func TestListSubgroups(t *testing.T) {
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "list_subgroups"
 			req.Params.Arguments = tt.args
 

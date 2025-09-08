@@ -192,6 +192,7 @@ func TestGetUser(t *testing.T) {
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "get_user"
 			req.Params.Arguments = tt.args
 
@@ -369,6 +370,7 @@ func TestGetUserStatus(t *testing.T) {
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "get_user_status"
 			req.Params.Arguments = tt.args
 
@@ -583,6 +585,7 @@ func TestSetUserStatus(t *testing.T) {
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "set_user_status"
 			req.Params.Arguments = tt.args
 

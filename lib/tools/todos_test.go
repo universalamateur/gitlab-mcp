@@ -232,6 +232,7 @@ func TestListUserTodos(t *testing.T) {
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "list_user_todos"
 			req.Params.Arguments = tt.args
 
@@ -279,6 +280,7 @@ func TestCompleteTodoItem(t *testing.T) {
 	defer srv.Close()
 
 	var req mcp.CallToolRequest
+
 	req.Params.Name = "complete_todo_item"
 	req.Params.Arguments = map[string]any{
 		"id": 1,
@@ -321,6 +323,7 @@ func TestCompleteAllTodoItems(t *testing.T) {
 	defer srv.Close()
 
 	var req mcp.CallToolRequest
+
 	req.Params.Name = "complete_all_todo_items"
 	req.Params.Arguments = map[string]any{}
 

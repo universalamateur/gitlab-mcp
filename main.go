@@ -14,7 +14,8 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	if err := cmd.New().ExecuteContext(ctx); err != nil {
+	err := cmd.New().ExecuteContext(ctx)
+	if err != nil {
 		log.Fatal(err)
 	}
 }

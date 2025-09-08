@@ -292,6 +292,7 @@ func TestGetMergeRequest(t *testing.T) {
 
 			// Test direct function call
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "get_merge_request"
 			req.Params.Arguments = tt.args
 
@@ -498,6 +499,7 @@ func TestListUserMergeRequests(t *testing.T) {
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "list_user_merge_requests"
 			req.Params.Arguments = tt.args
 
@@ -654,6 +656,7 @@ func TestListProjectMergeRequests(t *testing.T) {
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "list_project_merge_requests"
 			req.Params.Arguments = tt.args
 
@@ -808,6 +811,7 @@ func TestListGroupMergeRequests(t *testing.T) {
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "list_group_merge_requests"
 			req.Params.Arguments = tt.args
 
@@ -1037,6 +1041,7 @@ func TestListDraftNotes(t *testing.T) {
 
 			// Test direct function call
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "list_draft_notes"
 			req.Params.Arguments = tt.args
 

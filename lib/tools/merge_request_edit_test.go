@@ -550,6 +550,7 @@ func TestEditMergeRequest(t *testing.T) {
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "edit_merge_request"
 			req.Params.Arguments = tt.args
 
