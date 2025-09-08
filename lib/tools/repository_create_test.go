@@ -335,6 +335,7 @@ func TestCreateCommit(t *testing.T) {
 
 			// Test direct function call
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "create_commit"
 			req.Params.Arguments = tt.args
 
@@ -350,6 +351,7 @@ func TestCreateCommit(t *testing.T) {
 
 			if tt.wantResult != nil {
 				var got *gitlab.Commit
+
 				if err := unmarshalResult(result, &got); err != nil {
 					t.Fatalf("decode error: %v", err)
 				}

@@ -332,6 +332,7 @@ func TestCreateMergeRequest(t *testing.T) {
 
 			// Test direct function call
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "create_merge_request"
 			req.Params.Arguments = tt.args
 
@@ -347,6 +348,7 @@ func TestCreateMergeRequest(t *testing.T) {
 
 			if tt.wantResult != nil {
 				var got *gitlab.MergeRequest
+
 				if err := unmarshalResult(result, &got); err != nil {
 					t.Fatalf("decode error: %v", err)
 				}

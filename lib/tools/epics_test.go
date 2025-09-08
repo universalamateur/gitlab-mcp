@@ -439,6 +439,7 @@ func TestCreateEpic(t *testing.T) {
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "create_epic"
 			req.Params.Arguments = tt.args
 
@@ -637,6 +638,7 @@ func TestEditEpic(t *testing.T) {
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "edit_epic"
 			req.Params.Arguments = tt.args
 

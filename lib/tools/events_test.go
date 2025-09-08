@@ -414,6 +414,7 @@ func TestListUserEvents(t *testing.T) {
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "list_user_events"
 			req.Params.Arguments = tt.args
 

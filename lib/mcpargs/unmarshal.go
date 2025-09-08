@@ -61,7 +61,8 @@ func Unmarshal(arguments map[string]any, v any) error { //nolint:cyclop,funlen,g
 
 			// Check if the pointer implements Unmarshaler
 			if unmarshaler, ok := ptrToField.Interface().(Unmarshaler); ok {
-				if err := unmarshaler.Unmarshal(value); err != nil {
+				err := unmarshaler.Unmarshal(value)
+				if err != nil {
 					errs = errors.Join(errs, fmt.Errorf("%w: failed to unmarshal field %q: %w", ErrUnmarshalArguments, field.Name, err))
 				}
 
@@ -83,7 +84,8 @@ func Unmarshal(arguments map[string]any, v any) error { //nolint:cyclop,funlen,g
 		}
 
 		// If not a custom unmarshaler, try to convert the value to the field's type and set it
-		if err := setValue(fieldValue, value); err != nil {
+		err := setValue(fieldValue, value)
+		if err != nil {
 			errs = errors.Join(errs, fmt.Errorf("%w: failed to set field %q: %w", ErrUnmarshalArguments, field.Name, err))
 		}
 	}

@@ -191,7 +191,6 @@ func TestToolOptionsMultipleErrors(t *testing.T) {
 	}{}
 
 	_, err := Marshal(input)
-
 	if err == nil {
 		t.Fatal("ToolOptions() error = nil, want multiple errors")
 	}

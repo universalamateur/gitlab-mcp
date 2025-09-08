@@ -264,6 +264,7 @@ func TestGetIssue(t *testing.T) {
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "get_issue"
 			req.Params.Arguments = tt.args
 
@@ -782,6 +783,7 @@ func TestListIssues(t *testing.T) {
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "list_issues"
 			req.Params.Arguments = tt.args
 
@@ -1169,6 +1171,7 @@ func TestListGroupIssues(t *testing.T) {
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "list_group_issues"
 			req.Params.Arguments = tt.args
 
@@ -1561,6 +1564,7 @@ func TestListProjectIssues(t *testing.T) {
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "list_project_issues"
 			req.Params.Arguments = tt.args
 

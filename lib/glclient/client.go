@@ -186,7 +186,8 @@ func ConfigFromRequest(r *http.Request, serverConfig ServerConfig) (*Config, err
 		return nil, fmt.Errorf("%w; set the `Authorization` or `Private-Token` header", auth.ErrTokenNotFound)
 	}
 
-	if err := clientConfig.validateBaseURL(); err != nil {
+	err := clientConfig.validateBaseURL()
+	if err != nil {
 		return nil, err
 	}
 

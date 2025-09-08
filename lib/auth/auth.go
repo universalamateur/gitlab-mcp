@@ -151,7 +151,8 @@ func (t *fileBackedToken) Token() (*oauth2.Token, error) {
 
 	if storedToken.AccessToken != refreshedToken.AccessToken ||
 		storedToken.RefreshToken != refreshedToken.RefreshToken {
-		if err := StoreToken(t.filename, t.issuer, refreshedToken, withFileSystem(t.fileSystem)); err != nil {
+		err := StoreToken(t.filename, t.issuer, refreshedToken, withFileSystem(t.fileSystem))
+		if err != nil {
 			return nil, fmt.Errorf("StoreToken(filename=%q, issuer=%q): %w", t.filename, t.issuer, err)
 		}
 	}
@@ -197,6 +198,7 @@ var errNotLegacyToken = errors.New("not a legacy token")
 // If data does not represent an *oauth2.Token, it returns a errNotLegacyToken error.
 func parseLegacyToken(data []byte) (storedTokens, error) {
 	var token oauth2.Token
+
 	if err := json.Unmarshal(data, &token); err != nil {
 		return storedTokens{}, fmt.Errorf("json.Unmarshal legacy token: %w", err)
 	}
@@ -292,12 +294,14 @@ func (fs osFS) ReadFile(filename string) ([]byte, error) {
 func (fs osFS) WriteFile(filename string, data []byte, perm fs.FileMode) error {
 	dir := filepath.Dir(filename)
 
-	if err := os.MkdirAll(dir, 0700); err != nil {
+	err := os.MkdirAll(dir, 0700)
+	if err != nil {
 		return fmt.Errorf("os.MkdirAll(%q): %w", dir, err)
 	}
 
 	if info, err := os.Stat(filename); err == nil && info.Mode().Perm() != perm {
-		if err := os.Chmod(filename, perm); err != nil {
+		err := os.Chmod(filename, perm)
+		if err != nil {
 			return fmt.Errorf("os.Chmod(%q): %w", filename, err)
 		}
 	}

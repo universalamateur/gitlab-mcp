@@ -191,7 +191,8 @@ func (c *rootCommand) serveHTTP(ctx context.Context, mcpSrv *server.MCPServer) e
 		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 
-		if err := httpServer.Shutdown(ctx); err != nil {
+		err := httpServer.Shutdown(ctx)
+		if err != nil {
 			return fmt.Errorf("server shutdown error: %w", err)
 		}
 
@@ -203,7 +204,8 @@ func (c *rootCommand) serveHTTP(ctx context.Context, mcpSrv *server.MCPServer) e
 	case <-ctx.Done():
 		log.Println("Shutting down server...")
 
-		if err := httpServer.Shutdown(ctx); err != nil {
+		err := httpServer.Shutdown(ctx)
+		if err != nil {
 			return fmt.Errorf("server shutdown error: %w", err)
 		}
 

@@ -145,6 +145,7 @@ func TestListProjects(t *testing.T) {
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "list_projects"
 			req.Params.Arguments = tt.args
 
@@ -320,6 +321,7 @@ func TestListGroupProjects(t *testing.T) {
 			defer srv.Close()
 
 			var req mcp.CallToolRequest
+
 			req.Params.Name = "list_projects"
 			req.Params.Arguments = tt.args
 

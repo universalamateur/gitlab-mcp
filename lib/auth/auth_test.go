@@ -362,7 +362,8 @@ func TestStoreToken(t *testing.T) {
 			// Call StoreToken
 			err := StoreToken(tc.filename, tc.issuer, tc.token, withFileSystem(fs))
 
-			if chkErr := tc.checkError(err); chkErr != nil {
+			chkErr := tc.checkError(err)
+			if chkErr != nil {
 				t.Error(chkErr)
 			}
 

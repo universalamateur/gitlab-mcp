@@ -101,6 +101,7 @@ func newToolResultJSON(v any) (*mcp.CallToolResult, error) {
 	}
 
 	var b bytes.Buffer
+
 	if err := json.NewEncoder(&b).Encode(v); err != nil {
 		return nil, fmt.Errorf("encoding to JSON: %w", err)
 	}

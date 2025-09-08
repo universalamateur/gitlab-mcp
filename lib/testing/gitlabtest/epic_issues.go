@@ -9,10 +9,10 @@ import (
 // FakeEpicIssuesService is a partial implementation of the gitlab.EpicIssuesServiceInterface to be used in unit tests.
 // Calling unimplemented methods will panic.
 type FakeEpicIssuesService struct {
+	gitlab.EpicIssuesServiceInterface
+
 	Epics  []*gitlab.Epic
 	Issues []*gitlab.Issue
-
-	gitlab.EpicIssuesServiceInterface
 }
 
 func (f *FakeEpicIssuesService) ListEpicIssues(groupID any, epicIID int, _ *gitlab.ListOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
