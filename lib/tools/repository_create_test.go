@@ -351,8 +351,8 @@ func TestCreateCommit(t *testing.T) {
 
 			if tt.wantResult != nil {
 				var got *gitlab.Commit
-				err := unmarshalResult(result, &got)
-				if err != nil {
+
+				if err := unmarshalResult(result, &got); err != nil {
 					t.Fatalf("decode error: %v", err)
 				}
 

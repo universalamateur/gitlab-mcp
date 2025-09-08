@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"io"
 	"net"
 	"net/http"
@@ -101,14 +102,19 @@ func waitForServer(t *testing.T, addr string) {
 			t.Fatalf("Timed out waiting for %q to become available", addr)
 		}
 
-		conn, err := net.DialTimeout("tcp", addr, 100*time.Millisecond)
+		ctx, cancel := context.WithTimeout(t.Context(), 100*time.Millisecond)
+		dialer := net.Dialer{Timeout: 100 * time.Millisecond}
+
+		conn, err := dialer.DialContext(ctx, "tcp", addr)
 		if err == nil {
 			conn.Close()
+			cancel()
 			t.Logf("%q became available after %s", addr, time.Since(start))
 
 			return
 		}
 
+		cancel()
 		time.Sleep(backoff)
 
 		backoff = min(2*backoff, time.Second)

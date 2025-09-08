@@ -348,8 +348,8 @@ func TestCreateMergeRequest(t *testing.T) {
 
 			if tt.wantResult != nil {
 				var got *gitlab.MergeRequest
-				err := unmarshalResult(result, &got)
-				if err != nil {
+
+				if err := unmarshalResult(result, &got); err != nil {
 					t.Fatalf("decode error: %v", err)
 				}
 

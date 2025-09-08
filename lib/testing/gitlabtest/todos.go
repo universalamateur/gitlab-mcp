@@ -6,9 +6,9 @@ import (
 
 // FakeTodosService is a partial implementation of the gitlab.TodosServiceInterface for unit tests.
 type FakeTodosService struct {
-	Todos []*gitlab.Todo
-
 	gitlab.TodosServiceInterface
+
+	Todos []*gitlab.Todo
 }
 
 // ListTodos filters todos by state (if provided) and paginates results.

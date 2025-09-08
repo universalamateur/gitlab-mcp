@@ -198,8 +198,8 @@ var errNotLegacyToken = errors.New("not a legacy token")
 // If data does not represent an *oauth2.Token, it returns a errNotLegacyToken error.
 func parseLegacyToken(data []byte) (storedTokens, error) {
 	var token oauth2.Token
-	err := json.Unmarshal(data, &token)
-	if err != nil {
+
+	if err := json.Unmarshal(data, &token); err != nil {
 		return storedTokens{}, fmt.Errorf("json.Unmarshal legacy token: %w", err)
 	}
 

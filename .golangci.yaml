@@ -18,6 +18,7 @@ linters:
     - lll
     - mnd
     - nilnil
+    - noinlineerr
     - nolintlint
     - nonamedreturns
     - paralleltest
@@ -29,6 +30,7 @@ linters:
     - testpackage
     - unparam
     - varnamelen
+    - wsl  # superseded by wsl_v5
 
   settings:
     cyclop:
