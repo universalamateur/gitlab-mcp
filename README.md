@@ -230,7 +230,6 @@ You can provide these environment variables in one of two ways:
 | `get_issues_closed_on_merge` | Get all the issues that would be closed by merging the provided merge request |
 | `get_job` | Get a single job of a project |
 | `get_merge_request_approvals` | Get approvals for a merge request |
-| `get_merge_request_changes` | Get information about the merge request including its files and changes |
 | `get_merge_request_commits` | Get all commits associated with a merge request |
 | `get_merge_request_dependencies` | Get merge request dependencies |
 | `get_merge_request_participants` | Get a list of merge request participants |
