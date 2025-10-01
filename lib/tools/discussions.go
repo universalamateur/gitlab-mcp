@@ -24,6 +24,7 @@ type DiscussionServiceInterface interface {
 	ModifyDiscussionNote() server.ServerTool
 	DeleteDiscussionNote() server.ServerTool
 	ResolveDiscussion() server.ServerTool
+	NewPositionDiscussion() server.ServerTool
 }
 
 // DiscussionTools implements discussion-related MCP tools.
@@ -38,6 +39,7 @@ func (d *DiscussionTools) AddTo(srv ToolAdder) {
 		d.ModifyDiscussionNote(),
 		d.DeleteDiscussionNote(),
 		d.ResolveDiscussion(),
+		d.NewPositionDiscussion(),
 	)
 }
 
