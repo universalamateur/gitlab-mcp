@@ -418,9 +418,11 @@ func TestSetUserStatus(t *testing.T) {
 						if opts.Emoji == nil || *opts.Emoji != "coffee" {
 							t.Errorf("opts.Emoji = %v, want 'coffee'", opts.Emoji)
 						}
+
 						if opts.Message == nil || *opts.Message != "Taking a break" {
 							t.Errorf("opts.Message = %v, want 'Taking a break'", opts.Message)
 						}
+
 						if opts.Availability == nil || *opts.Availability != "busy" {
 							t.Errorf("opts.Availability = %v, want 'busy'", opts.Availability)
 						}
@@ -454,9 +456,11 @@ func TestSetUserStatus(t *testing.T) {
 						if opts.Emoji != nil {
 							t.Errorf("opts.Emoji = %v, want nil", opts.Emoji)
 						}
+
 						if opts.Message == nil || *opts.Message != "Working remotely" {
 							t.Errorf("opts.Message = %v, want 'Working remotely'", opts.Message)
 						}
+
 						if opts.Availability != nil {
 							t.Errorf("opts.Availability = %v, want nil", opts.Availability)
 						}
@@ -490,9 +494,11 @@ func TestSetUserStatus(t *testing.T) {
 						if opts.Emoji != nil {
 							t.Errorf("opts.Emoji = %v, want nil", opts.Emoji)
 						}
+
 						if opts.Message != nil {
 							t.Errorf("opts.Message = %v, want nil", opts.Message)
 						}
+
 						if opts.Availability == nil || *opts.Availability != "busy" {
 							t.Errorf("opts.Availability = %v, want 'busy'", opts.Availability)
 						}
@@ -529,9 +535,11 @@ func TestSetUserStatus(t *testing.T) {
 						if opts.Emoji != nil && *opts.Emoji != "" {
 							t.Errorf("opts.Emoji = %v, want empty string", opts.Emoji)
 						}
+
 						if opts.Message != nil && *opts.Message != "" {
 							t.Errorf("opts.Message = %v, want empty string", opts.Message)
 						}
+
 						if opts.Availability == nil || *opts.Availability != "not_set" {
 							t.Errorf("opts.Availability = %v, want 'not_set'", opts.Availability)
 						}
