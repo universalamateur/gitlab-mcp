@@ -114,6 +114,7 @@ func testManager(t *testing.T, mgr discussions.Manager) {
 		t.Fatalf("note.ID = %d, want %d", note.ID, want)
 	}
 
+	//nolint:gosec // False positive
 	want[0].Notes = append(want[0].Notes, &gitlab.Note{
 		ID:   1,
 		Body: "First reply",
@@ -131,6 +132,7 @@ func testManager(t *testing.T, mgr discussions.Manager) {
 		t.Fatalf("note.ID = %d, want %d", note.ID, want)
 	}
 
+	//nolint:gosec // False positive
 	want[0].Notes[1] = &gitlab.Note{
 		ID:   1,
 		Body: "Updated reply",
