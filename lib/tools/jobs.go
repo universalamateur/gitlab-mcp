@@ -326,7 +326,7 @@ func parseBuildStates(statuses string) *[]gitlab.BuildStateValue {
 		buildStates []gitlab.BuildStateValue
 	)
 
-	for _, statusStr := range strings.Split(statuses, ",") {
+	for statusStr := range strings.SplitSeq(statuses, ",") {
 		statusStr = strings.TrimSpace(statusStr)
 		if state, ok := buildStateValues[statusStr]; ok && !haveState[state] {
 			buildStates = append(buildStates, state)

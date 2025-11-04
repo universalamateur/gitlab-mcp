@@ -143,6 +143,7 @@ func TestListUserEvents(t *testing.T) {
 						}
 
 						targetType := gitlab.EventTargetTypeValue("issue")
+
 						wantOpts := &gitlab.ListContributionEventsOptions{
 							Sort:       gitlab.Ptr("desc"),
 							TargetType: &targetType,
@@ -180,6 +181,7 @@ func TestListUserEvents(t *testing.T) {
 						}
 
 						eventType := gitlab.EventTypeValue("created")
+
 						wantOpts := &gitlab.ListContributionEventsOptions{
 							Sort:   gitlab.Ptr("desc"),
 							Action: &eventType,

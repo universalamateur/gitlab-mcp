@@ -155,9 +155,11 @@ func TestListUserTodos(t *testing.T) {
 						if *opts.State != "done" {
 							t.Errorf("expected state 'done', got %q", *opts.State)
 						}
+
 						if opts.Action == nil || string(*opts.Action) != "assigned" {
 							t.Errorf("expected action 'assigned', got %v", opts.Action)
 						}
+
 						if opts.ProjectID == nil || *opts.ProjectID != 789 {
 							t.Errorf("expected project_id 789, got %v", opts.ProjectID)
 						}

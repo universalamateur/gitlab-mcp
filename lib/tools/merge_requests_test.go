@@ -359,6 +359,7 @@ func TestListUserMergeRequests(t *testing.T) {
 					ListMergeRequests(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(opts *gitlab.ListMergeRequestsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
 						wantOpts := defaultOpts
+
 						wantOpts.AuthorUsername = gitlab.Ptr("another_user")
 						if diff := cmp.Diff(&wantOpts, opts); diff != "" {
 							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
@@ -720,6 +721,7 @@ func TestListGroupMergeRequests(t *testing.T) {
 					ListGroupMergeRequests(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.ListGroupMergeRequestsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
 						wantOpts := defaultOpts
+
 						wantOpts.State = gitlab.Ptr("opened")
 						if diff := cmp.Diff(&wantOpts, opts); diff != "" {
 							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)

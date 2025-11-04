@@ -897,7 +897,7 @@ func parseUserIDs(s string) *[]int {
 
 	var userIDs []int
 
-	for _, idStr := range strings.Split(s, ",") {
+	for idStr := range strings.SplitSeq(s, ",") {
 		idStr = strings.TrimSpace(idStr)
 
 		id, err := strconv.Atoi(idStr)
@@ -925,7 +925,7 @@ func newLabelOptions(labels string) *gitlab.LabelOptions {
 
 	var labelOpts gitlab.LabelOptions
 
-	for _, label := range strings.Split(labels, ",") {
+	for label := range strings.SplitSeq(labels, ",") {
 		label = strings.TrimSpace(label)
 
 		if label != "" {

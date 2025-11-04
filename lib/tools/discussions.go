@@ -239,7 +239,7 @@ func (d *DiscussionTools) deleteDiscussionNote(ctx context.Context, client *gitl
 		return nil, fmt.Errorf("failed to delete discussion note: %w", err)
 	}
 
-	return newToolResultJSON(map[string]interface{}{"deleted": true})
+	return newToolResultJSON(map[string]any{"deleted": true})
 }
 
 type resolveDiscussionArgs struct {

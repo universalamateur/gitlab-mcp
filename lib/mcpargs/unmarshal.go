@@ -159,6 +159,7 @@ func setValue(target reflect.Value, value any) error { //nolint:cyclop,funlen,go
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		// Handle unsigned integers
 		var uintVal uint64
+
 		switch v := value.(type) {
 		case uint:
 			uintVal = uint64(v)
@@ -193,6 +194,7 @@ func setValue(target reflect.Value, value any) error { //nolint:cyclop,funlen,go
 	case reflect.Float32, reflect.Float64:
 		// Handle floating point
 		var floatVal float64
+
 		switch v := value.(type) {
 		case float32:
 			floatVal = float64(v)

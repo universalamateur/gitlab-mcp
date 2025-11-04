@@ -27,7 +27,7 @@ func WithClient(ctx context.Context, client *gitlab.Client) context.Context {
 	return context.WithValue(ctx, clientKey, client)
 }
 
-// WithError returns a new context that carries the provided error.
+// WithClientError returns a new context that carries the provided error.
 // The error can later be retrieved using the Client function.
 func WithClientError(ctx context.Context, err error) context.Context {
 	return context.WithValue(ctx, clientErrorKey, err)
