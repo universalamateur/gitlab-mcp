@@ -53,8 +53,11 @@ fi
 
 # install mise/asdf dependencies
 echo "installing required plugins with mise install.."
-mise plugins update
+mise plugins update -q
 mise install
+
+# set PROMPT_COMMAND to empty value for mise if unset
+: "${PROMPT_COMMAND:=}"
 eval "$(mise activate bash)"
 
 # pre-commit is optional
