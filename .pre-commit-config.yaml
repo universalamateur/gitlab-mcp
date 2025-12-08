@@ -25,7 +25,7 @@ repos:
   # Documentation available at
   # https://gitlab.com/gitlab-com/gl-infra/common-ci-tasks/-/blob/main/docs/pre-commit.md
   - repo: https://gitlab.com/gitlab-com/gl-infra/common-ci-tasks
-    rev: v3.1  # renovate:managed
+    rev: v3.3  # renovate:managed
 
     hooks:
       - id: shellcheck  # Run shellcheck for changed Shell files
