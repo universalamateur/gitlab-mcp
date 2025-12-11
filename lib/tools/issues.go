@@ -78,7 +78,7 @@ type listIssuesArgs struct {
 	State         string     `mcp_desc:"Filter issues by state, with 'all' returning closed and opened issues. Defaults to 'opened'." mcp_enum:"all,opened,closed"`
 	Confidential  bool       `mcp_desc:"If true, includes confidential issues. Default is false, which excludes confidential issues"`
 	Milestone     string     `mcp_desc:"The milestone title to filter by"`
-	IterationID   int        `mcp_desc:"The iteration ID to filter by"`
+	IterationID   int64      `mcp_desc:"The iteration ID to filter by"`
 	Labels        string     `mcp_desc:"Comma-separated list of label names to filter by"`
 	Search        string     `mcp_desc:"Search issues against issue title and description"`
 	CreatedAfter  string     `mcp_desc:"Return issues created on or after the given time (format: RFC3339 or '2006-01-02 15:04:05')"`
@@ -114,7 +114,7 @@ func (i *IssuesTools) listIssues(ctx context.Context, client *gitlab.Client, arg
 		args.Limit = defaultIssuesLimit
 	}
 
-	nextPage := func(opts *gitlab.ListIssuesOptions, page int) {
+	nextPage := func(opts *gitlab.ListIssuesOptions, page int64) {
 		opts.Page = page
 	}
 
@@ -256,7 +256,7 @@ func (i *IssuesTools) listGroupIssues(ctx context.Context, client *gitlab.Client
 		args.Limit = defaultIssuesLimit
 	}
 
-	nextPage := func(opts *gitlab.ListGroupIssuesOptions, page int) {
+	nextPage := func(opts *gitlab.ListGroupIssuesOptions, page int64) {
 		opts.Page = page
 	}
 
@@ -282,7 +282,7 @@ type listProjectIssuesArgs struct {
 	Confidential  bool       `mcp_desc:"If true, includes confidential issues. Default is false, which excludes confidential issues"`
 	Labels        string     `mcp_desc:"Comma-separated list of label names to filter by"`
 	Milestone     string     `mcp_desc:"The milestone title to filter by"`
-	IterationID   int        `mcp_desc:"The iteration ID to filter by"`
+	IterationID   int64      `mcp_desc:"The iteration ID to filter by"`
 	Author        mcpargs.ID `mcp_desc:"Filter by author ID or username"`
 	Assignee      mcpargs.ID `mcp_desc:"Filter by assignee ID or username"`
 	Search        string     `mcp_desc:"Search issues against their title and description"`
@@ -320,7 +320,7 @@ func (i *IssuesTools) listProjectIssues(ctx context.Context, client *gitlab.Clie
 		args.Limit = defaultIssuesLimit
 	}
 
-	nextPage := func(opts *gitlab.ListProjectIssuesOptions, page int) {
+	nextPage := func(opts *gitlab.ListProjectIssuesOptions, page int64) {
 		opts.Page = page
 	}
 
@@ -382,7 +382,7 @@ func listProjectIssuesOptions(args listProjectIssuesArgs) (*gitlab.ListProjectIs
 
 	switch {
 	case args.Assignee.Integer != 0:
-		opt.AssigneeID = gitlab.Ptr(args.Assignee.Integer)
+		opt.AssigneeID = gitlab.AssigneeID(args.Assignee.Integer)
 	case args.Assignee.String != "":
 		opt.AssigneeUsername = gitlab.Ptr(args.Assignee.String)
 	}
@@ -517,7 +517,7 @@ func parseTime(timeStr string) (*time.Time, error) {
 
 type getIssueArgs struct {
 	ProjectID    mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	IssueIID     int        `mcp_desc:"The internal ID of the project issue" mcp_required:"true"`
+	IssueIID     int64      `mcp_desc:"The internal ID of the project issue" mcp_required:"true"`
 	Confidential bool       `mcp_desc:"If true, allows access to confidential issues. Default is false, which will return an error for confidential issues"`
 }
 
@@ -602,7 +602,7 @@ type detailedIssue struct {
 
 type listMergeRequestsRelatedToIssueArgs struct {
 	ProjectID mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	IssueIID  int        `mcp_desc:"The internal ID of the project issue" mcp_required:"true"`
+	IssueIID  int64      `mcp_desc:"The internal ID of the project issue" mcp_required:"true"`
 }
 
 // ListMergeRequestsRelatedToIssue returns a ServerTool for listing all merge requests related to a specific issue.
@@ -620,7 +620,9 @@ func (i *IssuesTools) ListMergeRequestsRelatedToIssue() server.ServerTool {
 func (i *IssuesTools) listMergeRequestsRelatedToIssue(ctx context.Context, client *gitlab.Client, args listMergeRequestsRelatedToIssueArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var (
 		opt = gitlab.ListMergeRequestsRelatedToIssueOptions{
-			PerPage: maxPerPage,
+			ListOptions: gitlab.ListOptions{
+				PerPage: maxPerPage,
+			},
 		}
 		mergeRequests []*gitlab.BasicMergeRequest
 	)
@@ -648,8 +650,8 @@ type createIssueArgs struct {
 	Title        string     `mcp_desc:"The title of the issue to create" mcp_required:"true"`
 	Description  string     `mcp_desc:"The description of the issue in GitLab Flavored Markdown"`
 	AssigneeIDs  string     `mcp_desc:"Comma-separated list of user IDs to assign the issue to"`
-	MilestoneID  int        `mcp_desc:"The ID of a milestone to assign the issue to"`
-	EpicID       int        `mcp_desc:"The global ID of an epic to assign the issue to"`
+	MilestoneID  int64      `mcp_desc:"The ID of a milestone to assign the issue to"`
+	EpicID       int64      `mcp_desc:"The global ID of an epic to assign the issue to"`
 	Labels       string     `mcp_desc:"Comma-separated label names to assign to the new issue"`
 	Confidential bool       `mcp_desc:"Set to true to make the issue confidential"`
 }
@@ -702,19 +704,19 @@ func (i *IssuesTools) createIssue(ctx context.Context, client *gitlab.Client, ar
 
 type editIssueArgs struct {
 	ProjectID        mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	IssueIID         int        `mcp_desc:"The internal ID of the project issue" mcp_required:"true"`
+	IssueIID         int64      `mcp_desc:"The internal ID of the project issue" mcp_required:"true"`
 	Title            string     `mcp_desc:"Changes the title of the issue"`
 	Description      string     `mcp_desc:"Changes the description of the issue. The description uses GitLab Flavored Markdown"`
 	AssigneeIDs      string     `mcp_desc:"Comma-separated list of user IDs to assign the issue to. Pass a single hyphen ('-') to clear all assignees. Omit the parameter to leave assignees unchanged"`
-	MilestoneID      int        `mcp_desc:"The ID of a milestone to assign the issue to. Set to 0 to remove the milestone"`
-	EpicID           int        `mcp_desc:"The global ID of an epic to assign the issue to"`
+	MilestoneID      int64      `mcp_desc:"The ID of a milestone to assign the issue to. Set to 0 to remove the milestone"`
+	EpicID           int64      `mcp_desc:"The global ID of an epic to assign the issue to"`
 	AddLabels        string     `mcp_desc:"Comma-separated label names to add to the issue"`
 	RemoveLabels     string     `mcp_desc:"Comma-separated label names to remove from the issue"`
 	StateEvent       string     `mcp_desc:"The state of the issue. Use 'close' to close the issue or 'reopen' to reopen a closed issue. Omit to keep the issue state unchanged" mcp_enum:"close,reopen"`
 	Confidential     bool       `mcp_desc:"If true, enables editing confidential issues or makes a public issue confidential. Default is false. Note: By design, specifying 'false' explicitly does not make confidential issues public - this is a security measure."`
 	DiscussionLocked bool       `mcp_desc:"Flag indicating if the issue's discussion is locked. If true, only project members can add or edit comments"`
 	DueDate          string     `mcp_desc:"Due date of the issue in the format 'YYYY-MM-DD'"`
-	Weight           int        `mcp_desc:"Sets the weight of the issue, which must be a non-negative integer value."`
+	Weight           int64      `mcp_desc:"Sets the weight of the issue, which must be a non-negative integer value."`
 }
 
 // EditIssue returns a ServerTool for updating an existing issue.
@@ -800,7 +802,7 @@ func (i *IssuesTools) editIssue(ctx context.Context, client *gitlab.Client, args
 
 type issueTimeTrackingArgs struct {
 	ProjectID           mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	IssueIID            int        `mcp_desc:"The internal ID of the project issue" mcp_required:"true"`
+	IssueIID            int64      `mcp_desc:"The internal ID of the project issue" mcp_required:"true"`
 	TimeEstimate        int        `mcp_desc:"Sets the estimated time of work for this issue in seconds. Set to zero to clear the estimation."`
 	AddSpentTimeSeconds int        `mcp_desc:"Adds time spent working on this issue in seconds"`
 	AddSpentTimeSummary string     `mcp_desc:"The summary of the time spent working on this issue"`
@@ -885,22 +887,22 @@ func (i *IssuesTools) issueTimeTracking(ctx context.Context, client *gitlab.Clie
 
 // parseUserIDs parses a comma-separated string of user IDs.
 // Returns nil for "no change to assignees" and an empty slice for "clear assignees field".
-func parseUserIDs(s string) *[]int {
+func parseUserIDs(s string) *[]int64 {
 	if s == "" {
 		return nil
 	}
 
 	if s == "-" {
-		clearAll := []int{}
+		clearAll := []int64{}
 		return &clearAll
 	}
 
-	var userIDs []int
+	var userIDs []int64
 
 	for idStr := range strings.SplitSeq(s, ",") {
 		idStr = strings.TrimSpace(idStr)
 
-		id, err := strconv.Atoi(idStr)
+		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
 			log.Printf("Skipping invalid user ID: %q\n", idStr)
 			continue

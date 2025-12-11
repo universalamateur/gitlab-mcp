@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sort"
+	"slices"
 	"strings"
 	"testing"
 
@@ -126,7 +126,7 @@ func TestListGroupEpics(t *testing.T) {
 	}
 
 	var (
-		wantIDs = []int{1001, 1002}
+		wantIDs = []int64{1001, 1002}
 		gotIDs  = epicIDs(epics)
 	)
 
@@ -171,7 +171,7 @@ func TestGetEpic(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if wantID := 1001; epic.ID != wantID {
+	if wantID := int64(1001); epic.ID != wantID {
 		t.Errorf("got epic id %v, wanted %v", epic.ID, wantID)
 	}
 }
@@ -213,7 +213,7 @@ func TestGetEpicLinks(t *testing.T) {
 	}
 
 	var (
-		wantIDs = []int{1002, 1005}
+		wantIDs = []int64{1002, 1005}
 		gotIDs  = epicIDs(epics)
 	)
 
@@ -258,27 +258,27 @@ func TestListEpicIssues(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var gotIDs []int
+	var gotIDs []int64
 	for _, issue := range issues {
 		gotIDs = append(gotIDs, issue.ID)
 	}
 
-	sort.Ints(gotIDs)
+	slices.Sort(gotIDs)
 
-	wantIDs := []int{101, 102}
+	wantIDs := []int64{101, 102}
 
 	if !cmp.Equal(gotIDs, wantIDs) {
 		t.Errorf("got issues with ids %v, wanted %v", gotIDs, wantIDs)
 	}
 }
 
-func epicIDs(epics []*gitlab.Epic) []int {
-	var ids []int
+func epicIDs(epics []*gitlab.Epic) []int64 {
+	var ids []int64
 	for _, epic := range epics {
 		ids = append(ids, epic.ID)
 	}
 
-	sort.Ints(ids)
+	slices.Sort(ids)
 
 	return ids
 }
@@ -368,7 +368,7 @@ func TestCreateEpic(t *testing.T) {
 							Confidential:   gitlab.Ptr(false),
 							DueDateFixed:   mustISOTime("2024-09-17"),
 							DueDateIsFixed: gitlab.Ptr(true),
-							ParentID:       gitlab.Ptr(1001),
+							ParentID:       gitlab.Ptr(int64(1001)),
 						}
 
 						if diff := cmp.Diff(wantOpts, opts, isoTimeComparer); diff != "" {
@@ -472,7 +472,7 @@ func TestEditEpic(t *testing.T) {
 		name              string
 		args              map[string]any
 		initialState      *gitlab.Epic
-		setupMock         func(epicsService *glabtest.MockEpicsServiceInterface, groupID string, epicIID int, ret *gitlab.Epic)
+		setupMock         func(epicsService *glabtest.MockEpicsServiceInterface, groupID string, epicIID int64, ret *gitlab.Epic)
 		want              *gitlab.Epic
 		wantError         bool
 		wantErrorResponse bool // If the tool call itself should return an error message
@@ -482,14 +482,14 @@ func TestEditEpic(t *testing.T) {
 			args: map[string]any{
 				"description": "New description",
 			},
-			setupMock: func(epicsService *glabtest.MockEpicsServiceInterface, groupID string, epicIID int, ret *gitlab.Epic) {
+			setupMock: func(epicsService *glabtest.MockEpicsServiceInterface, groupID string, epicIID int64, ret *gitlab.Epic) {
 				epicsService.EXPECT().GetEpic(gomock.Eq(groupID), gomock.Eq(epicIID), gomock.Any()).
 					Return(&gitlab.Epic{Description: "Old description"},
 						&gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}},
 						nil)
 
 				epicsService.EXPECT().UpdateEpic(gomock.Eq(groupID), gomock.Eq(epicIID), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateEpicOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Epic, *gitlab.Response, error) {
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateEpicOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Epic, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateEpicOptions{
 							Description: gitlab.Ptr("New description"),
 						}
@@ -517,7 +517,7 @@ func TestEditEpic(t *testing.T) {
 				"confidential":  true,
 				"due_date":      "2025-07-09",
 			},
-			setupMock: func(epicsService *glabtest.MockEpicsServiceInterface, groupID string, epicIID int, ret *gitlab.Epic) {
+			setupMock: func(epicsService *glabtest.MockEpicsServiceInterface, groupID string, epicIID int64, ret *gitlab.Epic) {
 				epicsService.EXPECT().GetEpic(gomock.Eq(groupID), gomock.Eq(epicIID), gomock.Any()).
 					Return(&gitlab.Epic{
 						Title:        "Old title",
@@ -530,11 +530,11 @@ func TestEditEpic(t *testing.T) {
 						nil)
 
 				epicsService.EXPECT().UpdateEpic(gomock.Eq(groupID), gomock.Eq(epicIID), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateEpicOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Epic, *gitlab.Response, error) {
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateEpicOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Epic, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateEpicOptions{
 							Title:          gitlab.Ptr("New title"),
 							Description:    gitlab.Ptr("New description"),
-							ParentID:       gitlab.Ptr(1002),
+							ParentID:       gitlab.Ptr(int64(1002)),
 							AddLabels:      &gitlab.LabelOptions{"to_be::added"},
 							RemoveLabels:   &gitlab.LabelOptions{"to_be::removed"},
 							StateEvent:     gitlab.Ptr("reopen"),
@@ -563,7 +563,7 @@ func TestEditEpic(t *testing.T) {
 		{
 			name: "editing a confidential issue without the confidential flag fails",
 			args: map[string]any{},
-			setupMock: func(epicsService *glabtest.MockEpicsServiceInterface, groupID string, epicIID int, ret *gitlab.Epic) {
+			setupMock: func(epicsService *glabtest.MockEpicsServiceInterface, groupID string, epicIID int64, ret *gitlab.Epic) {
 				epicsService.EXPECT().GetEpic(gomock.Eq(groupID), gomock.Eq(epicIID), gomock.Any()).
 					Return(&gitlab.Epic{Title: "Confidential epic", Confidential: true},
 						&gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}},
@@ -577,7 +577,7 @@ func TestEditEpic(t *testing.T) {
 				"title":    "Test title",
 				"due_date": "09/17/2024",
 			},
-			setupMock: func(epicsService *glabtest.MockEpicsServiceInterface, groupID string, epicIID int, ret *gitlab.Epic) {
+			setupMock: func(epicsService *glabtest.MockEpicsServiceInterface, groupID string, epicIID int64, ret *gitlab.Epic) {
 				epicsService.EXPECT().GetEpic(gomock.Eq(groupID), gomock.Eq(epicIID), gomock.Any()).
 					Return(&gitlab.Epic{Title: "Test epic"},
 						&gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}},
@@ -588,7 +588,7 @@ func TestEditEpic(t *testing.T) {
 		{
 			name: "epic does not exist",
 			args: map[string]any{},
-			setupMock: func(epicsService *glabtest.MockEpicsServiceInterface, groupID string, epicIID int, ret *gitlab.Epic) {
+			setupMock: func(epicsService *glabtest.MockEpicsServiceInterface, groupID string, epicIID int64, ret *gitlab.Epic) {
 				epicsService.EXPECT().GetEpic(gomock.Eq(groupID), gomock.Eq(epicIID), gomock.Any()).
 					Return(nil,
 						&gitlab.Response{Response: &http.Response{StatusCode: http.StatusNotFound}},
@@ -599,7 +599,7 @@ func TestEditEpic(t *testing.T) {
 		{
 			name: "internal server error",
 			args: map[string]any{},
-			setupMock: func(epicsService *glabtest.MockEpicsServiceInterface, groupID string, epicIID int, ret *gitlab.Epic) {
+			setupMock: func(epicsService *glabtest.MockEpicsServiceInterface, groupID string, epicIID int64, ret *gitlab.Epic) {
 				epicsService.EXPECT().GetEpic(gomock.Eq(groupID), gomock.Eq(epicIID), gomock.Any()).
 					Return(&gitlab.Epic{Description: "Old description"},
 						&gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}},
@@ -624,7 +624,7 @@ func TestEditEpic(t *testing.T) {
 			groupID := fmt.Sprintf("test/group%d", 1000+i)
 			tt.args["group_id"] = groupID
 
-			epicIID := 10 + i
+			epicIID := int64(10 + i)
 			tt.args["epic_iid"] = epicIID
 
 			tt.setupMock(gitlabClient.MockEpics, groupID, epicIID, tt.want)

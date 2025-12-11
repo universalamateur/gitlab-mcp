@@ -33,8 +33,8 @@ func TestEditMergeRequest(t *testing.T) {
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
 				mockMergeRequests.EXPECT().
-					UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(1), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
+					UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(int64(1)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateMergeRequestOptions{
 							Title: gitlab.Ptr("New MR Title"),
 						}
@@ -61,8 +61,8 @@ func TestEditMergeRequest(t *testing.T) {
 				"description":       "New MR Description",
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
-				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(2), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
+				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(int64(2)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateMergeRequestOptions{
 							Description: gitlab.Ptr("New MR Description"),
 						}
@@ -88,8 +88,8 @@ func TestEditMergeRequest(t *testing.T) {
 				"target_branch":     "develop",
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
-				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(3), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
+				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(int64(3)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateMergeRequestOptions{
 							TargetBranch: gitlab.Ptr("develop"),
 						}
@@ -115,10 +115,10 @@ func TestEditMergeRequest(t *testing.T) {
 				"assignee_ids":      "-", // Signal to clear assignees
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
-				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(4), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
+				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(int64(4)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateMergeRequestOptions{
-							AssigneeIDs: &[]int{},
+							AssigneeIDs: &[]int64{},
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
 							return nil, nil, fmt.Errorf("UpdateMergeRequest() options mismatch (-want +got):\n%s", diff)
@@ -142,10 +142,10 @@ func TestEditMergeRequest(t *testing.T) {
 				"assignee_ids":      "101,102",
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
-				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(5), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
+				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(int64(5)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateMergeRequestOptions{
-							AssigneeIDs: &[]int{101, 102},
+							AssigneeIDs: &[]int64{101, 102},
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
 							return nil, nil, fmt.Errorf("UpdateMergeRequest() options mismatch (-want +got):\n%s", diff)
@@ -169,10 +169,10 @@ func TestEditMergeRequest(t *testing.T) {
 				"reviewer_ids":      "201,202",
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
-				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(6), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
+				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(int64(6)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateMergeRequestOptions{
-							ReviewerIDs: &[]int{201, 202},
+							ReviewerIDs: &[]int64{201, 202},
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
 							return nil, nil, fmt.Errorf("UpdateMergeRequest() options mismatch (-want +got):\n%s", diff)
@@ -196,10 +196,10 @@ func TestEditMergeRequest(t *testing.T) {
 				"reviewer_ids":      "-",
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
-				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(7), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
+				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(int64(7)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateMergeRequestOptions{
-							ReviewerIDs: &[]int{},
+							ReviewerIDs: &[]int64{},
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
 							return nil, nil, fmt.Errorf("UpdateMergeRequest() options mismatch (-want +got):\n%s", diff)
@@ -223,8 +223,8 @@ func TestEditMergeRequest(t *testing.T) {
 				"add_labels":        "feature,ready-for-review",
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
-				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(8), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
+				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(int64(8)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateMergeRequestOptions{
 							AddLabels: &gitlab.LabelOptions{"feature", "ready-for-review"},
 						}
@@ -250,8 +250,8 @@ func TestEditMergeRequest(t *testing.T) {
 				"remove_labels":     "draft",
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
-				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(9), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
+				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(int64(9)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateMergeRequestOptions{
 							RemoveLabels: &gitlab.LabelOptions{"draft"},
 						}
@@ -277,10 +277,10 @@ func TestEditMergeRequest(t *testing.T) {
 				"milestone_id":      42,
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
-				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(10), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
+				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(int64(10)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateMergeRequestOptions{
-							MilestoneID: gitlab.Ptr(42),
+							MilestoneID: gitlab.Ptr(int64(42)),
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
 							return nil, nil, fmt.Errorf("UpdateMergeRequest() options mismatch (-want +got):\n%s", diff)
@@ -304,8 +304,8 @@ func TestEditMergeRequest(t *testing.T) {
 				"state_event":       "close",
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
-				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(11), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
+				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(int64(11)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateMergeRequestOptions{
 							StateEvent: gitlab.Ptr("close"),
 						}
@@ -331,8 +331,8 @@ func TestEditMergeRequest(t *testing.T) {
 				"state_event":       "reopen",
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
-				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(12), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
+				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(int64(12)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateMergeRequestOptions{
 							StateEvent: gitlab.Ptr("reopen"),
 						}
@@ -358,8 +358,8 @@ func TestEditMergeRequest(t *testing.T) {
 				"remove_source_branch": true,
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
-				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(13), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
+				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(int64(13)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateMergeRequestOptions{
 							RemoveSourceBranch: gitlab.Ptr(true),
 						}
@@ -385,8 +385,8 @@ func TestEditMergeRequest(t *testing.T) {
 				"squash":            false,
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
-				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(14), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
+				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(int64(14)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateMergeRequestOptions{
 							Squash: gitlab.Ptr(false),
 						}
@@ -412,8 +412,8 @@ func TestEditMergeRequest(t *testing.T) {
 				"discussion_locked": true,
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
-				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(15), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
+				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(int64(15)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateMergeRequestOptions{
 							DiscussionLocked: gitlab.Ptr(true),
 						}
@@ -439,8 +439,8 @@ func TestEditMergeRequest(t *testing.T) {
 				"allow_collaboration": true,
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
-				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(16), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
+				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(int64(16)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateMergeRequestOptions{
 							AllowCollaboration: gitlab.Ptr(true),
 						}
@@ -470,13 +470,13 @@ func TestEditMergeRequest(t *testing.T) {
 				"squash":            true,
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
-				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(17), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
+				mockMergeRequests.EXPECT().UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(int64(17)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateMergeRequestOptions{
 							Title:       gitlab.Ptr("Updated Title"),
 							Description: gitlab.Ptr("Updated Description"),
 							AddLabels:   &gitlab.LabelOptions{"enhancement", "high-priority"},
-							AssigneeIDs: &[]int{301, 302},
+							AssigneeIDs: &[]int64{301, 302},
 							Squash:      gitlab.Ptr(true),
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
@@ -518,8 +518,8 @@ func TestEditMergeRequest(t *testing.T) {
 			},
 			setupMock: func(mockMergeRequests *glabtest.MockMergeRequestsServiceInterface, ret *gitlab.MergeRequest) {
 				mockMergeRequests.EXPECT().
-					UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(20), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
+					UpdateMergeRequest(gomock.Eq("test/project"), gomock.Eq(int64(20)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						// Check that opts are what we expect even when an error is returned
 						wantOpts := &gitlab.UpdateMergeRequestOptions{Title: gitlab.Ptr("New Title")}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {

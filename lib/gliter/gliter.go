@@ -11,7 +11,7 @@ import (
 // All func iterates over all items fetched by the getter function, handling pagination automatically.
 // It yields each item and stops when either an error occurs or the yield function returns false.
 // The nextPage function is called with the current options and the next page number to continue pagination.
-func All[T any, O any](ctx context.Context, getter func(opts *O, options ...gitlab.RequestOptionFunc) ([]T, *gitlab.Response, error), opts O, nextPage func(*O, int)) iter.Seq2[T, error] {
+func All[T any, O any](ctx context.Context, getter func(opts *O, options ...gitlab.RequestOptionFunc) ([]T, *gitlab.Response, error), opts O, nextPage func(*O, int64)) iter.Seq2[T, error] {
 	return func(yield func(T, error) bool) {
 		for {
 			items, resp, err := getter(&opts, gitlab.WithContext(ctx))
@@ -40,7 +40,7 @@ func All[T any, O any](ctx context.Context, getter func(opts *O, options ...gitl
 
 // AllWithID is a wrapper for All that includes an ID in the getter function.
 // It is useful for fetching items that are related to a specific ID, such as merge requests within a project or group.
-func AllWithID[T any, O any](ctx context.Context, id any, getter func(id any, opts *O, options ...gitlab.RequestOptionFunc) ([]T, *gitlab.Response, error), opts O, nextPage func(*O, int)) iter.Seq2[T, error] {
+func AllWithID[T any, O any](ctx context.Context, id any, getter func(id any, opts *O, options ...gitlab.RequestOptionFunc) ([]T, *gitlab.Response, error), opts O, nextPage func(*O, int64)) iter.Seq2[T, error] {
 	wrappedGetter := func(opts *O, options ...gitlab.RequestOptionFunc) ([]T, *gitlab.Response, error) {
 		return getter(id, opts, options...)
 	}

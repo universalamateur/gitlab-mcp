@@ -9,7 +9,7 @@ import (
 // It implements the Unmarshaler interface to unmarshal from either string or int types.
 type ID struct { //nolint:recvcheck // Unmarshal requires pointer receiver.
 	String  string
-	Integer int
+	Integer int64
 }
 
 // Interface tests.
@@ -24,7 +24,7 @@ func (id *ID) Unmarshal(v any) error {
 		return fmt.Errorf("%w: cannot unmarshal ID from %T", ErrUnmarshalArguments, v)
 	}
 
-	if i, err := strconv.Atoi(s); err == nil {
+	if i, err := strconv.ParseInt(s, 10, 64); err == nil {
 		id.Integer = i
 		id.String = ""
 

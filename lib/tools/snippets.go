@@ -77,7 +77,9 @@ func (s *SnippetsTools) ListUserSnippets() server.ServerTool {
 func (s *SnippetsTools) listUserSnippets(ctx context.Context, client *gitlab.Client, _ struct{}, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var (
 		opt = &gitlab.ListSnippetsOptions{
-			PerPage: maxPerPage,
+			ListOptions: gitlab.ListOptions{
+				PerPage: maxPerPage,
+			},
 		}
 		snippets []*gitlab.Snippet
 	)
@@ -156,7 +158,9 @@ func (s *SnippetsTools) listAllSnippetsIncludingPrivate(ctx context.Context, cli
 func (s *SnippetsTools) listAllPublicSnippets(ctx context.Context, client *gitlab.Client) (*mcp.CallToolResult, error) {
 	// List only public snippets
 	opt := &gitlab.ExploreSnippetsOptions{
-		PerPage: maxPerPage,
+		ListOptions: gitlab.ListOptions{
+			PerPage: maxPerPage,
+		},
 	}
 
 	var snippets []*gitlab.Snippet
@@ -180,7 +184,7 @@ func (s *SnippetsTools) listAllPublicSnippets(ctx context.Context, client *gitla
 }
 
 type getSnippetArgs struct {
-	SnippetID int `mcp_desc:"The ID of the snippet" mcp_required:"true"`
+	SnippetID int64 `mcp_desc:"The ID of the snippet" mcp_required:"true"`
 }
 
 // GetSnippet returns a ServerTool for fetching information about a specific snippet.
@@ -205,7 +209,7 @@ func (s *SnippetsTools) getSnippet(ctx context.Context, client *gitlab.Client, a
 }
 
 type getSnippetContentArgs struct {
-	SnippetID int `mcp_desc:"The ID of the snippet" mcp_required:"true"`
+	SnippetID int64 `mcp_desc:"The ID of the snippet" mcp_required:"true"`
 }
 
 // GetSnippetContent returns a ServerTool for fetching the content of a specific snippet.
@@ -300,7 +304,7 @@ func (s *SnippetsTools) createSnippet(ctx context.Context, client *gitlab.Client
 }
 
 type updateSnippetArgs struct {
-	SnippetID   int    `mcp_desc:"The ID of the snippet to update" mcp_required:"true"`
+	SnippetID   int64  `mcp_desc:"The ID of the snippet to update" mcp_required:"true"`
 	Title       string `mcp_desc:"The title of the snippet"`
 	Description string `mcp_desc:"The description of the snippet"`
 	Visibility  string `mcp_desc:"The visibility level of the snippet" mcp_enum:"private,internal,public"`
@@ -379,7 +383,7 @@ func (s *SnippetsTools) updateSnippet(ctx context.Context, client *gitlab.Client
 }
 
 type deleteSnippetArgs struct {
-	SnippetID int `mcp_desc:"The ID of the snippet to delete" mcp_required:"true"`
+	SnippetID int64 `mcp_desc:"The ID of the snippet to delete" mcp_required:"true"`
 }
 
 // DeleteSnippet returns a ServerTool for deleting a snippet.

@@ -24,7 +24,7 @@ import (
 	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
 
-const maxPerPage = 100
+const maxPerPage int64 = 100
 
 // ErrInvalidArgument is an error indicating that the argument provided is invalid.
 var ErrInvalidArgument = errors.New("invalid argument")

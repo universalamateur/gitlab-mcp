@@ -53,7 +53,7 @@ func TestGetUser(t *testing.T) {
 			},
 			setupMock: func(mockUsers *glabtest.MockUsersServiceInterface) {
 				mockUsers.EXPECT().
-					GetUser(gomock.Eq(2), gomock.Any(), gomock.Any()).
+					GetUser(gomock.Eq(int64(2)), gomock.Any(), gomock.Any()).
 					Return(&gitlab.User{
 						ID:       2,
 						Username: "other_user",
@@ -155,7 +155,7 @@ func TestGetUser(t *testing.T) {
 			},
 			setupMock: func(mockUsers *glabtest.MockUsersServiceInterface) {
 				mockUsers.EXPECT().
-					GetUser(gomock.Eq(999), gomock.Any(), gomock.Any()).
+					GetUser(gomock.Eq(int64(999)), gomock.Any(), gomock.Any()).
 					Return(nil, &gitlab.Response{
 						Response: &http.Response{StatusCode: http.StatusNotFound},
 					}, fmt.Errorf("user not found"))
@@ -241,7 +241,7 @@ func TestGetUserStatus(t *testing.T) {
 			},
 			setupMock: func(mockUsers *glabtest.MockUsersServiceInterface) {
 				mockUsers.EXPECT().
-					GetUserStatus(gomock.Eq(1), gomock.Any()).
+					GetUserStatus(gomock.Eq(int64(1)), gomock.Any()).
 					Return(&gitlab.UserStatus{
 						Emoji:        "speech_balloon",
 						Message:      "Working on GitLab MCP",
@@ -313,7 +313,7 @@ func TestGetUserStatus(t *testing.T) {
 			},
 			setupMock: func(mockUsers *glabtest.MockUsersServiceInterface) {
 				mockUsers.EXPECT().
-					GetUserStatus(gomock.Eq(2), gomock.Any()).
+					GetUserStatus(gomock.Eq(int64(2)), gomock.Any()).
 					Return(&gitlab.UserStatus{
 						Emoji:        "calendar",
 						Message:      "In a meeting",
@@ -337,7 +337,7 @@ func TestGetUserStatus(t *testing.T) {
 			},
 			setupMock: func(mockUsers *glabtest.MockUsersServiceInterface) {
 				mockUsers.EXPECT().
-					GetUserStatus(gomock.Eq(999), gomock.Any()).
+					GetUserStatus(gomock.Eq(int64(999)), gomock.Any()).
 					Return(nil, &gitlab.Response{
 						Response: &http.Response{StatusCode: http.StatusNotFound},
 					}, fmt.Errorf("user status not found"))

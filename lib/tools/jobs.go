@@ -60,7 +60,7 @@ func (j *JobsTools) AddTo(srv ToolAdder) {
 
 type listPipelineJobsArgs struct {
 	ProjectID      mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	PipelineID     int        `mcp_desc:"ID of the pipeline" mcp_required:"true"`
+	PipelineID     int64      `mcp_desc:"ID of the pipeline" mcp_required:"true"`
 	Status         string     `mcp_desc:"Filter jobs by status (comma-separated): created, pending, running, failed, success, canceled, skipped, waiting_for_resource, manual"`
 	IncludeRetried bool       `mcp_desc:"Include retried jobs in the response (defaults to false)"`
 }
@@ -111,7 +111,7 @@ func (j *JobsTools) listPipelineJobs(ctx context.Context, client *gitlab.Client,
 
 type listDownstreamPipelinesArgs struct {
 	ProjectID  mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	PipelineID int        `mcp_desc:"ID of the pipeline" mcp_required:"true"`
+	PipelineID int64      `mcp_desc:"ID of the pipeline" mcp_required:"true"`
 	Status     string     `mcp_desc:"Filter downstream pipeline triggers by status (comma-separated): created, pending, running, failed, success, canceled, skipped, waiting_for_resource, manual"`
 }
 
@@ -160,7 +160,7 @@ func (j *JobsTools) listDownstreamPipelines(ctx context.Context, client *gitlab.
 
 type getJobArgs struct {
 	ProjectID mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	JobID     int        `mcp_desc:"ID of the job" mcp_required:"true"`
+	JobID     int64      `mcp_desc:"ID of the job" mcp_required:"true"`
 }
 
 // GetJob returns a ServerTool for fetching information about a specific job.
@@ -186,7 +186,7 @@ func (j *JobsTools) getJob(ctx context.Context, client *gitlab.Client, args getJ
 
 type downloadJobArtifactsFileArgs struct {
 	ProjectID    mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	JobID        int        `mcp_desc:"ID of the job" mcp_required:"true"`
+	JobID        int64      `mcp_desc:"ID of the job" mcp_required:"true"`
 	ArtifactPath string     `mcp_desc:"Path to a file inside the artifacts archive" mcp_required:"true"`
 }
 
@@ -219,7 +219,7 @@ func (j *JobsTools) downloadJobArtifactsFile(ctx context.Context, client *gitlab
 
 type downloadJobLogArgs struct {
 	ProjectID mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	JobID     int        `mcp_desc:"ID of the job" mcp_required:"true"`
+	JobID     int64      `mcp_desc:"ID of the job" mcp_required:"true"`
 }
 
 // DownloadJobLog returns a ServerTool for downloading the log file of a specific job.
@@ -251,7 +251,7 @@ func (j *JobsTools) downloadJobLog(ctx context.Context, client *gitlab.Client, a
 
 type retryJobArgs struct {
 	ProjectID mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	JobID     int        `mcp_desc:"ID of the job" mcp_required:"true"`
+	JobID     int64      `mcp_desc:"ID of the job" mcp_required:"true"`
 }
 
 // RetryJob returns a ServerTool for retrying a failed job.
@@ -278,7 +278,7 @@ func (j *JobsTools) retryJob(ctx context.Context, client *gitlab.Client, args re
 
 type triggerManualJobArgs struct {
 	ProjectID mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	JobID     int        `mcp_desc:"ID of the job" mcp_required:"true"`
+	JobID     int64      `mcp_desc:"ID of the job" mcp_required:"true"`
 }
 
 // TriggerManualJob returns a ServerTool for manually triggering a job.

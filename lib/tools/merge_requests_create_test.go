@@ -80,9 +80,9 @@ func TestCreateMergeRequest(t *testing.T) {
 							Description:        gitlab.Ptr("This adds a comprehensive new feature with tests"),
 							TargetBranch:       gitlab.Ptr("develop"),
 							Labels:             &gitlab.LabelOptions{"feature", "enhancement"},
-							AssigneeIDs:        &[]int{1, 2},
-							ReviewerIDs:        &[]int{3, 4},
-							MilestoneID:        gitlab.Ptr(5),
+							AssigneeIDs:        &[]int64{1, 2},
+							ReviewerIDs:        &[]int64{3, 4},
+							MilestoneID:        gitlab.Ptr(int64(5)),
 							RemoveSourceBranch: gitlab.Ptr(true),
 							Squash:             gitlab.Ptr(true),
 						}
@@ -188,8 +188,8 @@ func TestCreateMergeRequest(t *testing.T) {
 						wantOpts := &gitlab.CreateMergeRequestOptions{
 							Title:        gitlab.Ptr("Update documentation"),
 							SourceBranch: gitlab.Ptr("docs-update"),
-							AssigneeIDs:  &[]int{42},
-							ReviewerIDs:  &[]int{99},
+							AssigneeIDs:  &[]int64{42},
+							ReviewerIDs:  &[]int64{99},
 						}
 						if diff := cmp.Diff(wantOpts, opts, assigneeIDComparer); diff != "" {
 							return nil, nil, fmt.Errorf("CreateMergeRequest() options mismatch (-want +got):\n%s", diff)
@@ -255,7 +255,7 @@ func TestCreateMergeRequest(t *testing.T) {
 						wantOpts := &gitlab.CreateMergeRequestOptions{
 							Title:        gitlab.Ptr("Add feature for milestone"),
 							SourceBranch: gitlab.Ptr("milestone-feature"),
-							MilestoneID:  gitlab.Ptr(10),
+							MilestoneID:  gitlab.Ptr(int64(10)),
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
 							return nil, nil, fmt.Errorf("CreateMergeRequest() options mismatch (-want +got):\n%s", diff)

@@ -53,7 +53,7 @@ func TestGetIssue(t *testing.T) {
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, mockDisc *glabtest.MockDiscussionsServiceInterface) {
 				// Mock GetIssue
 				mockIssues.EXPECT().
-					GetIssue(gomock.Eq("test/project"), gomock.Eq(123), gomock.Any()).
+					GetIssue(gomock.Eq("test/project"), gomock.Eq(int64(123)), gomock.Any()).
 					Return(&gitlab.Issue{
 						ID:           12345,
 						IID:          123,
@@ -68,7 +68,7 @@ func TestGetIssue(t *testing.T) {
 
 				// Mock ListIssueDiscussions
 				mockDisc.EXPECT().
-					ListIssueDiscussions("test/project", gomock.Eq(123), gomock.Any(), gomock.Any()).
+					ListIssueDiscussions("test/project", gomock.Eq(int64(123)), gomock.Any(), gomock.Any()).
 					Return([]*gitlab.Discussion{
 						{
 							ID: "discussion1",
@@ -118,13 +118,13 @@ func TestGetIssue(t *testing.T) {
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, mockDisc *glabtest.MockDiscussionsServiceInterface) {
 				// Mock GetIssue with error
 				mockIssues.EXPECT().
-					GetIssue(gomock.Any(), gomock.Eq(456), gomock.Any()).
+					GetIssue(gomock.Any(), gomock.Eq(int64(456)), gomock.Any()).
 					Return(nil, nil, fmt.Errorf("issue not found"))
 
 				// This won't be called due to the error, but we need to set expectations
 				// for all concurrent fetches to avoid test flakiness
 				mockDisc.EXPECT().
-					ListIssueDiscussions(gomock.Any(), gomock.Eq(456), gomock.Any(), gomock.Any()).
+					ListIssueDiscussions(gomock.Any(), gomock.Eq(int64(456)), gomock.Any(), gomock.Any()).
 					Return([]*gitlab.Discussion{}, &gitlab.Response{
 						Response: &http.Response{StatusCode: http.StatusOK},
 					}, nil).AnyTimes()
@@ -140,7 +140,7 @@ func TestGetIssue(t *testing.T) {
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, mockDisc *glabtest.MockDiscussionsServiceInterface) {
 				// Mock GetIssue
 				mockIssues.EXPECT().
-					GetIssue(gomock.Any(), gomock.Eq(789), gomock.Any()).
+					GetIssue(gomock.Any(), gomock.Eq(int64(789)), gomock.Any()).
 					Return(&gitlab.Issue{
 						ID:           78901,
 						IID:          789,
@@ -152,7 +152,7 @@ func TestGetIssue(t *testing.T) {
 
 				// Mock ListIssueDiscussions with error
 				mockDisc.EXPECT().
-					ListIssueDiscussions(gomock.Any(), gomock.Eq(789), gomock.Any(), gomock.Any()).
+					ListIssueDiscussions(gomock.Any(), gomock.Eq(int64(789)), gomock.Any(), gomock.Any()).
 					Return(nil, nil, fmt.Errorf("discussions not available"))
 			},
 			wantError: true,
@@ -167,7 +167,7 @@ func TestGetIssue(t *testing.T) {
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, mockDisc *glabtest.MockDiscussionsServiceInterface) {
 				// Mock GetIssue with confidential flag set to true
 				mockIssues.EXPECT().
-					GetIssue(gomock.Any(), gomock.Eq(101), gomock.Any()).
+					GetIssue(gomock.Any(), gomock.Eq(int64(101)), gomock.Any()).
 					Return(&gitlab.Issue{
 						ID:           10101,
 						IID:          101,
@@ -179,7 +179,7 @@ func TestGetIssue(t *testing.T) {
 
 				// Mock ListIssueDiscussions
 				mockDisc.EXPECT().
-					ListIssueDiscussions(gomock.Any(), gomock.Eq(101), gomock.Any(), gomock.Any()).
+					ListIssueDiscussions(gomock.Any(), gomock.Eq(int64(101)), gomock.Any(), gomock.Any()).
 					Return([]*gitlab.Discussion{}, &gitlab.Response{
 						Response: &http.Response{StatusCode: http.StatusOK},
 					}, nil)
@@ -196,7 +196,7 @@ func TestGetIssue(t *testing.T) {
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, mockDisc *glabtest.MockDiscussionsServiceInterface) {
 				// Mock GetIssue with confidential flag set to true
 				mockIssues.EXPECT().
-					GetIssue(gomock.Any(), gomock.Eq(102), gomock.Any()).
+					GetIssue(gomock.Any(), gomock.Eq(int64(102)), gomock.Any()).
 					Return(&gitlab.Issue{
 						ID:           10202,
 						IID:          102,
@@ -208,7 +208,7 @@ func TestGetIssue(t *testing.T) {
 
 				// Mock ListIssueDiscussions
 				mockDisc.EXPECT().
-					ListIssueDiscussions(gomock.Any(), gomock.Eq(102), gomock.Any(), gomock.Any()).
+					ListIssueDiscussions(gomock.Any(), gomock.Eq(int64(102)), gomock.Any(), gomock.Any()).
 					Return([]*gitlab.Discussion{
 						{
 							ID: "confidential-discussion",
@@ -483,7 +483,7 @@ func TestListIssues(t *testing.T) {
 					ListIssues(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := defaultOpts
-						wantOpts.AuthorID = gitlab.Ptr(5001)
+						wantOpts.AuthorID = gitlab.Ptr(int64(5001))
 						wantOpts.AssigneeID = gitlab.AssigneeID(5002)
 
 						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
@@ -1433,8 +1433,8 @@ func TestListProjectIssues(t *testing.T) {
 							Confidential:     gitlab.Ptr(false),
 							Labels:           &gitlab.LabelOptions{"enhancement"},
 							Milestone:        gitlab.Ptr("v2.0"),
-							IterationID:      gitlab.Ptr(456),
-							AuthorID:         gitlab.Ptr(789),
+							IterationID:      gitlab.Ptr(int64(456)),
+							AuthorID:         gitlab.Ptr(int64(789)),
 							AssigneeUsername: gitlab.Ptr("test_assignee"),
 							Search:           gitlab.Ptr("urgent fix"),
 							UpdatedBefore:    &updatedBefore,
@@ -1590,7 +1590,7 @@ func TestListProjectIssues(t *testing.T) {
 	}
 }
 
-func makeIssues(from, to int) []*gitlab.Issue {
+func makeIssues(from, to int64) []*gitlab.Issue {
 	issues := make([]*gitlab.Issue, 0, to-from)
 
 	for i := from; i < to; i++ {

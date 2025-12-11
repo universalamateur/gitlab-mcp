@@ -19,7 +19,7 @@ func TestListUserTodos(t *testing.T) {
 		name      string
 		args      map[string]any
 		setupMock func(*glabtest.MockTodosServiceInterface)
-		wantIDs   []int
+		wantIDs   []int64
 	}{
 		{
 			name: "state filtering - pending",
@@ -39,7 +39,7 @@ func TestListUserTodos(t *testing.T) {
 						}, nil
 					})
 			},
-			wantIDs: []int{1, 2},
+			wantIDs: []int64{1, 2},
 		},
 		{
 			name: "action filtering - assigned",
@@ -59,7 +59,7 @@ func TestListUserTodos(t *testing.T) {
 						}, nil
 					})
 			},
-			wantIDs: []int{3, 4},
+			wantIDs: []int64{3, 4},
 		},
 		{
 			name: "author filtering",
@@ -79,7 +79,7 @@ func TestListUserTodos(t *testing.T) {
 						}, nil
 					})
 			},
-			wantIDs: []int{5},
+			wantIDs: []int64{5},
 		},
 		{
 			name: "project filtering",
@@ -99,7 +99,7 @@ func TestListUserTodos(t *testing.T) {
 						}, nil
 					})
 			},
-			wantIDs: []int{6},
+			wantIDs: []int64{6},
 		},
 		{
 			name: "group filtering",
@@ -119,7 +119,7 @@ func TestListUserTodos(t *testing.T) {
 						}, nil
 					})
 			},
-			wantIDs: []int{61},
+			wantIDs: []int64{61},
 		},
 		{
 			name: "type filtering",
@@ -139,7 +139,7 @@ func TestListUserTodos(t *testing.T) {
 						}, nil
 					})
 			},
-			wantIDs: []int{7},
+			wantIDs: []int64{7},
 		},
 		{
 			name: "combined filters",
@@ -169,7 +169,7 @@ func TestListUserTodos(t *testing.T) {
 						}, nil
 					})
 			},
-			wantIDs: []int{8, 9},
+			wantIDs: []int64{8, 9},
 		},
 		{
 			name: "limit parameter",
@@ -184,7 +184,7 @@ func TestListUserTodos(t *testing.T) {
 						Response: &http.Response{StatusCode: http.StatusOK},
 					}, nil)
 			},
-			wantIDs: []int{10, 11}, // Expect only 2 due to limit
+			wantIDs: []int64{10, 11}, // Expect only 2 due to limit
 		},
 		{
 			name: "pagination",
@@ -214,7 +214,7 @@ func TestListUserTodos(t *testing.T) {
 						}, nil
 					})
 			},
-			wantIDs: []int{13, 14, 15},
+			wantIDs: []int64{13, 14, 15},
 		},
 	}
 
@@ -248,7 +248,7 @@ func TestListUserTodos(t *testing.T) {
 				t.Fatalf("decode error: %v", err)
 			}
 
-			var gotIDs []int
+			var gotIDs []int64
 			for _, todo := range todos {
 				gotIDs = append(gotIDs, todo.ID)
 			}
@@ -266,7 +266,7 @@ func TestCompleteTodoItem(t *testing.T) {
 
 	// Expect MarkTodoAsDone to be called with the todo ID
 	gitlabClient.MockTodos.EXPECT().
-		MarkTodoAsDone(gomock.Eq(1), gomock.Any()).
+		MarkTodoAsDone(gomock.Eq(int64(1)), gomock.Any()).
 		Return(&gitlab.Response{
 			Response: &http.Response{
 				StatusCode: http.StatusOK,

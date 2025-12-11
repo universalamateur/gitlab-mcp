@@ -43,7 +43,9 @@ func NewCommitDiscussion(client *gitlab.Client, projectID mcpargs.ID, commitID s
 func (d *CommitDiscussion) List(ctx context.Context, confidential bool) ([]*gitlab.Discussion, error) {
 	var (
 		opt = &gitlab.ListCommitDiscussionsOptions{
-			PerPage: maxPerPage,
+			ListOptions: gitlab.ListOptions{
+				PerPage: maxPerPage,
+			},
 		}
 		allDiscussions []*gitlab.Discussion
 	)
@@ -152,7 +154,7 @@ func (d *CommitDiscussion) AddNote(ctx context.Context, discussionID string, bod
 }
 
 // ModifyNote updates an existing note in a discussion thread.
-func (d *CommitDiscussion) ModifyNote(ctx context.Context, discussionID string, noteID int, body string) (*gitlab.Note, error) {
+func (d *CommitDiscussion) ModifyNote(ctx context.Context, discussionID string, noteID int64, body string) (*gitlab.Note, error) {
 	opt := &gitlab.UpdateCommitDiscussionNoteOptions{
 		Body: gitlab.Ptr(body),
 	}
@@ -166,7 +168,7 @@ func (d *CommitDiscussion) ModifyNote(ctx context.Context, discussionID string, 
 }
 
 // DeleteNote removes a note from a discussion thread.
-func (d *CommitDiscussion) DeleteNote(ctx context.Context, discussionID string, noteID int) error {
+func (d *CommitDiscussion) DeleteNote(ctx context.Context, discussionID string, noteID int64) error {
 	_, err := d.client.Discussions.DeleteCommitDiscussionNote(d.projectID.Value(), d.commitID, discussionID, noteID, gitlab.WithContext(ctx))
 	if err != nil {
 		return fmt.Errorf("failed to delete commit note: %w", err)

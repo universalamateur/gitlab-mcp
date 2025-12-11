@@ -15,7 +15,7 @@ type FakeEpicsService struct {
 }
 
 func (f *FakeEpicsService) ListGroupEpics(groupID any, opt *gitlab.ListGroupEpicsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Epic, *gitlab.Response, error) {
-	id, ok := groupID.(int)
+	id, ok := groupID.(int64)
 	if !ok {
 		return nil, nil, ErrNumericIDRequired
 	}
@@ -37,8 +37,8 @@ func (f *FakeEpicsService) ListGroupEpics(groupID any, opt *gitlab.ListGroupEpic
 	return epics, &gitlab.Response{}, nil
 }
 
-func (f *FakeEpicsService) GetEpic(groupID any, epicIID int, _ ...gitlab.RequestOptionFunc) (*gitlab.Epic, *gitlab.Response, error) {
-	id, ok := groupID.(int)
+func (f *FakeEpicsService) GetEpic(groupID any, epicIID int64, _ ...gitlab.RequestOptionFunc) (*gitlab.Epic, *gitlab.Response, error) {
+	id, ok := groupID.(int64)
 	if !ok {
 		return nil, nil, ErrNumericIDRequired
 	}
@@ -52,13 +52,13 @@ func (f *FakeEpicsService) GetEpic(groupID any, epicIID int, _ ...gitlab.Request
 	return nil, &gitlab.Response{}, nil
 }
 
-func (f *FakeEpicsService) GetEpicLinks(groupID any, epicIID int, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Epic, *gitlab.Response, error) {
-	id, ok := groupID.(int)
+func (f *FakeEpicsService) GetEpicLinks(groupID any, epicIID int64, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Epic, *gitlab.Response, error) {
+	id, ok := groupID.(int64)
 	if !ok {
 		return nil, nil, ErrNumericIDRequired
 	}
 
-	epicID := -1
+	epicID := int64(-1)
 
 	for _, epic := range f.Epics {
 		if epic.GroupID == id && epic.IID == epicIID {

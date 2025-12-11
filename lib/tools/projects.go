@@ -74,7 +74,7 @@ func (p *ProjectsTools) listProjects(ctx context.Context, client *gitlab.Client,
 		return mcp.NewToolResultError(`The search order by "similarity" is only available when both, the "search" argument is non-empty and the "membership" argument is true.`), nil
 	}
 
-	nextPage := func(opts *gitlab.ListProjectsOptions, page int) {
+	nextPage := func(opts *gitlab.ListProjectsOptions, page int64) {
 		opts.Page = page
 	}
 
@@ -123,7 +123,7 @@ func (p *ProjectsTools) listGroupProjects(ctx context.Context, client *gitlab.Cl
 		return mcp.NewToolResultError(`The search order by "similarity" is only available when the "search" argument is non-empty.`), nil
 	}
 
-	nextPage := func(opts *gitlab.ListGroupProjectsOptions, page int) {
+	nextPage := func(opts *gitlab.ListGroupProjectsOptions, page int64) {
 		opts.Page = page
 	}
 

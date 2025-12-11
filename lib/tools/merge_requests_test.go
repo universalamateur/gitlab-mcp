@@ -32,7 +32,7 @@ func TestGetMergeRequest(t *testing.T) {
 			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface, mockDisc *glabtest.MockDiscussionsServiceInterface) {
 				// Mock GetMergeRequest
 				mockMR.EXPECT().
-					GetMergeRequest(gomock.Eq("test/project"), gomock.Eq(123), gomock.Any(), gomock.Any()).
+					GetMergeRequest(gomock.Eq("test/project"), gomock.Eq(int64(123)), gomock.Any(), gomock.Any()).
 					Return(&gitlab.MergeRequest{
 						BasicMergeRequest: gitlab.BasicMergeRequest{
 							ID:          12345,
@@ -48,7 +48,7 @@ func TestGetMergeRequest(t *testing.T) {
 
 				// Mock ListMergeRequestDiscussions
 				mockDisc.EXPECT().
-					ListMergeRequestDiscussions(gomock.Any(), gomock.Eq(123), gomock.Any(), gomock.Any()).
+					ListMergeRequestDiscussions(gomock.Any(), gomock.Eq(int64(123)), gomock.Any(), gomock.Any()).
 					Return([]*gitlab.Discussion{
 						{
 							ID: "discussion1",
@@ -67,7 +67,7 @@ func TestGetMergeRequest(t *testing.T) {
 
 				// Mock ListMergeRequestDiffs
 				mockMR.EXPECT().
-					ListMergeRequestDiffs(gomock.Any(), gomock.Eq(123), gomock.Any(), gomock.Any()).
+					ListMergeRequestDiffs(gomock.Any(), gomock.Eq(int64(123)), gomock.Any(), gomock.Any()).
 					Return([]*gitlab.MergeRequestDiff{
 						{
 							OldPath:     "file.go",
@@ -130,19 +130,19 @@ func TestGetMergeRequest(t *testing.T) {
 			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface, mockDisc *glabtest.MockDiscussionsServiceInterface) {
 				// Mock GetMergeRequest with error
 				mockMR.EXPECT().
-					GetMergeRequest(gomock.Any(), gomock.Eq(456), gomock.Any(), gomock.Any()).
+					GetMergeRequest(gomock.Any(), gomock.Eq(int64(456)), gomock.Any(), gomock.Any()).
 					Return(nil, nil, fmt.Errorf("merge request not found"))
 
 				// These won't be called due to the error, but we need to set expectations
 				// for all concurrent fetches to avoid test flakiness
 				mockDisc.EXPECT().
-					ListMergeRequestDiscussions(gomock.Any(), gomock.Eq(456), gomock.Any(), gomock.Any()).
+					ListMergeRequestDiscussions(gomock.Any(), gomock.Eq(int64(456)), gomock.Any(), gomock.Any()).
 					Return([]*gitlab.Discussion{}, &gitlab.Response{
 						Response: &http.Response{StatusCode: http.StatusOK},
 					}, nil).AnyTimes()
 
 				mockMR.EXPECT().
-					ListMergeRequestDiffs(gomock.Any(), gomock.Eq(456), gomock.Any(), gomock.Any()).
+					ListMergeRequestDiffs(gomock.Any(), gomock.Eq(int64(456)), gomock.Any(), gomock.Any()).
 					Return([]*gitlab.MergeRequestDiff{}, &gitlab.Response{
 						Response: &http.Response{StatusCode: http.StatusOK},
 					}, nil).AnyTimes()
@@ -158,7 +158,7 @@ func TestGetMergeRequest(t *testing.T) {
 			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface, mockDisc *glabtest.MockDiscussionsServiceInterface) {
 				// Mock GetMergeRequest
 				mockMR.EXPECT().
-					GetMergeRequest(gomock.Any(), gomock.Eq(789), gomock.Any(), gomock.Any()).
+					GetMergeRequest(gomock.Any(), gomock.Eq(int64(789)), gomock.Any(), gomock.Any()).
 					Return(&gitlab.MergeRequest{
 						BasicMergeRequest: gitlab.BasicMergeRequest{
 							ID:    78901,
@@ -171,12 +171,12 @@ func TestGetMergeRequest(t *testing.T) {
 
 				// Mock ListMergeRequestDiscussions with error
 				mockDisc.EXPECT().
-					ListMergeRequestDiscussions(gomock.Any(), gomock.Eq(789), gomock.Any(), gomock.Any()).
+					ListMergeRequestDiscussions(gomock.Any(), gomock.Eq(int64(789)), gomock.Any(), gomock.Any()).
 					Return(nil, nil, fmt.Errorf("discussions not available"))
 
 				// Mock ListMergeRequestDiffs
 				mockMR.EXPECT().
-					ListMergeRequestDiffs(gomock.Any(), gomock.Eq(789), gomock.Any(), gomock.Any()).
+					ListMergeRequestDiffs(gomock.Any(), gomock.Eq(int64(789)), gomock.Any(), gomock.Any()).
 					Return([]*gitlab.MergeRequestDiff{}, &gitlab.Response{
 						Response: &http.Response{StatusCode: http.StatusOK},
 					}, nil).AnyTimes()
@@ -192,7 +192,7 @@ func TestGetMergeRequest(t *testing.T) {
 			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface, mockDisc *glabtest.MockDiscussionsServiceInterface) {
 				// Mock GetMergeRequest
 				mockMR.EXPECT().
-					GetMergeRequest(gomock.Eq("test/project"), gomock.Eq(101), gomock.Any(), gomock.Any()).
+					GetMergeRequest(gomock.Eq("test/project"), gomock.Eq(int64(101)), gomock.Any(), gomock.Any()).
 					Return(&gitlab.MergeRequest{
 						BasicMergeRequest: gitlab.BasicMergeRequest{
 							ID:    10101,
@@ -205,15 +205,15 @@ func TestGetMergeRequest(t *testing.T) {
 
 				// Mock ListMergeRequestDiscussions
 				mockDisc.EXPECT().
-					ListMergeRequestDiscussions(gomock.Any(), gomock.Eq(101), gomock.Any(), gomock.Any()).
+					ListMergeRequestDiscussions(gomock.Any(), gomock.Eq(int64(101)), gomock.Any(), gomock.Any()).
 					Return([]*gitlab.Discussion{}, &gitlab.Response{
 						Response: &http.Response{StatusCode: http.StatusOK},
 					}, nil)
 
 				// First page of diffs
 				firstPage := mockMR.EXPECT().
-					ListMergeRequestDiffs(gomock.Any(), gomock.Eq(101), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.ListMergeRequestDiffsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.MergeRequestDiff, *gitlab.Response, error) {
+					ListMergeRequestDiffs(gomock.Any(), gomock.Eq(int64(101)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.ListMergeRequestDiffsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.MergeRequestDiff, *gitlab.Response, error) {
 						if opts.Page != 0 {
 							t.Errorf("expected first page request, got page %d", opts.Page)
 						}
@@ -232,8 +232,8 @@ func TestGetMergeRequest(t *testing.T) {
 
 				// Second page of diffs
 				mockMR.EXPECT().
-					ListMergeRequestDiffs(gomock.Any(), gomock.Eq(101), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.ListMergeRequestDiffsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.MergeRequestDiff, *gitlab.Response, error) {
+					ListMergeRequestDiffs(gomock.Any(), gomock.Eq(int64(101)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.ListMergeRequestDiffsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.MergeRequestDiff, *gitlab.Response, error) {
 						if opts.Page != 2 {
 							t.Errorf("expected second page request, got page %d", opts.Page)
 						}
@@ -854,7 +854,7 @@ func TestListDraftNotes(t *testing.T) {
 			},
 			setupMock: func(mockDraftNotes *glabtest.MockDraftNotesServiceInterface) {
 				mockDraftNotes.EXPECT().
-					ListDraftNotes(gomock.Eq("test/project"), gomock.Eq(123), gomock.Any(), gomock.Any()).
+					ListDraftNotes(gomock.Eq("test/project"), gomock.Eq(int64(123)), gomock.Any(), gomock.Any()).
 					Return([]*gitlab.DraftNote{
 						{
 							ID:       1,
@@ -920,7 +920,7 @@ func TestListDraftNotes(t *testing.T) {
 			},
 			setupMock: func(mockDraftNotes *glabtest.MockDraftNotesServiceInterface) {
 				mockDraftNotes.EXPECT().
-					ListDraftNotes(gomock.Eq("test/project"), gomock.Eq(456), gomock.Any(), gomock.Any()).
+					ListDraftNotes(gomock.Eq("test/project"), gomock.Eq(int64(456)), gomock.Any(), gomock.Any()).
 					Return([]*gitlab.DraftNote{}, &gitlab.Response{
 						Response: &http.Response{StatusCode: http.StatusOK},
 						NextPage: 0,
@@ -936,7 +936,7 @@ func TestListDraftNotes(t *testing.T) {
 			},
 			setupMock: func(mockDraftNotes *glabtest.MockDraftNotesServiceInterface) {
 				mockDraftNotes.EXPECT().
-					ListDraftNotes(gomock.Eq("test/project"), gomock.Eq(789), gomock.Any(), gomock.Any()).
+					ListDraftNotes(gomock.Eq("test/project"), gomock.Eq(int64(789)), gomock.Any(), gomock.Any()).
 					Return(nil, nil, fmt.Errorf("failed to fetch draft notes"))
 			},
 			wantErr: true,
@@ -950,8 +950,8 @@ func TestListDraftNotes(t *testing.T) {
 			setupMock: func(mockDraftNotes *glabtest.MockDraftNotesServiceInterface) {
 				// First page
 				firstPage := mockDraftNotes.EXPECT().
-					ListDraftNotes(gomock.Eq("test/project"), gomock.Eq(101), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.ListDraftNotesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.DraftNote, *gitlab.Response, error) {
+					ListDraftNotes(gomock.Eq("test/project"), gomock.Eq(int64(101)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.ListDraftNotesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.DraftNote, *gitlab.Response, error) {
 						if opts.Page != 0 {
 							t.Errorf("expected first page request, got page %d", opts.Page)
 						}
@@ -970,8 +970,8 @@ func TestListDraftNotes(t *testing.T) {
 
 				// Second page
 				mockDraftNotes.EXPECT().
-					ListDraftNotes(gomock.Eq("test/project"), gomock.Eq(101), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.ListDraftNotesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.DraftNote, *gitlab.Response, error) {
+					ListDraftNotes(gomock.Eq("test/project"), gomock.Eq(int64(101)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.ListDraftNotesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.DraftNote, *gitlab.Response, error) {
 						if opts.Page != 2 {
 							t.Errorf("expected second page request, got page %d", opts.Page)
 						}
@@ -1069,7 +1069,7 @@ func TestListDraftNotes(t *testing.T) {
 	}
 }
 
-func makeMergeRequests(from, to int) []*gitlab.BasicMergeRequest {
+func makeMergeRequests(from, to int64) []*gitlab.BasicMergeRequest {
 	mrs := make([]*gitlab.BasicMergeRequest, 0, to-from)
 
 	for i := from; i < to; i++ {
