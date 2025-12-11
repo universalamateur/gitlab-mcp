@@ -13,13 +13,13 @@ import (
 type EpicDiscussion struct {
 	client  *gitlab.Client
 	groupID mcpargs.ID
-	epicID  int
+	epicID  int64
 }
 
 var _ Manager = (*EpicDiscussion)(nil)
 
 // NewEpicDiscussion creates a new instance for managing discussions on a specific GitLab epic.
-func NewEpicDiscussion(client *gitlab.Client, groupID mcpargs.ID, epicID int) (*EpicDiscussion, error) {
+func NewEpicDiscussion(client *gitlab.Client, groupID mcpargs.ID, epicID int64) (*EpicDiscussion, error) {
 	if client == nil {
 		return nil, fmt.Errorf("%w: client cannot be nil", ErrInvalidArgument)
 	}
@@ -43,7 +43,9 @@ func NewEpicDiscussion(client *gitlab.Client, groupID mcpargs.ID, epicID int) (*
 func (d *EpicDiscussion) List(ctx context.Context, confidential bool) ([]*gitlab.Discussion, error) {
 	var (
 		opt = &gitlab.ListGroupEpicDiscussionsOptions{
-			PerPage: maxPerPage,
+			ListOptions: gitlab.ListOptions{
+				PerPage: maxPerPage,
+			},
 		}
 		allDiscussions []*gitlab.Discussion
 	)
@@ -95,7 +97,7 @@ func (d *EpicDiscussion) AddNote(ctx context.Context, discussionID string, body 
 }
 
 // ModifyNote updates an existing note in a discussion thread.
-func (d *EpicDiscussion) ModifyNote(ctx context.Context, discussionID string, noteID int, body string) (*gitlab.Note, error) {
+func (d *EpicDiscussion) ModifyNote(ctx context.Context, discussionID string, noteID int64, body string) (*gitlab.Note, error) {
 	opt := &gitlab.UpdateEpicDiscussionNoteOptions{
 		Body: gitlab.Ptr(body),
 	}
@@ -109,7 +111,7 @@ func (d *EpicDiscussion) ModifyNote(ctx context.Context, discussionID string, no
 }
 
 // DeleteNote removes a note from a discussion thread.
-func (d *EpicDiscussion) DeleteNote(ctx context.Context, discussionID string, noteID int) error {
+func (d *EpicDiscussion) DeleteNote(ctx context.Context, discussionID string, noteID int64) error {
 	_, err := d.client.Discussions.DeleteEpicDiscussionNote(d.groupID.Value(), d.epicID, discussionID, noteID, gitlab.WithContext(ctx))
 	if err != nil {
 		return fmt.Errorf("failed to delete epic note: %w", err)

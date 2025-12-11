@@ -103,7 +103,7 @@ func (e *EpicTools) listGroupEpics(ctx context.Context, client *gitlab.Client, a
 
 type getEpicArgs struct {
 	GroupID mcpargs.ID `mcp_desc:"ID of the group either in owner/namespace format or the numeric group ID" mcp_required:"true"`
-	EpicIID int        `mcp_desc:"Internal ID of the epic to fetch" mcp_required:"true"`
+	EpicIID int64      `mcp_desc:"Internal ID of the epic to fetch" mcp_required:"true"`
 }
 
 // GetEpic returns a ServerTool for fetching information about a specific epic.
@@ -129,7 +129,7 @@ func (e *EpicTools) getEpic(ctx context.Context, client *gitlab.Client, args get
 
 type getEpicLinksArgs struct {
 	GroupID mcpargs.ID `mcp_desc:"ID of the group either in owner/namespace format or the numeric group ID" mcp_required:"true"`
-	EpicIID int        `mcp_desc:"Internal ID of the epic to fetch child epics for" mcp_required:"true"`
+	EpicIID int64      `mcp_desc:"Internal ID of the epic to fetch child epics for" mcp_required:"true"`
 }
 
 // GetEpicLinks returns a ServerTool for retrieving all child epics of a specific epic.
@@ -155,7 +155,7 @@ func (e *EpicTools) getEpicLinks(ctx context.Context, client *gitlab.Client, arg
 
 type listEpicIssuesArgs struct {
 	GroupID mcpargs.ID `mcp_desc:"ID of the group either in owner/namespace format or the numeric group ID" mcp_required:"true"`
-	EpicIID int        `mcp_desc:"Internal ID of the epic to fetch issues for" mcp_required:"true"`
+	EpicIID int64      `mcp_desc:"Internal ID of the epic to fetch issues for" mcp_required:"true"`
 }
 
 // ListEpicIssues returns a ServerTool for listing all issues assigned to a specific epic.
@@ -205,7 +205,7 @@ type createEpicArgs struct {
 	Description  string     `mcp_desc:"Description of the epic"`
 	Confidential bool       `mcp_desc:"Whether the epic is confidential"`
 	DueDate      string     `mcp_desc:"Due date of the epic (format: YYYY-MM-DD)"`
-	ParentID     int        `mcp_desc:"ID of the parent epic"`
+	ParentID     int64      `mcp_desc:"ID of the parent epic"`
 }
 
 // CreateEpic returns a ServerTool for creating a new epic.
@@ -259,10 +259,10 @@ func (e *EpicTools) createEpic(ctx context.Context, client *gitlab.Client, args 
 
 type editEpicArgs struct {
 	GroupID      mcpargs.ID `mcp_desc:"ID of the group either in owner/namespace format or the numeric group ID" mcp_required:"true"`
-	EpicIID      int        `mcp_desc:"Internal ID of the epic to edit" mcp_required:"true"`
+	EpicIID      int64      `mcp_desc:"Internal ID of the epic to edit" mcp_required:"true"`
 	Title        string     `mcp_desc:"Changes the title of the epic"`
 	Description  string     `mcp_desc:"Changes the description of the epic. The description uses GitLab Flavored Markdown"`
-	ParentID     int        `mcp_desc:"Global ID of the parent epic"`
+	ParentID     int64      `mcp_desc:"Global ID of the parent epic"`
 	AddLabels    string     `mcp_desc:"Comma-separated label names to add to the epic"`
 	RemoveLabels string     `mcp_desc:"Comma-separated label names to remove from the epic"`
 	StateEvent   string     `mcp_desc:"The state of the epic. Use 'close' to close the epic or 'reopen' to reopen a closed epic. Omit to keep the epic state unchanged" mcp_enum:"close,reopen"`

@@ -15,13 +15,13 @@ type FakeEpicIssuesService struct {
 	Issues []*gitlab.Issue
 }
 
-func (f *FakeEpicIssuesService) ListEpicIssues(groupID any, epicIID int, _ *gitlab.ListOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
-	id, ok := groupID.(int)
+func (f *FakeEpicIssuesService) ListEpicIssues(groupID any, epicIID int64, _ *gitlab.ListOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+	id, ok := groupID.(int64)
 	if !ok {
 		return nil, nil, ErrNumericIDRequired
 	}
 
-	epicID := -1
+	epicID := int64(-1)
 
 	for _, epic := range f.Epics {
 		if epic.GroupID == id && epic.IID == epicIID {

@@ -13,13 +13,13 @@ import (
 type SnippetDiscussion struct {
 	client    *gitlab.Client
 	projectID mcpargs.ID
-	snippetID int
+	snippetID int64
 }
 
 var _ Manager = (*SnippetDiscussion)(nil)
 
 // NewSnippetDiscussion creates a new instance for managing discussions on a specific GitLab snippet.
-func NewSnippetDiscussion(client *gitlab.Client, projectID mcpargs.ID, snippetID int) (*SnippetDiscussion, error) {
+func NewSnippetDiscussion(client *gitlab.Client, projectID mcpargs.ID, snippetID int64) (*SnippetDiscussion, error) {
 	if client == nil {
 		return nil, fmt.Errorf("%w: client cannot be nil", ErrInvalidArgument)
 	}
@@ -43,7 +43,9 @@ func NewSnippetDiscussion(client *gitlab.Client, projectID mcpargs.ID, snippetID
 func (d *SnippetDiscussion) List(ctx context.Context, confidential bool) ([]*gitlab.Discussion, error) {
 	var (
 		opt = &gitlab.ListSnippetDiscussionsOptions{
-			PerPage: maxPerPage,
+			ListOptions: gitlab.ListOptions{
+				PerPage: maxPerPage,
+			},
 		}
 		allDiscussions []*gitlab.Discussion
 	)
@@ -95,7 +97,7 @@ func (d *SnippetDiscussion) AddNote(ctx context.Context, discussionID string, bo
 }
 
 // ModifyNote updates an existing note in a discussion thread.
-func (d *SnippetDiscussion) ModifyNote(ctx context.Context, discussionID string, noteID int, body string) (*gitlab.Note, error) {
+func (d *SnippetDiscussion) ModifyNote(ctx context.Context, discussionID string, noteID int64, body string) (*gitlab.Note, error) {
 	opt := &gitlab.UpdateSnippetDiscussionNoteOptions{
 		Body: gitlab.Ptr(body),
 	}
@@ -109,7 +111,7 @@ func (d *SnippetDiscussion) ModifyNote(ctx context.Context, discussionID string,
 }
 
 // DeleteNote removes a note from a discussion thread.
-func (d *SnippetDiscussion) DeleteNote(ctx context.Context, discussionID string, noteID int) error {
+func (d *SnippetDiscussion) DeleteNote(ctx context.Context, discussionID string, noteID int64) error {
 	_, err := d.client.Discussions.DeleteSnippetDiscussionNote(d.projectID.Value(), d.snippetID, discussionID, noteID, gitlab.WithContext(ctx))
 	if err != nil {
 		return fmt.Errorf("failed to delete snippet note: %w", err)

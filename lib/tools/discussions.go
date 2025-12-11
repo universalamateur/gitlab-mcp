@@ -180,7 +180,7 @@ type modifyDiscussionNoteArgs struct {
 	ParentID     mcpargs.ID             `mcp_desc:"ID of the parent resource (project ID for issue/MR/snippet/commit, group ID for epic)" mcp_required:"true"`
 	ResourceID   mcpargs.ID             `mcp_desc:"ID of the resource (IID for issue/MR, ID for epic/snippet, SHA for commit)" mcp_required:"true"`
 	DiscussionID string                 `mcp_desc:"The ID of the discussion thread" mcp_required:"true"`
-	NoteID       int                    `mcp_desc:"The ID of the note to modify" mcp_required:"true"`
+	NoteID       int64                  `mcp_desc:"The ID of the note to modify" mcp_required:"true"`
 	Body         string                 `mcp_desc:"The updated content of the note in GitLab Flavored Markdown" mcp_required:"true"`
 }
 
@@ -214,7 +214,7 @@ type deleteDiscussionNoteArgs struct {
 	ParentID     mcpargs.ID             `mcp_desc:"ID of the parent resource (project ID for issue/MR/snippet/commit, group ID for epic)" mcp_required:"true"`
 	ResourceID   mcpargs.ID             `mcp_desc:"ID of the resource (IID for issue/MR, ID for epic/snippet, SHA for commit)" mcp_required:"true"`
 	DiscussionID string                 `mcp_desc:"The ID of the discussion thread" mcp_required:"true"`
-	NoteID       int                    `mcp_desc:"The ID of the note to delete" mcp_required:"true"`
+	NoteID       int64                  `mcp_desc:"The ID of the note to delete" mcp_required:"true"`
 }
 
 func (d *DiscussionTools) DeleteDiscussionNote() server.ServerTool {
@@ -244,7 +244,7 @@ func (d *DiscussionTools) deleteDiscussionNote(ctx context.Context, client *gitl
 
 type resolveDiscussionArgs struct {
 	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
+	MergeRequestIID int64      `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
 	DiscussionID    string     `mcp_desc:"The ID of the discussion thread" mcp_required:"true"`
 	Resolved        bool       `mcp_desc:"Whether to resolve (true) or unresolve (false) the discussion" mcp_required:"true"`
 }
@@ -302,8 +302,8 @@ type newPositionDiscussionArgs struct {
 	OldPath      string                 `mcp_desc:"File path before change" mcp_required:"true"`
 	NewPath      string                 `mcp_desc:"File path after change" mcp_required:"true"`
 	PositionType string                 `mcp_desc:"Type of the position reference. Allowed values: text or file" mcp_required:"true" mcp_enum:"text,file"`
-	OldLine      int                    `mcp_desc:"Line number before change (for text positions)"`
-	NewLine      int                    `mcp_desc:"Line number after change (for text positions)"`
+	OldLine      int64                  `mcp_desc:"Line number before change (for text positions)"`
+	NewLine      int64                  `mcp_desc:"Line number after change (for text positions)"`
 	CommitID     string                 `mcp_desc:"SHA referencing commit to start this thread on"`
 }
 

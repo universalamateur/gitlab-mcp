@@ -37,21 +37,21 @@ func TestEditIssue(t *testing.T) {
 			initialIssueState: &gitlab.Issue{IID: 1, Title: "Old Title"},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, initialIssue *gitlab.Issue, ret *gitlab.Issue) {
 				mockIssues.EXPECT().
-					GetIssue(gomock.Eq("test/project"), gomock.Eq(1), gomock.Any()).
-					Return(initialIssue, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil)
+					GetIssue(gomock.Eq("test/project"), gomock.Eq(int64(1)), gomock.Any()).
+					Return(initialIssue, newResponse(http.StatusOK), nil)
 				mockIssues.EXPECT().
-					UpdateIssue(gomock.Eq("test/project"), gomock.Eq(1), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
+					UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(1)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateIssueOptions{
 							Title: gitlab.Ptr("New Title"),
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
-							t.Fatalf("UpdateIssue() options mismatch (-want +got):\n%s", diff)
+							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("UpdateIssue() options mismatch (-want +got):\n%s", diff)
 						}
 
-						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+						return ret, newResponse(http.StatusOK), nil
 					}).
-					Return(ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil)
+					Return(ret, newResponse(http.StatusOK), nil)
 			},
 			wantResult: &gitlab.Issue{IID: 1, Title: "New Title"},
 		},
@@ -64,17 +64,17 @@ func TestEditIssue(t *testing.T) {
 			},
 			initialIssueState: &gitlab.Issue{IID: 2, Description: "Old Description"},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, initialIssue *gitlab.Issue, ret *gitlab.Issue) {
-				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(2), gomock.Any()).Return(initialIssue, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil)
-				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(2), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
+				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(int64(2)), gomock.Any()).Return(initialIssue, newResponse(http.StatusOK), nil)
+				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(2)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateIssueOptions{
 							Description: gitlab.Ptr("New Description"),
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
-							t.Fatalf("UpdateIssue() options mismatch for description (-want +got):\n%s", diff)
+							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("UpdateIssue() options mismatch for description (-want +got):\n%s", diff)
 						}
 
-						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+						return ret, newResponse(http.StatusOK), nil
 					})
 			},
 			wantResult: &gitlab.Issue{IID: 2, Description: "New Description"},
@@ -88,17 +88,17 @@ func TestEditIssue(t *testing.T) {
 			},
 			initialIssueState: &gitlab.Issue{IID: 3, Assignees: []*gitlab.IssueAssignee{{ID: 100}}},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, initialIssue *gitlab.Issue, ret *gitlab.Issue) {
-				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(3), gomock.Any()).Return(initialIssue, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil)
-				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(3), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
+				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(int64(3)), gomock.Any()).Return(initialIssue, newResponse(http.StatusOK), nil)
+				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(3)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateIssueOptions{
-							AssigneeIDs: &[]int{},
+							AssigneeIDs: &[]int64{},
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
-							t.Fatalf("UpdateIssue() options mismatch for clearing assignees (-want +got):\n%s", diff)
+							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("UpdateIssue() options mismatch for clearing assignees (-want +got):\n%s", diff)
 						}
 
-						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+						return ret, newResponse(http.StatusOK), nil
 					})
 			},
 			wantResult: &gitlab.Issue{IID: 3, Assignees: []*gitlab.IssueAssignee{}},
@@ -112,17 +112,17 @@ func TestEditIssue(t *testing.T) {
 			},
 			initialIssueState: &gitlab.Issue{IID: 4},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, initialIssue *gitlab.Issue, ret *gitlab.Issue) {
-				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(4), gomock.Any()).Return(initialIssue, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil)
-				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(4), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
+				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(int64(4)), gomock.Any()).Return(initialIssue, newResponse(http.StatusOK), nil)
+				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(4)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateIssueOptions{
-							AssigneeIDs: &[]int{101, 102},
+							AssigneeIDs: &[]int64{101, 102},
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
-							t.Fatalf("UpdateIssue() options mismatch for setting assignees (-want +got):\n%s", diff)
+							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("UpdateIssue() options mismatch for setting assignees (-want +got):\n%s", diff)
 						}
 
-						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+						return ret, newResponse(http.StatusOK), nil
 					})
 			},
 			wantResult: &gitlab.Issue{IID: 4, Assignees: []*gitlab.IssueAssignee{{ID: 101}, {ID: 102}}},
@@ -136,17 +136,17 @@ func TestEditIssue(t *testing.T) {
 			},
 			initialIssueState: &gitlab.Issue{IID: 5},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, initialIssue *gitlab.Issue, ret *gitlab.Issue) {
-				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(5), gomock.Any()).Return(initialIssue, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil)
-				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(5), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
+				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(int64(5)), gomock.Any()).Return(initialIssue, newResponse(http.StatusOK), nil)
+				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(5)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateIssueOptions{
 							AddLabels: &gitlab.LabelOptions{"bug", "critical"},
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
-							t.Fatalf("UpdateIssue() options mismatch for adding labels (-want +got):\n%s", diff)
+							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("UpdateIssue() options mismatch for adding labels (-want +got):\n%s", diff)
 						}
 
-						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+						return ret, newResponse(http.StatusOK), nil
 					})
 			},
 			wantResult: &gitlab.Issue{IID: 5, Labels: []string{"bug", "critical"}},
@@ -160,17 +160,17 @@ func TestEditIssue(t *testing.T) {
 			},
 			initialIssueState: &gitlab.Issue{IID: 6, Labels: []string{"todo", "bug"}},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, initialIssue *gitlab.Issue, ret *gitlab.Issue) {
-				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(6), gomock.Any()).Return(initialIssue, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil)
-				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(6), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
+				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(int64(6)), gomock.Any()).Return(initialIssue, newResponse(http.StatusOK), nil)
+				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(6)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateIssueOptions{
 							RemoveLabels: &gitlab.LabelOptions{"todo"},
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
-							t.Fatalf("UpdateIssue() options mismatch for removing labels (-want +got):\n%s", diff)
+							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("UpdateIssue() options mismatch for removing labels (-want +got):\n%s", diff)
 						}
 
-						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+						return ret, newResponse(http.StatusOK), nil
 					})
 			},
 			wantResult: &gitlab.Issue{IID: 6, Labels: []string{"bug"}}, // Assuming 'todo' is removed
@@ -184,17 +184,17 @@ func TestEditIssue(t *testing.T) {
 			},
 			initialIssueState: &gitlab.Issue{IID: 7, State: "opened"},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, initialIssue *gitlab.Issue, ret *gitlab.Issue) {
-				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(7), gomock.Any()).Return(initialIssue, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil)
-				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(7), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
+				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(int64(7)), gomock.Any()).Return(initialIssue, newResponse(http.StatusOK), nil)
+				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(7)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateIssueOptions{
 							StateEvent: gitlab.Ptr("close"),
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
-							t.Fatalf("UpdateIssue() options mismatch for closing issue (-want +got):\n%s", diff)
+							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("UpdateIssue() options mismatch for closing issue (-want +got):\n%s", diff)
 						}
 
-						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+						return ret, newResponse(http.StatusOK), nil
 					})
 			},
 			wantResult: &gitlab.Issue{IID: 7, State: "closed"},
@@ -208,17 +208,17 @@ func TestEditIssue(t *testing.T) {
 			},
 			initialIssueState: &gitlab.Issue{IID: 8, State: "closed"},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, initialIssue *gitlab.Issue, ret *gitlab.Issue) {
-				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(8), gomock.Any()).Return(initialIssue, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil)
-				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(8), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
+				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(int64(8)), gomock.Any()).Return(initialIssue, newResponse(http.StatusOK), nil)
+				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(8)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateIssueOptions{
 							StateEvent: gitlab.Ptr("reopen"),
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
-							t.Fatalf("UpdateIssue() options mismatch for reopening issue (-want +got):\n%s", diff)
+							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("UpdateIssue() options mismatch for reopening issue (-want +got):\n%s", diff)
 						}
 
-						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+						return ret, newResponse(http.StatusOK), nil
 					})
 			},
 			wantResult: &gitlab.Issue{IID: 8, State: "opened"},
@@ -232,17 +232,17 @@ func TestEditIssue(t *testing.T) {
 			},
 			initialIssueState: &gitlab.Issue{IID: 9, Confidential: false},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, initialIssue *gitlab.Issue, ret *gitlab.Issue) {
-				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(9), gomock.Any()).Return(initialIssue, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil)
-				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(9), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
+				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(int64(9)), gomock.Any()).Return(initialIssue, newResponse(http.StatusOK), nil)
+				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(9)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateIssueOptions{
 							Confidential: gitlab.Ptr(true),
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
-							t.Fatalf("UpdateIssue() options mismatch for making confidential (-want +got):\n%s", diff)
+							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("UpdateIssue() options mismatch for making confidential (-want +got):\n%s", diff)
 						}
 
-						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+						return ret, newResponse(http.StatusOK), nil
 					})
 			},
 			wantResult: &gitlab.Issue{IID: 9, Confidential: true},
@@ -257,18 +257,18 @@ func TestEditIssue(t *testing.T) {
 			},
 			initialIssueState: &gitlab.Issue{IID: 10, Title: "Secure Old Title", Confidential: true},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, initialIssue *gitlab.Issue, ret *gitlab.Issue) {
-				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(10), gomock.Any()).Return(initialIssue, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil)
-				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(10), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
+				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(int64(10)), gomock.Any()).Return(initialIssue, newResponse(http.StatusOK), nil)
+				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(10)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateIssueOptions{
 							Title:        gitlab.Ptr("Secure New Title"),
 							Confidential: gitlab.Ptr(true), // confidential flag is passed through
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
-							t.Fatalf("UpdateIssue() options mismatch for editing confidential issue (-want +got):\n%s", diff)
+							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("UpdateIssue() options mismatch for editing confidential issue (-want +got):\n%s", diff)
 						}
 
-						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+						return ret, newResponse(http.StatusOK), nil
 					})
 			},
 			wantResult: &gitlab.Issue{IID: 10, Title: "Secure New Title", Confidential: true},
@@ -282,7 +282,7 @@ func TestEditIssue(t *testing.T) {
 			},
 			initialIssueState: &gitlab.Issue{IID: 11, Title: "Confidential", Confidential: true},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, initialIssue *gitlab.Issue, _ *gitlab.Issue) {
-				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(11), gomock.Any()).Return(initialIssue, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil)
+				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(int64(11)), gomock.Any()).Return(initialIssue, newResponse(http.StatusOK), nil)
 			},
 			wantErrorResponse: true,
 		},
@@ -295,17 +295,17 @@ func TestEditIssue(t *testing.T) {
 			},
 			initialIssueState: &gitlab.Issue{IID: 12, DiscussionLocked: false},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, initialIssue *gitlab.Issue, ret *gitlab.Issue) {
-				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(12), gomock.Any()).Return(initialIssue, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil)
-				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(12), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
+				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(int64(12)), gomock.Any()).Return(initialIssue, newResponse(http.StatusOK), nil)
+				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(12)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateIssueOptions{
 							DiscussionLocked: gitlab.Ptr(true),
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
-							t.Fatalf("UpdateIssue() options mismatch for locking discussion (-want +got):\n%s", diff)
+							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("UpdateIssue() options mismatch for locking discussion (-want +got):\n%s", diff)
 						}
 
-						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+						return ret, newResponse(http.StatusOK), nil
 					})
 			},
 			wantResult: &gitlab.Issue{IID: 12, DiscussionLocked: true},
@@ -319,18 +319,18 @@ func TestEditIssue(t *testing.T) {
 			},
 			initialIssueState: &gitlab.Issue{IID: 15},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, initialIssue *gitlab.Issue, ret *gitlab.Issue) {
-				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(15), gomock.Any()).Return(initialIssue, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil)
-				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(15), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
+				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(int64(15)), gomock.Any()).Return(initialIssue, newResponse(http.StatusOK), nil)
+				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(15)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateIssueOptions{
 							DueDate: mustISOTime("2025-07-01"),
 						}
 
 						if diff := cmp.Diff(wantOpts, opts, isoTimeComparer); diff != "" {
-							return nil, nil, fmt.Errorf("UpdateIssue() options mismatch (-want/+got):\n%s", diff)
+							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("UpdateIssue() options mismatch (-want/+got):\n%s", diff)
 						}
 
-						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+						return ret, newResponse(http.StatusOK), nil
 					})
 			},
 			wantResult: &gitlab.Issue{
@@ -347,18 +347,18 @@ func TestEditIssue(t *testing.T) {
 			},
 			initialIssueState: &gitlab.Issue{IID: 16},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, initialIssue *gitlab.Issue, ret *gitlab.Issue) {
-				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(16), gomock.Any()).Return(initialIssue, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil)
-				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(16), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
+				mockIssues.EXPECT().GetIssue(gomock.Eq("test/project"), gomock.Eq(int64(16)), gomock.Any()).Return(initialIssue, newResponse(http.StatusOK), nil)
+				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(16)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateIssueOptions{
-							Weight: gitlab.Ptr(42),
+							Weight: gitlab.Ptr(int64(42)),
 						}
 
 						if diff := cmp.Diff(wantOpts, opts, isoTimeComparer); diff != "" {
-							return nil, nil, fmt.Errorf("UpdateIssue() options mismatch (-want/+got):\n%s", diff)
+							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("UpdateIssue() options mismatch (-want/+got):\n%s", diff)
 						}
 
-						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+						return ret, newResponse(http.StatusOK), nil
 					})
 			},
 			wantResult: &gitlab.Issue{
@@ -376,8 +376,8 @@ func TestEditIssue(t *testing.T) {
 			initialIssueState: &gitlab.Issue{IID: 13},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, _ *gitlab.Issue, _ *gitlab.Issue) {
 				mockIssues.EXPECT().
-					GetIssue(gomock.Eq("test/project"), gomock.Eq(13), gomock.Any()).
-					Return(nil, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusNotFound}}, fmt.Errorf("issue not found"))
+					GetIssue(gomock.Eq("test/project"), gomock.Eq(int64(13)), gomock.Any()).
+					Return(nil, newResponse(http.StatusNotFound), fmt.Errorf("issue not found"))
 			},
 			wantError: true,
 		},
@@ -391,18 +391,18 @@ func TestEditIssue(t *testing.T) {
 			initialIssueState: &gitlab.Issue{IID: 14},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, initialIssue *gitlab.Issue, _ *gitlab.Issue) {
 				mockIssues.EXPECT().
-					GetIssue(gomock.Eq("test/project"), gomock.Eq(14), gomock.Any()).
-					Return(initialIssue, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil)
+					GetIssue(gomock.Eq("test/project"), gomock.Eq(int64(14)), gomock.Any()).
+					Return(initialIssue, newResponse(http.StatusOK), nil)
 				mockIssues.EXPECT().
-					UpdateIssue(gomock.Eq("test/project"), gomock.Eq(14), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
+					UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(14)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						// Check that opts are what we expect even when an error is returned
 						wantOpts := &gitlab.UpdateIssueOptions{Title: gitlab.Ptr("New Title")}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
-							t.Errorf("UpdateIssue() options mismatch before error (-want +got):\n%s", diff)
+							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("UpdateIssue() options mismatch before error (-want +got):\n%s", diff)
 						}
 
-						return nil, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusInternalServerError}}, fmt.Errorf("update failed")
+						return nil, newResponse(http.StatusInternalServerError), fmt.Errorf("update failed")
 					})
 			},
 			wantError:  true,
@@ -478,17 +478,17 @@ func TestIssueTimeTracking(t *testing.T) {
 			},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, ret *gitlab.TimeStats) {
 				mockIssues.EXPECT().
-					SetTimeEstimate(gomock.Eq("test/project"), gomock.Eq(1), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.SetTimeEstimateOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.TimeStats, *gitlab.Response, error) {
+					SetTimeEstimate(gomock.Eq("test/project"), gomock.Eq(int64(1)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.SetTimeEstimateOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.TimeStats, *gitlab.Response, error) {
 						wantOpts := &gitlab.SetTimeEstimateOptions{
 							Duration: gitlab.Ptr(fmt.Sprintf("%ds", 40*3600)),
 						}
 
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
-							return nil, nil, fmt.Errorf("SetTimeEstimate() options mismatch (-want +got):\n%s", diff)
+							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("SetTimeEstimate() options mismatch (-want +got):\n%s", diff)
 						}
 
-						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+						return ret, newResponse(http.StatusOK), nil
 					})
 			},
 			wantResult: &gitlab.TimeStats{
@@ -504,9 +504,9 @@ func TestIssueTimeTracking(t *testing.T) {
 			},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, ret *gitlab.TimeStats) {
 				mockIssues.EXPECT().
-					ResetTimeEstimate(gomock.Eq("test/project"), gomock.Eq(2), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, _ ...gitlab.RequestOptionFunc) (*gitlab.TimeStats, *gitlab.Response, error) {
-						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+					ResetTimeEstimate(gomock.Eq("test/project"), gomock.Eq(int64(2)), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, _ ...gitlab.RequestOptionFunc) (*gitlab.TimeStats, *gitlab.Response, error) {
+						return ret, newResponse(http.StatusOK), nil
 					})
 			},
 			wantResult: &gitlab.TimeStats{},
@@ -521,18 +521,18 @@ func TestIssueTimeTracking(t *testing.T) {
 			},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, ret *gitlab.TimeStats) {
 				mockIssues.EXPECT().
-					AddSpentTime(gomock.Eq("test/project"), gomock.Eq(1), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, opts *gitlab.AddSpentTimeOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.TimeStats, *gitlab.Response, error) {
+					AddSpentTime(gomock.Eq("test/project"), gomock.Eq(int64(1)), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.AddSpentTimeOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.TimeStats, *gitlab.Response, error) {
 						wantOpts := &gitlab.AddSpentTimeOptions{
 							Duration: gitlab.Ptr("3600s"),
 							Summary:  gitlab.Ptr("Writing unit tests"),
 						}
 
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
-							return nil, nil, fmt.Errorf("AddSpentTime() options mismatch (-want +got):\n%s", diff)
+							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("AddSpentTime() options mismatch (-want +got):\n%s", diff)
 						}
 
-						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+						return ret, newResponse(http.StatusOK), nil
 					})
 			},
 			wantResult: &gitlab.TimeStats{
@@ -548,9 +548,9 @@ func TestIssueTimeTracking(t *testing.T) {
 			},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, ret *gitlab.TimeStats) {
 				mockIssues.EXPECT().
-					ResetSpentTime(gomock.Eq("test/project"), gomock.Eq(4), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, _ ...gitlab.RequestOptionFunc) (*gitlab.TimeStats, *gitlab.Response, error) {
-						return ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil
+					ResetSpentTime(gomock.Eq("test/project"), gomock.Eq(int64(4)), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, _ ...gitlab.RequestOptionFunc) (*gitlab.TimeStats, *gitlab.Response, error) {
+						return ret, newResponse(http.StatusOK), nil
 					})
 			},
 			wantResult: &gitlab.TimeStats{},
@@ -565,14 +565,14 @@ func TestIssueTimeTracking(t *testing.T) {
 			},
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface, ret *gitlab.TimeStats) {
 				mockIssues.EXPECT().
-					ResetTimeEstimate(gomock.Eq("test/project"), gomock.Eq(5), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, _ ...gitlab.RequestOptionFunc) (*gitlab.TimeStats, *gitlab.Response, error) {
-						return nil, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusInternalServerError}}, fmt.Errorf("reset time estimate failure")
+					ResetTimeEstimate(gomock.Eq("test/project"), gomock.Eq(int64(5)), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, _ ...gitlab.RequestOptionFunc) (*gitlab.TimeStats, *gitlab.Response, error) {
+						return nil, newResponse(http.StatusInternalServerError), fmt.Errorf("reset time estimate failure")
 					})
 				mockIssues.EXPECT().
-					ResetSpentTime(gomock.Eq("test/project"), gomock.Eq(5), gomock.Any()).
-					DoAndReturn(func(_ any, _ int, _ ...gitlab.RequestOptionFunc) (*gitlab.TimeStats, *gitlab.Response, error) {
-						return nil, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusInternalServerError}}, fmt.Errorf("reset time spent failure")
+					ResetSpentTime(gomock.Eq("test/project"), gomock.Eq(int64(5)), gomock.Any()).
+					DoAndReturn(func(_ any, _ int64, _ ...gitlab.RequestOptionFunc) (*gitlab.TimeStats, *gitlab.Response, error) {
+						return nil, newResponse(http.StatusInternalServerError), fmt.Errorf("reset time spent failure")
 					})
 			},
 			wantErrors: []string{"reset time estimate failure", "reset time spent failure"},
@@ -642,3 +642,11 @@ func mustISOTime(s string) *gitlab.ISOTime {
 var isoTimeComparer = cmp.Comparer(func(a, b gitlab.ISOTime) bool {
 	return time.Time(a).Equal(time.Time(b))
 })
+
+func newResponse(statusCode int) *gitlab.Response {
+	return &gitlab.Response{
+		Response: &http.Response{
+			StatusCode: statusCode,
+		},
+	}
+}

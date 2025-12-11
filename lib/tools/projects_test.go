@@ -307,8 +307,8 @@ func TestListGroupProjects(t *testing.T) {
 			gitlabClient := glabtest.NewTestClient(t)
 			ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
 
-			groupID := 1000 + i
-			tt.args["group_id"] = strconv.Itoa(groupID)
+			groupID := int64(1000 + i)
+			tt.args["group_id"] = strconv.FormatInt(groupID, 10)
 
 			tt.setupMock(gitlabClient.MockGroups, groupID, tt.want)
 

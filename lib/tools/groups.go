@@ -88,7 +88,7 @@ func (g *GroupsTools) listSubgroups(ctx context.Context, client *gitlab.Client, 
 
 	opt.MinAccessLevel = accessLevel(args.MinAccessLevel)
 
-	nextPage := func(opts *gitlab.ListSubGroupsOptions, page int) {
+	nextPage := func(opts *gitlab.ListSubGroupsOptions, page int64) {
 		opts.Page = page
 	}
 

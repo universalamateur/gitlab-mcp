@@ -13,14 +13,14 @@ import (
 type MergeRequestDiscussion struct {
 	client          *gitlab.Client
 	projectID       mcpargs.ID
-	mergeRequestIID int
+	mergeRequestIID int64
 }
 
 var _ ResolvableManager = (*MergeRequestDiscussion)(nil)
 var _ PositionedManager = (*MergeRequestDiscussion)(nil)
 
 // NewMergeRequestDiscussion creates a new instance for managing discussions on a specific GitLab merge request.
-func NewMergeRequestDiscussion(client *gitlab.Client, projectID mcpargs.ID, mergeRequestIID int) (*MergeRequestDiscussion, error) {
+func NewMergeRequestDiscussion(client *gitlab.Client, projectID mcpargs.ID, mergeRequestIID int64) (*MergeRequestDiscussion, error) {
 	if client == nil {
 		return nil, fmt.Errorf("%w: client cannot be nil", ErrInvalidArgument)
 	}
@@ -36,7 +36,9 @@ func NewMergeRequestDiscussion(client *gitlab.Client, projectID mcpargs.ID, merg
 func (d *MergeRequestDiscussion) List(ctx context.Context, confidential bool) ([]*gitlab.Discussion, error) {
 	var (
 		opt = &gitlab.ListMergeRequestDiscussionsOptions{
-			PerPage: maxPerPage,
+			ListOptions: gitlab.ListOptions{
+				PerPage: maxPerPage,
+			},
 		}
 		allDiscussions []*gitlab.Discussion
 	)
@@ -109,7 +111,7 @@ func (d *MergeRequestDiscussion) AddNote(ctx context.Context, discussionID strin
 }
 
 // ModifyNote updates an existing note in a discussion thread.
-func (d *MergeRequestDiscussion) ModifyNote(ctx context.Context, discussionID string, noteID int, body string) (*gitlab.Note, error) {
+func (d *MergeRequestDiscussion) ModifyNote(ctx context.Context, discussionID string, noteID int64, body string) (*gitlab.Note, error) {
 	opt := &gitlab.UpdateMergeRequestDiscussionNoteOptions{
 		Body: gitlab.Ptr(body),
 	}
@@ -123,7 +125,7 @@ func (d *MergeRequestDiscussion) ModifyNote(ctx context.Context, discussionID st
 }
 
 // DeleteNote removes a note from a discussion thread.
-func (d *MergeRequestDiscussion) DeleteNote(ctx context.Context, discussionID string, noteID int) error {
+func (d *MergeRequestDiscussion) DeleteNote(ctx context.Context, discussionID string, noteID int64) error {
 	_, err := d.client.Discussions.DeleteMergeRequestDiscussionNote(d.projectID.Value(), d.mergeRequestIID, discussionID, noteID, gitlab.WithContext(ctx))
 	if err != nil {
 		return fmt.Errorf("failed to delete merge request note: %w", err)

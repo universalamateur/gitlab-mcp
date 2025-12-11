@@ -110,7 +110,7 @@ func testManager(t *testing.T, mgr discussions.Manager) {
 		t.Fatal(err)
 	}
 
-	if want := 1; note.ID != want {
+	if want := int64(1); note.ID != want {
 		t.Fatalf("note.ID = %d, want %d", note.ID, want)
 	}
 
@@ -128,7 +128,7 @@ func testManager(t *testing.T, mgr discussions.Manager) {
 		t.Fatal(err)
 	}
 
-	if want := 1; note.ID != want {
+	if want := int64(1); note.ID != want {
 		t.Fatalf("note.ID = %d, want %d", note.ID, want)
 	}
 
@@ -171,7 +171,7 @@ var _ gitlab.DiscussionsServiceInterface = (*fakeDiscussionsService)(nil)
 type fakeDiscussionsService struct {
 	gitlab.DiscussionsServiceInterface
 
-	nextID      int
+	nextID      int64
 	discussions map[string][]*gitlab.Discussion
 }
 
@@ -189,71 +189,71 @@ func newFakeDiscussionsService(discussions map[string][]*gitlab.Discussion) *fak
 
 // Issues
 
-func (fds *fakeDiscussionsService) ListIssueDiscussions(projectID any, issueIID int, opt *gitlab.ListIssueDiscussionsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Discussion, *gitlab.Response, error) {
+func (fds *fakeDiscussionsService) ListIssueDiscussions(projectID any, issueIID int64, opt *gitlab.ListIssueDiscussionsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Discussion, *gitlab.Response, error) {
 	return fds.list("Issue", projectID, issueIID)
 }
 
-func (fds *fakeDiscussionsService) CreateIssueDiscussion(projectID any, issueIID int, opt *gitlab.CreateIssueDiscussionOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Discussion, *gitlab.Response, error) {
+func (fds *fakeDiscussionsService) CreateIssueDiscussion(projectID any, issueIID int64, opt *gitlab.CreateIssueDiscussionOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Discussion, *gitlab.Response, error) {
 	return fds.create("Issue", projectID, issueIID, *opt.Body)
 }
 
-func (fds *fakeDiscussionsService) AddIssueDiscussionNote(projectID any, issueIID int, discussionID string, opt *gitlab.AddIssueDiscussionNoteOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Note, *gitlab.Response, error) {
+func (fds *fakeDiscussionsService) AddIssueDiscussionNote(projectID any, issueIID int64, discussionID string, opt *gitlab.AddIssueDiscussionNoteOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Note, *gitlab.Response, error) {
 	return fds.addNote("Issue", projectID, issueIID, discussionID, *opt.Body)
 }
 
-func (fds *fakeDiscussionsService) UpdateIssueDiscussionNote(projectID any, issueIID int, discussionID string, noteID int, opt *gitlab.UpdateIssueDiscussionNoteOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Note, *gitlab.Response, error) {
+func (fds *fakeDiscussionsService) UpdateIssueDiscussionNote(projectID any, issueIID int64, discussionID string, noteID int64, opt *gitlab.UpdateIssueDiscussionNoteOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Note, *gitlab.Response, error) {
 	return fds.updateNote("Issue", projectID, issueIID, discussionID, noteID, *opt.Body)
 }
 
-func (fds *fakeDiscussionsService) DeleteIssueDiscussionNote(projectID any, issueIID int, discussionID string, noteID int, _ ...gitlab.RequestOptionFunc) (*gitlab.Response, error) {
+func (fds *fakeDiscussionsService) DeleteIssueDiscussionNote(projectID any, issueIID int64, discussionID string, noteID int64, _ ...gitlab.RequestOptionFunc) (*gitlab.Response, error) {
 	return fds.deleteNote("Issue", projectID, issueIID, discussionID, noteID)
 }
 
 // Snippets
 
-func (fds *fakeDiscussionsService) ListSnippetDiscussions(projectID any, snippetID int, opt *gitlab.ListSnippetDiscussionsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Discussion, *gitlab.Response, error) {
+func (fds *fakeDiscussionsService) ListSnippetDiscussions(projectID any, snippetID int64, opt *gitlab.ListSnippetDiscussionsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Discussion, *gitlab.Response, error) {
 	return fds.list("Snippet", projectID, snippetID)
 }
 
-func (fds *fakeDiscussionsService) CreateSnippetDiscussion(projectID any, snippetID int, opt *gitlab.CreateSnippetDiscussionOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Discussion, *gitlab.Response, error) {
+func (fds *fakeDiscussionsService) CreateSnippetDiscussion(projectID any, snippetID int64, opt *gitlab.CreateSnippetDiscussionOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Discussion, *gitlab.Response, error) {
 	return fds.create("Snippet", projectID, snippetID, *opt.Body)
 }
 
-func (fds *fakeDiscussionsService) AddSnippetDiscussionNote(projectID any, snippetID int, discussionID string, opt *gitlab.AddSnippetDiscussionNoteOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Note, *gitlab.Response, error) {
+func (fds *fakeDiscussionsService) AddSnippetDiscussionNote(projectID any, snippetID int64, discussionID string, opt *gitlab.AddSnippetDiscussionNoteOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Note, *gitlab.Response, error) {
 	return fds.addNote("Snippet", projectID, snippetID, discussionID, *opt.Body)
 }
 
-func (fds *fakeDiscussionsService) UpdateSnippetDiscussionNote(projectID any, snippetID int, discussionID string, noteID int, opt *gitlab.UpdateSnippetDiscussionNoteOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Note, *gitlab.Response, error) {
+func (fds *fakeDiscussionsService) UpdateSnippetDiscussionNote(projectID any, snippetID int64, discussionID string, noteID int64, opt *gitlab.UpdateSnippetDiscussionNoteOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Note, *gitlab.Response, error) {
 	return fds.updateNote("Snippet", projectID, snippetID, discussionID, noteID, *opt.Body)
 }
 
-func (fds *fakeDiscussionsService) DeleteSnippetDiscussionNote(projectID any, snippetID int, discussionID string, noteID int, _ ...gitlab.RequestOptionFunc) (*gitlab.Response, error) {
+func (fds *fakeDiscussionsService) DeleteSnippetDiscussionNote(projectID any, snippetID int64, discussionID string, noteID int64, _ ...gitlab.RequestOptionFunc) (*gitlab.Response, error) {
 	return fds.deleteNote("Snippet", projectID, snippetID, discussionID, noteID)
 }
 
 // Merge Requests
 
-func (fds *fakeDiscussionsService) ListMergeRequestDiscussions(projectID any, mergeRequestIID int, opt *gitlab.ListMergeRequestDiscussionsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Discussion, *gitlab.Response, error) {
+func (fds *fakeDiscussionsService) ListMergeRequestDiscussions(projectID any, mergeRequestIID int64, opt *gitlab.ListMergeRequestDiscussionsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Discussion, *gitlab.Response, error) {
 	return fds.list("MergeRequest", projectID, mergeRequestIID)
 }
 
-func (fds *fakeDiscussionsService) CreateMergeRequestDiscussion(projectID any, mergeRequestIID int, opt *gitlab.CreateMergeRequestDiscussionOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Discussion, *gitlab.Response, error) {
+func (fds *fakeDiscussionsService) CreateMergeRequestDiscussion(projectID any, mergeRequestIID int64, opt *gitlab.CreateMergeRequestDiscussionOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Discussion, *gitlab.Response, error) {
 	return fds.create("MergeRequest", projectID, mergeRequestIID, *opt.Body)
 }
 
-func (fds *fakeDiscussionsService) AddMergeRequestDiscussionNote(projectID any, mergeRequestIID int, discussionID string, opt *gitlab.AddMergeRequestDiscussionNoteOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Note, *gitlab.Response, error) {
+func (fds *fakeDiscussionsService) AddMergeRequestDiscussionNote(projectID any, mergeRequestIID int64, discussionID string, opt *gitlab.AddMergeRequestDiscussionNoteOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Note, *gitlab.Response, error) {
 	return fds.addNote("MergeRequest", projectID, mergeRequestIID, discussionID, *opt.Body)
 }
 
-func (fds *fakeDiscussionsService) UpdateMergeRequestDiscussionNote(projectID any, mergeRequestIID int, discussionID string, noteID int, opt *gitlab.UpdateMergeRequestDiscussionNoteOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Note, *gitlab.Response, error) {
+func (fds *fakeDiscussionsService) UpdateMergeRequestDiscussionNote(projectID any, mergeRequestIID int64, discussionID string, noteID int64, opt *gitlab.UpdateMergeRequestDiscussionNoteOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Note, *gitlab.Response, error) {
 	return fds.updateNote("MergeRequest", projectID, mergeRequestIID, discussionID, noteID, *opt.Body)
 }
 
-func (fds *fakeDiscussionsService) DeleteMergeRequestDiscussionNote(projectID any, mergeRequestIID int, discussionID string, noteID int, _ ...gitlab.RequestOptionFunc) (*gitlab.Response, error) {
+func (fds *fakeDiscussionsService) DeleteMergeRequestDiscussionNote(projectID any, mergeRequestIID int64, discussionID string, noteID int64, _ ...gitlab.RequestOptionFunc) (*gitlab.Response, error) {
 	return fds.deleteNote("MergeRequest", projectID, mergeRequestIID, discussionID, noteID)
 }
 
-func (fds *fakeDiscussionsService) ResolveMergeRequestDiscussion(projectID any, mergeRequestIID int, discussionID string, opt *gitlab.ResolveMergeRequestDiscussionOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Discussion, *gitlab.Response, error) {
+func (fds *fakeDiscussionsService) ResolveMergeRequestDiscussion(projectID any, mergeRequestIID int64, discussionID string, opt *gitlab.ResolveMergeRequestDiscussionOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Discussion, *gitlab.Response, error) {
 	key := fmt.Sprintf("MergeRequest(%v,%d)", projectID, mergeRequestIID)
 
 	discussion, ok := findDiscussion(fds.discussions[key], discussionID)
@@ -268,23 +268,23 @@ func (fds *fakeDiscussionsService) ResolveMergeRequestDiscussion(projectID any, 
 
 // Epics
 
-func (fds *fakeDiscussionsService) ListGroupEpicDiscussions(groupID any, epicIID int, opt *gitlab.ListGroupEpicDiscussionsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Discussion, *gitlab.Response, error) {
+func (fds *fakeDiscussionsService) ListGroupEpicDiscussions(groupID any, epicIID int64, opt *gitlab.ListGroupEpicDiscussionsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Discussion, *gitlab.Response, error) {
 	return fds.list("Epic", groupID, epicIID)
 }
 
-func (fds *fakeDiscussionsService) CreateEpicDiscussion(groupID any, epicIID int, opt *gitlab.CreateEpicDiscussionOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Discussion, *gitlab.Response, error) {
+func (fds *fakeDiscussionsService) CreateEpicDiscussion(groupID any, epicIID int64, opt *gitlab.CreateEpicDiscussionOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Discussion, *gitlab.Response, error) {
 	return fds.create("Epic", groupID, epicIID, *opt.Body)
 }
 
-func (fds *fakeDiscussionsService) AddEpicDiscussionNote(groupID any, epicIID int, discussionID string, opt *gitlab.AddEpicDiscussionNoteOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Note, *gitlab.Response, error) {
+func (fds *fakeDiscussionsService) AddEpicDiscussionNote(groupID any, epicIID int64, discussionID string, opt *gitlab.AddEpicDiscussionNoteOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Note, *gitlab.Response, error) {
 	return fds.addNote("Epic", groupID, epicIID, discussionID, *opt.Body)
 }
 
-func (fds *fakeDiscussionsService) UpdateEpicDiscussionNote(groupID any, epicIID int, discussionID string, noteID int, opt *gitlab.UpdateEpicDiscussionNoteOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Note, *gitlab.Response, error) {
+func (fds *fakeDiscussionsService) UpdateEpicDiscussionNote(groupID any, epicIID int64, discussionID string, noteID int64, opt *gitlab.UpdateEpicDiscussionNoteOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Note, *gitlab.Response, error) {
 	return fds.updateNote("Epic", groupID, epicIID, discussionID, noteID, *opt.Body)
 }
 
-func (fds *fakeDiscussionsService) DeleteEpicDiscussionNote(groupID any, epicIID int, discussionID string, noteID int, _ ...gitlab.RequestOptionFunc) (*gitlab.Response, error) {
+func (fds *fakeDiscussionsService) DeleteEpicDiscussionNote(groupID any, epicIID int64, discussionID string, noteID int64, _ ...gitlab.RequestOptionFunc) (*gitlab.Response, error) {
 	return fds.deleteNote("Epic", groupID, epicIID, discussionID, noteID)
 }
 
@@ -302,11 +302,11 @@ func (fds *fakeDiscussionsService) AddCommitDiscussionNote(projectID any, commit
 	return fds.addNote("Commit", projectID, commitSHA, discussionID, *opt.Body)
 }
 
-func (fds *fakeDiscussionsService) UpdateCommitDiscussionNote(projectID any, commitSHA string, discussionID string, noteID int, opt *gitlab.UpdateCommitDiscussionNoteOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Note, *gitlab.Response, error) {
+func (fds *fakeDiscussionsService) UpdateCommitDiscussionNote(projectID any, commitSHA string, discussionID string, noteID int64, opt *gitlab.UpdateCommitDiscussionNoteOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Note, *gitlab.Response, error) {
 	return fds.updateNote("Commit", projectID, commitSHA, discussionID, noteID, *opt.Body)
 }
 
-func (fds *fakeDiscussionsService) DeleteCommitDiscussionNote(projectID any, commitSHA string, discussionID string, noteID int, _ ...gitlab.RequestOptionFunc) (*gitlab.Response, error) {
+func (fds *fakeDiscussionsService) DeleteCommitDiscussionNote(projectID any, commitSHA string, discussionID string, noteID int64, _ ...gitlab.RequestOptionFunc) (*gitlab.Response, error) {
 	return fds.deleteNote("Commit", projectID, commitSHA, discussionID, noteID)
 }
 
@@ -359,7 +359,7 @@ func (fds *fakeDiscussionsService) addNote(resourceType string, parentID, resour
 	return note, &gitlab.Response{}, nil
 }
 
-func (fds *fakeDiscussionsService) updateNote(resourceType string, parentID, resourceID any, discussionID string, noteID int, body string) (*gitlab.Note, *gitlab.Response, error) {
+func (fds *fakeDiscussionsService) updateNote(resourceType string, parentID, resourceID any, discussionID string, noteID int64, body string) (*gitlab.Note, *gitlab.Response, error) {
 	key := fmt.Sprintf("%s(%v,%v)", resourceType, parentID, resourceID)
 
 	discussion, ok := findDiscussion(fds.discussions[key], discussionID)
@@ -377,7 +377,7 @@ func (fds *fakeDiscussionsService) updateNote(resourceType string, parentID, res
 	return note, &gitlab.Response{}, nil
 }
 
-func (fds *fakeDiscussionsService) deleteNote(resourceType string, parentID, resourceID any, discussionID string, noteID int) (*gitlab.Response, error) {
+func (fds *fakeDiscussionsService) deleteNote(resourceType string, parentID, resourceID any, discussionID string, noteID int64) (*gitlab.Response, error) {
 	key := fmt.Sprintf("%s(%v,%v)", resourceType, parentID, resourceID)
 
 	discussion, ok := findDiscussion(fds.discussions[key], discussionID)
@@ -415,7 +415,7 @@ func findDiscussion(discussions []*gitlab.Discussion, id string) (*gitlab.Discus
 	return nil, false
 }
 
-func findNote(notes []*gitlab.Note, id int) (*gitlab.Note, bool) {
+func findNote(notes []*gitlab.Note, id int64) (*gitlab.Note, bool) {
 	for _, n := range notes {
 		if n.ID == id {
 			return n, true

@@ -13,13 +13,13 @@ import (
 type IssueDiscussion struct {
 	client    *gitlab.Client
 	projectID mcpargs.ID
-	issueIID  int
+	issueIID  int64
 }
 
 var _ Manager = (*IssueDiscussion)(nil)
 
 // NewIssueDiscussion creates a new instance for managing discussions on a specific GitLab issue.
-func NewIssueDiscussion(client *gitlab.Client, projectID mcpargs.ID, issueIID int) (*IssueDiscussion, error) {
+func NewIssueDiscussion(client *gitlab.Client, projectID mcpargs.ID, issueIID int64) (*IssueDiscussion, error) {
 	if client == nil {
 		return nil, fmt.Errorf("%w: client cannot be nil", ErrInvalidArgument)
 	}
@@ -43,7 +43,9 @@ func NewIssueDiscussion(client *gitlab.Client, projectID mcpargs.ID, issueIID in
 func (d *IssueDiscussion) List(ctx context.Context, confidential bool) ([]*gitlab.Discussion, error) {
 	var (
 		opt = &gitlab.ListIssueDiscussionsOptions{
-			PerPage: maxPerPage,
+			ListOptions: gitlab.ListOptions{
+				PerPage: maxPerPage,
+			},
 		}
 		allDiscussions []*gitlab.Discussion
 	)
@@ -95,7 +97,7 @@ func (d *IssueDiscussion) AddNote(ctx context.Context, discussionID string, body
 }
 
 // ModifyNote updates an existing note in a discussion thread.
-func (d *IssueDiscussion) ModifyNote(ctx context.Context, discussionID string, noteID int, body string) (*gitlab.Note, error) {
+func (d *IssueDiscussion) ModifyNote(ctx context.Context, discussionID string, noteID int64, body string) (*gitlab.Note, error) {
 	opt := &gitlab.UpdateIssueDiscussionNoteOptions{
 		Body: gitlab.Ptr(body),
 	}
@@ -109,7 +111,7 @@ func (d *IssueDiscussion) ModifyNote(ctx context.Context, discussionID string, n
 }
 
 // DeleteNote removes a note from a discussion thread.
-func (d *IssueDiscussion) DeleteNote(ctx context.Context, discussionID string, noteID int) error {
+func (d *IssueDiscussion) DeleteNote(ctx context.Context, discussionID string, noteID int64) error {
 	_, err := d.client.Discussions.DeleteIssueDiscussionNote(d.projectID.Value(), d.issueIID, discussionID, noteID, gitlab.WithContext(ctx))
 	if err != nil {
 		return fmt.Errorf("failed to delete note: %w", err)

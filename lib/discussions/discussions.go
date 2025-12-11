@@ -58,10 +58,10 @@ type Manager interface {
 	AddNote(ctx context.Context, discussionID string, body string) (*gitlab.Note, error)
 
 	// ModifyNote updates an existing note in a discussion thread.
-	ModifyNote(ctx context.Context, discussionID string, noteID int, body string) (*gitlab.Note, error)
+	ModifyNote(ctx context.Context, discussionID string, noteID int64, body string) (*gitlab.Note, error)
 
 	// DeleteNote removes a note from a discussion thread.
-	DeleteNote(ctx context.Context, discussionID string, noteID int) error
+	DeleteNote(ctx context.Context, discussionID string, noteID int64) error
 }
 
 // ResolvableManager extends Manager with methods for resolving discussions,

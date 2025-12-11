@@ -24,20 +24,13 @@ func TestListUserEvents(t *testing.T) {
 	const testUser = "testuser"
 
 	// Helper function to create test events
-	createTestEvent := func(id int, actionName string, targetType string, createdAt time.Time) *gitlab.ContributionEvent {
+	createTestEvent := func(id int64, actionName string, targetType string, createdAt time.Time) *gitlab.ContributionEvent {
 		return &gitlab.ContributionEvent{
 			ID:         id,
 			ActionName: actionName,
 			TargetType: targetType,
 			CreatedAt:  &createdAt,
-			Author: struct {
-				Name      string `json:"name"`
-				Username  string `json:"username"`
-				ID        int    `json:"id"`
-				State     string `json:"state"`
-				AvatarURL string `json:"avatar_url"`
-				WebURL    string `json:"web_url"`
-			}{
+			Author: gitlab.BasicUser{
 				ID:       100,
 				Username: testUser,
 				Name:     "Test User",

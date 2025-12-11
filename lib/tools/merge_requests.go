@@ -155,7 +155,7 @@ func (m *MergeRequestsTools) listUserMergeRequests(ctx context.Context, client *
 		args.Limit = defaultMergeRequestsLimit
 	}
 
-	nextPage := func(opts *gitlab.ListMergeRequestsOptions, page int) {
+	nextPage := func(opts *gitlab.ListMergeRequestsOptions, page int64) {
 		opts.ListOptions.Page = page
 	}
 
@@ -210,7 +210,7 @@ func (m *MergeRequestsTools) listProjectMergeRequests(ctx context.Context, clien
 		args.Limit = defaultMergeRequestsLimit
 	}
 
-	nextPage := func(opts *gitlab.ListProjectMergeRequestsOptions, page int) {
+	nextPage := func(opts *gitlab.ListProjectMergeRequestsOptions, page int64) {
 		opts.Page = page
 	}
 
@@ -265,7 +265,7 @@ func (m *MergeRequestsTools) listGroupMergeRequests(ctx context.Context, client 
 		args.Limit = defaultMergeRequestsLimit
 	}
 
-	nextPage := func(opts *gitlab.ListGroupMergeRequestsOptions, page int) {
+	nextPage := func(opts *gitlab.ListGroupMergeRequestsOptions, page int64) {
 		opts.Page = page
 	}
 
@@ -285,7 +285,7 @@ func (m *MergeRequestsTools) listGroupMergeRequests(ctx context.Context, client 
 
 type getMergeRequestArgs struct {
 	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
+	MergeRequestIID int64      `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
 }
 
 // GetMergeRequest returns a ServerTool for fetching a specific merge request by its ID, including discussions and diffs.
@@ -376,7 +376,7 @@ func (m *MergeRequestsTools) getMergeRequest(ctx context.Context, client *gitlab
 
 type getMergeRequestApprovalsArgs struct {
 	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
+	MergeRequestIID int64      `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
 }
 
 // GetMergeRequestApprovals returns a ServerTool for fetching approval information for a specific merge request.
@@ -402,7 +402,7 @@ func (m *MergeRequestsTools) getMergeRequestApprovals(ctx context.Context, clien
 
 type getMergeRequestCommitsArgs struct {
 	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
+	MergeRequestIID int64      `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
 }
 
 // GetMergeRequestCommits returns a ServerTool for fetching all commits associated with a specific merge request.
@@ -420,7 +420,9 @@ func (m *MergeRequestsTools) GetMergeRequestCommits() server.ServerTool {
 func (m *MergeRequestsTools) getMergeRequestCommits(ctx context.Context, client *gitlab.Client, args getMergeRequestCommitsArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var (
 		opt = gitlab.GetMergeRequestCommitsOptions{
-			PerPage: maxPerPage,
+			ListOptions: gitlab.ListOptions{
+				PerPage: maxPerPage,
+			},
 		}
 		commits []*gitlab.Commit
 	)
@@ -445,7 +447,7 @@ func (m *MergeRequestsTools) getMergeRequestCommits(ctx context.Context, client 
 
 type listMergeRequestDiffsArgs struct {
 	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
+	MergeRequestIID int64      `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
 }
 
 // ListMergeRequestDiffs returns a ServerTool for listing all versions of diffs for a specific merge request.
@@ -470,7 +472,7 @@ func (m *MergeRequestsTools) listMergeRequestDiffs(ctx context.Context, client *
 }
 
 // listAllMergeRequestDiffs fetches all diffs for a given merge request, handling pagination.
-func (m *MergeRequestsTools) listAllMergeRequestDiffs(ctx context.Context, client *gitlab.Client, projectID any, mrIID int) ([]*gitlab.MergeRequestDiff, error) {
+func (m *MergeRequestsTools) listAllMergeRequestDiffs(ctx context.Context, client *gitlab.Client, projectID any, mrIID int64) ([]*gitlab.MergeRequestDiff, error) {
 	var allDiffs []*gitlab.MergeRequestDiff
 
 	opts := gitlab.ListMergeRequestDiffsOptions{
@@ -498,7 +500,7 @@ func (m *MergeRequestsTools) listAllMergeRequestDiffs(ctx context.Context, clien
 
 type getMergeRequestParticipantsArgs struct {
 	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
+	MergeRequestIID int64      `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
 }
 
 // GetMergeRequestParticipants returns a ServerTool for fetching all participants of a specific merge request.
@@ -524,7 +526,7 @@ func (m *MergeRequestsTools) getMergeRequestParticipants(ctx context.Context, cl
 
 type getMergeRequestReviewersArgs struct {
 	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
+	MergeRequestIID int64      `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
 }
 
 // GetMergeRequestReviewers returns a ServerTool for fetching all reviewers of a specific merge request.
@@ -550,7 +552,7 @@ func (m *MergeRequestsTools) getMergeRequestReviewers(ctx context.Context, clien
 
 type listMergeRequestPipelinesArgs struct {
 	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
+	MergeRequestIID int64      `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
 }
 
 // ListMergeRequestPipelines returns a ServerTool for listing all CI/CD pipelines for a specific merge request.
@@ -576,7 +578,7 @@ func (m *MergeRequestsTools) listMergeRequestPipelines(ctx context.Context, clie
 
 type getIssuesClosedOnMergeArgs struct {
 	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
+	MergeRequestIID int64      `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
 }
 
 // GetIssuesClosedOnMerge returns a ServerTool for fetching all issues that would be closed by merging a specific merge request.
@@ -594,7 +596,9 @@ func (m *MergeRequestsTools) GetIssuesClosedOnMerge() server.ServerTool {
 func (m *MergeRequestsTools) getIssuesClosedOnMerge(ctx context.Context, client *gitlab.Client, args getIssuesClosedOnMergeArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var (
 		opt = gitlab.GetIssuesClosedOnMergeOptions{
-			PerPage: maxPerPage,
+			ListOptions: gitlab.ListOptions{
+				PerPage: maxPerPage,
+			},
 		}
 		issues []*gitlab.Issue
 	)
@@ -619,7 +623,7 @@ func (m *MergeRequestsTools) getIssuesClosedOnMerge(ctx context.Context, client 
 
 type getMergeRequestDependenciesArgs struct {
 	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
+	MergeRequestIID int64      `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
 }
 
 // GetMergeRequestDependencies returns a ServerTool for fetching all dependencies of a specific merge request.
@@ -645,13 +649,13 @@ func (m *MergeRequestsTools) getMergeRequestDependencies(ctx context.Context, cl
 
 type editMergeRequestArgs struct {
 	ProjectID          mcpargs.ID           `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	MergeRequestIID    int                  `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
+	MergeRequestIID    int64                `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
 	Title              string               `mcp_desc:"Changes the title of the merge request"`
 	Description        string               `mcp_desc:"Changes the description of the merge request. The description uses GitLab Flavored Markdown"`
 	TargetBranch       string               `mcp_desc:"Changes the target branch of the merge request"`
 	AssigneeIDs        string               `mcp_desc:"Comma-separated list of user IDs to assign the merge request to. Pass '-' to clear all assignees. Omit the parameter to leave assignees unchanged"`
 	ReviewerIDs        string               `mcp_desc:"Comma-separated list of user IDs to set as reviewers for the merge request. Pass '-' to clear all reviewers. Omit the parameter to leave reviewers unchanged"`
-	MilestoneID        int                  `mcp_desc:"The ID of a milestone to assign the merge request to"`
+	MilestoneID        int64                `mcp_desc:"The ID of a milestone to assign the merge request to"`
 	AddLabels          string               `mcp_desc:"Comma-separated label names to add to the merge request"`
 	RemoveLabels       string               `mcp_desc:"Comma-separated label names to remove from the merge request"`
 	StateEvent         string               `mcp_desc:"The state of the merge request. Use 'close' to close the merge request or 'reopen' to reopen a closed merge request. Omit to keep the merge request state unchanged" mcp_enum:"close,reopen"`
@@ -729,7 +733,7 @@ func (m *MergeRequestsTools) editMergeRequest(ctx context.Context, client *gitla
 
 type listDraftNotesArgs struct {
 	ProjectID       mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	MergeRequestIID int        `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
+	MergeRequestIID int64      `mcp_desc:"The internal ID of the merge request" mcp_required:"true"`
 }
 
 type createMergeRequestArgs struct {
@@ -741,7 +745,7 @@ type createMergeRequestArgs struct {
 	Labels             string               `mcp_desc:"Comma-separated list of labels"`
 	AssigneeIDs        string               `mcp_desc:"Comma-separated list of user IDs to assign the merge request to"`
 	ReviewerIDs        string               `mcp_desc:"Comma-separated list of user IDs to set as reviewers"`
-	MilestoneID        int                  `mcp_desc:"Global milestone ID to assign the merge request to"`
+	MilestoneID        int64                `mcp_desc:"Global milestone ID to assign the merge request to"`
 	RemoveSourceBranch mcpargs.OptionalBool `mcp_desc:"Whether to remove source branch after merge (defaults to project setting)"`
 	Squash             mcpargs.OptionalBool `mcp_desc:"Whether to squash commits when merging (defaults to project setting)"`
 }
