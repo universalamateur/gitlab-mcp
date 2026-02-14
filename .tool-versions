@@ -1,5 +1,5 @@
 # Note: Install plugins by running `mise install`
-golang 1.25.7 # datasource=golang-version depName=golang/go
+golang 1.26.0 # datasource=golang-version depName=golang/go
 golangci-lint 2.8 # datasource=github-releases depName=golangci/golangci-lint
 goreleaser 2.9 # datasource=docker depName=registry.gitlab.com/gitlab-com/gl-infra/common-ci-tasks-images/goreleaser
 pre-commit 4.5.1 # datasource=github-releases depName=pre-commit/pre-commit
