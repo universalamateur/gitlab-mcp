@@ -27,6 +27,7 @@ var assigneeIDComparer = cmp.Comparer(func(a, b gitlab.AssigneeIDValue) bool {
 	if err != nil {
 		panic(err)
 	}
+
 	bData, err := b.MarshalJSON()
 	if err != nil {
 		panic(err)
