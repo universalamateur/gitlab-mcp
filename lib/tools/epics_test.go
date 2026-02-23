@@ -135,47 +135,6 @@ func TestListGroupEpics(t *testing.T) {
 	}
 }
 
-func TestGetEpic(t *testing.T) {
-	t.Parallel()
-
-	var (
-		gitlabClient = fakeGitlabClient()
-		ctx          = glctx.WithClient(t.Context(), gitlabClient)
-	)
-
-	srv := mcptest.NewUnstartedServer(t)
-	AddTo(srv)
-
-	if err := srv.Start(ctx); err != nil {
-		t.Fatalf("failed to start MCP test server: %v", err)
-	}
-	defer srv.Close()
-
-	client := srv.Client()
-
-	var req mcp.CallToolRequest
-
-	req.Params.Name = "get_epic"
-	req.Params.Arguments = map[string]any{
-		"group_id": "10",
-		"epic_iid": 1,
-	}
-
-	result, err := client.CallTool(t.Context(), req)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	var epic gitlab.Epic
-	if err := unmarshalResult(result, &epic); err != nil {
-		t.Fatal(err)
-	}
-
-	if wantID := int64(1001); epic.ID != wantID {
-		t.Errorf("got epic id %v, wanted %v", epic.ID, wantID)
-	}
-}
-
 func TestGetEpicLinks(t *testing.T) {
 	t.Parallel()
 

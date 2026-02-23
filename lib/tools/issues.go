@@ -7,14 +7,12 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 
-	"gitlab.com/fforster/gitlab-mcp/lib/discussions"
 	"gitlab.com/fforster/gitlab-mcp/lib/gliter"
 	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
@@ -33,9 +31,6 @@ type IssuesServiceInterface interface {
 
 	// ListProjectIssues returns a tool for listing all issues within a specific project.
 	ListProjectIssues() server.ServerTool
-
-	// GetIssue returns a tool for fetching a specific issue by its ID.
-	GetIssue() server.ServerTool
 
 	// ListMergeRequestsRelatedToIssue returns a tool for listing all merge requests related to a specific issue.
 	ListMergeRequestsRelatedToIssue() server.ServerTool
@@ -64,7 +59,6 @@ func (i *IssuesTools) AddTo(srv ToolAdder) {
 		i.ListIssues(),
 		i.ListGroupIssues(),
 		i.ListProjectIssues(),
-		i.GetIssue(),
 		i.ListMergeRequestsRelatedToIssue(),
 		i.CreateIssue(),
 		i.EditIssue(),
@@ -513,91 +507,6 @@ func parseTime(timeStr string) (*time.Time, error) {
 	}
 
 	return nil, fmt.Errorf("timeStr = %q: %w", timeStr, errParseTime)
-}
-
-type getIssueArgs struct {
-	ProjectID    mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	IssueIID     int64      `mcp_desc:"The internal ID of the project issue" mcp_required:"true"`
-	Confidential bool       `mcp_desc:"If true, allows access to confidential issues. Default is false, which will return an error for confidential issues"`
-}
-
-// GetIssue returns a ServerTool for fetching a specific issue by its ID, including its discussions.
-// If fetching discussions fails, an error is returned.
-func (i *IssuesTools) GetIssue() server.ServerTool {
-	return server.ServerTool{
-		Handler: ClientHandler(i.getIssue),
-		Tool: mcpargs.NewTool("get_issue", getIssueArgs{},
-			mcp.WithDescription("Get a single project issue, including its discussions. Returns an error if any part fails."),
-			mcp.WithReadOnlyHintAnnotation(true),
-		),
-	}
-}
-
-func (i *IssuesTools) getIssue(ctx context.Context, client *gitlab.Client, args getIssueArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var (
-		ret   detailedIssue
-		wg    sync.WaitGroup
-		errCh = make(chan error)
-	)
-
-	wg.Add(2)
-
-	go func() {
-		defer wg.Done()
-
-		var err error
-
-		ret.Issue, _, err = client.Issues.GetIssue(args.ProjectID.Value(), args.IssueIID, gitlab.WithContext(ctx))
-		if err != nil {
-			errCh <- fmt.Errorf("GetIssue(%q, %d): %w", args.ProjectID.Value(), args.IssueIID, err)
-			return
-		}
-	}()
-
-	go func() {
-		defer wg.Done()
-
-		// Fetch discussions for the issue
-		discMgr, err := discussions.NewIssueDiscussion(client, args.ProjectID, args.IssueIID)
-		if err != nil {
-			errCh <- fmt.Errorf("failed to create issue discussion manager for issue %d in project %s: %w", args.IssueIID, args.ProjectID.Value(), err)
-			return
-		}
-
-		ret.Discussions, err = discMgr.List(ctx, args.Confidential)
-		if err != nil {
-			errCh <- fmt.Errorf("failed to fetch discussions for issue %d in project %s: %w", args.IssueIID, args.ProjectID.Value(), err)
-			return
-		}
-	}()
-
-	go func() {
-		wg.Wait()
-		close(errCh)
-	}()
-
-	var errs error
-
-	for err := range errCh {
-		errs = errors.Join(errs, err)
-	}
-
-	if errs != nil {
-		return nil, errs
-	}
-
-	if ret.Issue.Confidential && !args.Confidential {
-		return mcp.NewToolResultError(fmt.Sprintf("issue %d is confidential, ensure it is safe to be shared with the model, then set confidential=true to access it", args.IssueIID)), nil
-	}
-
-	return newToolResultJSON(ret)
-}
-
-// detailedIssue embeds gitlab.Issue and adds discussions.
-// This type is unexported as it's only used internally by getIssue.
-type detailedIssue struct {
-	Issue       *gitlab.Issue        `json:"issue"`
-	Discussions []*gitlab.Discussion `json:"discussions,omitempty"`
 }
 
 type listMergeRequestsRelatedToIssueArgs struct {
