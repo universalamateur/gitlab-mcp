@@ -32,7 +32,7 @@ func (i *WorkItemsTools) AddTo(srv ToolAdder) {
 }
 
 type getWorkItemArgs struct {
-	FullPath string `mcp_desc:"Full path of the GitLab namespace in owner/project format" mcp_required:"true"`
+	FullPath string `mcp_desc:"Full path of the GitLab namespace (group or project) containing the work item, e.g. 'fforster/gitlab-mcp'" mcp_required:"true"`
 	IID      int64  `mcp_desc:"The internal ID of the work item" mcp_required:"true"`
 }
 
@@ -42,7 +42,9 @@ func (i *WorkItemsTools) GetWorkItem() server.ServerTool {
 	return server.ServerTool{
 		Handler: ClientHandler(i.getWorkItem),
 		Tool: mcpargs.NewTool("get_work_item", getWorkItemArgs{},
-			mcp.WithDescription("Retrieve a GitLab work item (e.g. issue, epic, task) by its namespace (group or project) and internal ID."),
+			mcp.WithDescription("Retrieve a GitLab work item by its namespace (group or project) and internal ID. "+
+				"Work items are GitLab's unified model for plan-stage objects such as issues, incidents, test cases, requirements, tasks, objectives, key results, epics, and tickets. "+
+				"Use this tool whenever data about any of these work item types is required."),
 			mcp.WithReadOnlyHintAnnotation(true),
 		),
 	}
