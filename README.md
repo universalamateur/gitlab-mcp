@@ -18,6 +18,7 @@ GitLab MCP implements the [Model Context Protocol](https://github.com/anthropics
 - Merge Requests
 - Discussions and Notes
 - Jobs
+- Projects
 - Repository Files and Directories
 - Snippets
 - User information
@@ -232,6 +233,7 @@ You can provide these environment variables in one of two ways:
 | `get_merge_request_participants` | Get a list of merge request participants |
 | `get_merge_request_reviewers` | Get a list of merge request reviewers |
 | `get_merge_request` | Get a single merge request |
+| `get_project` | Get a single project |
 | `get_repository_file_contents` | Get the contents of a single file from the repository |
 | `get_snippet_content` | Get the raw content of a snippet |
 | `get_snippet` | Returns the metadata of a snippet, such as title and description. File content is not returned |

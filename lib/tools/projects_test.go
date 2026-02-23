@@ -186,6 +186,90 @@ func TestListProjects(t *testing.T) {
 	}
 }
 
+func TestGetProject(t *testing.T) {
+	tests := []struct {
+		name      string
+		args      map[string]any
+		setupMock func(*glabtest.MockProjectsServiceInterface, *gitlab.Project)
+		want      *gitlab.Project
+		wantError bool
+	}{
+		{
+			name: "get project by owner/namespace path",
+			args: map[string]any{
+				"project_id": "owner/namespace",
+			},
+			setupMock: func(mockProjects *glabtest.MockProjectsServiceInterface, ret *gitlab.Project) {
+				mockProjects.EXPECT().
+					GetProject("owner/namespace", gomock.Any(), gomock.Any()).
+					Return(ret, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}, nil)
+			},
+			want: &gitlab.Project{
+				ID:   123,
+				Name: "namespace",
+				Path: "namespace",
+			},
+		},
+		{
+			name: "project not found",
+			args: map[string]any{
+				"project_id": "nonexistent/namespace",
+			},
+			setupMock: func(mockProjects *glabtest.MockProjectsServiceInterface, ret *gitlab.Project) {
+				mockProjects.EXPECT().
+					GetProject("nonexistent/namespace", gomock.Any(), gomock.Any()).
+					Return(nil, &gitlab.Response{Response: &http.Response{StatusCode: http.StatusNotFound}}, errors.New("404 Not Found"))
+			},
+			wantError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gitlabClient := glabtest.NewTestClient(t)
+			ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
+
+			tt.setupMock(gitlabClient.MockProjects, tt.want)
+
+			srv := mcptest.NewUnstartedServer(t)
+			AddTo(srv)
+
+			if err := srv.Start(ctx); err != nil {
+				t.Fatalf("failed to start MCP test server: %v", err)
+			}
+			defer srv.Close()
+
+			var req mcp.CallToolRequest
+
+			req.Params.Name = "get_project"
+			req.Params.Arguments = tt.args
+
+			result, err := srv.Client().CallTool(t.Context(), req)
+
+			if gotErr := err != nil; gotErr != tt.wantError {
+				t.Errorf("get_project error mismatch, got: %v, want error: %v", err, tt.wantError)
+			}
+
+			if err != nil {
+				return
+			}
+
+			if result.IsError {
+				return
+			}
+
+			var got *gitlab.Project
+			if err := unmarshalResult(result, &got); err != nil {
+				t.Fatalf("decode error: %v", err)
+			}
+
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Errorf("project mismatch (-want/+got):\n%s", diff)
+			}
+		})
+	}
+}
+
 func TestListGroupProjects(t *testing.T) {
 	defaultOpts := gitlab.ListGroupProjectsOptions{
 		ListOptions: gitlab.ListOptions{
