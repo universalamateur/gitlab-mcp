@@ -19,8 +19,33 @@ type ProjectsTools struct{}
 // AddTo registers all project-related tools with the provided MCPServer.
 func (g *ProjectsTools) AddTo(srv ToolAdder) {
 	srv.AddTools(
+		g.GetProject(),
 		g.ListProjects(),
 	)
+}
+
+type getProjectArgs struct {
+	ProjectID mcpargs.ID `mcp_desc:"ID of the project either in owner/namespace format or the numeric project ID" mcp_required:"true"`
+}
+
+// GetProject returns an MCP ServerTool for getting a single project.
+func (p *ProjectsTools) GetProject() server.ServerTool {
+	return server.ServerTool{
+		Handler: ClientHandler(p.getProject),
+		Tool: mcpargs.NewTool("get_project", getProjectArgs{},
+			mcp.WithDescription("Get a single project"),
+			mcp.WithReadOnlyHintAnnotation(true),
+		),
+	}
+}
+
+func (p *ProjectsTools) getProject(ctx context.Context, client *gitlab.Client, args getProjectArgs, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	project, _, err := client.Projects.GetProject(args.ProjectID.Value(), nil, gitlab.WithContext(ctx))
+	if err != nil {
+		return nil, fmt.Errorf("GetProject(%q): %w", args.ProjectID.Value(), err)
+	}
+
+	return newToolResultJSON(project)
 }
 
 type listProjectsArgs struct {
