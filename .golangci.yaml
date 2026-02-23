@@ -231,6 +231,12 @@ linters:
         text: (Expect directory permissions to be 0750 or less|Expect file permissions to be 0600 or less)
       - path: (.+)\.go$
         text: Potential file inclusion via variable
+      - path: ^lib/mcpargs/unmarshal_test.go$
+        text: G117  # Exported struct field "APIKey" (JSON key "APIKey") matches secret pattern (gosec)
+      - path: ^lib/auth/auth_test.go$
+        text: G101  # Potential hardcoded credentials (gosec)
+      - path: ^cmd/root_test.go$
+        text: G704  # SSRF via taint analysis (gosec)
 
     paths:
       - node_modules
