@@ -224,7 +224,6 @@ You can provide these environment variables in one of two ways:
 | `edit_issue` | Updates an existing GitLab issue. You can modify the issue's title, description, and metadata, and close/reopen issues. |
 | `get_epic_links` | GetEpicLinks gets all child epics of an epic |
 | `get_group` | Fetches information about a GitLab group |
-| `get_issue` | Get a single project issue |
 | `get_issues_closed_on_merge` | Get all the issues that would be closed by merging the provided merge request |
 | `get_job` | Get a single job of a project |
 | `get_merge_request_approvals` | Get approvals for a merge request |
