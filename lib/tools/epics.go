@@ -20,9 +20,6 @@ type EpicServiceInterface interface {
 	// ListGroupEpics returns a tool for listing all epics in a specific group.
 	ListGroupEpics() server.ServerTool
 
-	// GetEpic returns a tool for fetching a specific epic by its ID.
-	GetEpic() server.ServerTool
-
 	// GetEpicLinks returns a tool for fetching all child epics of a specific epic.
 	GetEpicLinks() server.ServerTool
 
@@ -43,7 +40,6 @@ type EpicTools struct{}
 func (e *EpicTools) AddTo(srv ToolAdder) {
 	srv.AddTools(
 		e.ListGroupEpics(),
-		e.GetEpic(),
 		e.GetEpicLinks(),
 		e.ListEpicIssues(),
 		e.CreateEpic(),
@@ -99,32 +95,6 @@ func (e *EpicTools) listGroupEpics(ctx context.Context, client *gitlab.Client, a
 	}
 
 	return newToolResultJSON(epics)
-}
-
-type getEpicArgs struct {
-	GroupID mcpargs.ID `mcp_desc:"ID of the group either in owner/namespace format or the numeric group ID" mcp_required:"true"`
-	EpicIID int64      `mcp_desc:"Internal ID of the epic to fetch" mcp_required:"true"`
-}
-
-// GetEpic returns a ServerTool for fetching information about a specific epic.
-// The tool accepts a group ID and an epic internal ID as parameters.
-func (e *EpicTools) GetEpic() server.ServerTool {
-	return server.ServerTool{
-		Handler: ClientHandler(e.getEpic),
-		Tool: mcpargs.NewTool("get_epic", getEpicArgs{},
-			mcp.WithDescription("Fetches information about an epic by ID"),
-			mcp.WithReadOnlyHintAnnotation(true),
-		),
-	}
-}
-
-func (e *EpicTools) getEpic(ctx context.Context, client *gitlab.Client, args getEpicArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	epic, _, err := client.Epics.GetEpic(args.GroupID.Value(), args.EpicIID, gitlab.WithContext(ctx))
-	if err != nil {
-		return nil, fmt.Errorf("GetEpic(%q, %d): %w", args.GroupID.Value(), args.EpicIID, err)
-	}
-
-	return newToolResultJSON(epic)
 }
 
 type getEpicLinksArgs struct {
