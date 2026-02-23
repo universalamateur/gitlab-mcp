@@ -14,11 +14,10 @@ Please provide feedback in https://gitlab.com/gitlab-org/ux-research/-/issues/34
 
 GitLab MCP implements the [Model Context Protocol](https://github.com/anthropics/model-context-protocol) for GitLab, allowing AI assistants like Claude to access and manipulate GitLab resources. This integration enables Claude to work with:
 
-- Discussions and Notes
-- Epics
-- Issues
-- Jobs
+- Work Items (Epics, Issues, Tasks)
 - Merge Requests
+- Discussions and Notes
+- Jobs
 - Repository Files and Directories
 - Snippets
 - User information
@@ -240,6 +239,7 @@ You can provide these environment variables in one of two ways:
 | `get_snippet` | Returns the metadata of a snippet, such as title and description. File content is not returned |
 | `get_user_status` | Get a user's status |
 | `get_user` | Get information about a specific user or the current user. In particular, this tool can be used to resolve a username to an ID. |
+| `get_work_item` | Get a work item (e.g. epic, issue, task) |
 | `issue_time_tracking` | Updates time tracking information for an issue, such as the time estimate and spent time. |
 | `list_all_snippets` | List all snippets the user has access to |
 | `list_draft_notes` | Returns a list of draft notes for the merge request |
@@ -258,7 +258,7 @@ You can provide these environment variables in one of two ways:
 | `list_project_merge_requests` | Get all merge requests for this project |
 | `list_repository_directory` | Get a list of repository files and directories in a project |
 | `list_subgroups` | Get a list of subgroups in a GitLab group |
-| `list_user_events`  | Get events for users between |
+| `list_user_events` | Get events for users between |
 | `list_user_merge_requests` | Get all merge requests authored by or assigned to a user for review |
 | `list_user_snippets` | List snippets owned by the current user |
 | `list_user_todos` | Get all todos for the current user, with optional filtering by state (pending, done) and a limit on the number returned (default 100). |

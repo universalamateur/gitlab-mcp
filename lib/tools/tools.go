@@ -48,6 +48,7 @@ func AddTo(srv ToolAdder) {
 	new(SnippetsTools).AddTo(srv)
 	new(TodosTools).AddTo(srv)
 	new(UsersTools).AddTo(srv)
+	new(WorkItemsTools).AddTo(srv)
 }
 
 // ClientHandler wraps a tool handler function with a GitLab client,
