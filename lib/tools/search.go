@@ -61,50 +61,37 @@ func (s *SearchTools) search(ctx context.Context, client *gitlab.Client, args se
 		opt.Ref = new(args.Ref)
 	}
 
-	reqOpt := gitlab.WithContext(ctx)
-
-	var (
-		results any
-		err     error
-	)
-
 	switch {
 	case !args.ProjectID.IsZero():
-		results, err = s.searchProject(client, args.ProjectID.Value(), args.Search, args.Scope, opt, reqOpt)
+		return s.searchProject(ctx, client, args.ProjectID.Value(), args.Search, args.Scope, opt)
 	case !args.GroupID.IsZero():
-		results, err = s.searchGroup(client, args.GroupID.Value(), args.Search, args.Scope, opt, reqOpt)
+		return s.searchGroup(ctx, client, args.GroupID.Value(), args.Search, args.Scope, opt)
 	default:
-		results, err = s.searchGlobal(client, args.Search, args.Scope, opt, reqOpt)
+		return s.searchGlobal(ctx, client, args.Search, args.Scope, opt)
 	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return newToolResultJSON(results)
 }
 
 //nolint:cyclop // Dispatch by scope — each case is one line.
-func (s *SearchTools) searchGlobal(client *gitlab.Client, query, scope string, opt *gitlab.SearchOptions, reqOpt gitlab.RequestOptionFunc) (any, error) {
+func (s *SearchTools) searchGlobal(ctx context.Context, client *gitlab.Client, query, scope string, opt *gitlab.SearchOptions) (*mcp.CallToolResult, error) {
 	switch scope {
 	case scopeProjects:
-		return unwrap(client.Search.Projects(query, opt, reqOpt))
+		return searchAllGlobal(ctx, client.Search.Projects, query, opt)
 	case scopeIssues:
-		return unwrap(client.Search.Issues(query, opt, reqOpt))
+		return searchAllGlobal(ctx, client.Search.Issues, query, opt)
 	case scopeMergeRequests:
-		return unwrap(client.Search.MergeRequests(query, opt, reqOpt))
+		return searchAllGlobal(ctx, client.Search.MergeRequests, query, opt)
 	case scopeMilestones:
-		return unwrap(client.Search.Milestones(query, opt, reqOpt))
+		return searchAllGlobal(ctx, client.Search.Milestones, query, opt)
 	case scopeSnippetTitles:
-		return unwrap(client.Search.SnippetTitles(query, opt, reqOpt))
+		return searchAllGlobal(ctx, client.Search.SnippetTitles, query, opt)
 	case scopeWikiBlobs:
-		return unwrap(client.Search.WikiBlobs(query, opt, reqOpt))
+		return searchAllGlobal(ctx, client.Search.WikiBlobs, query, opt)
 	case scopeCommits:
-		return unwrap(client.Search.Commits(query, opt, reqOpt))
+		return searchAllGlobal(ctx, client.Search.Commits, query, opt)
 	case scopeBlobs:
-		return unwrap(client.Search.Blobs(query, opt, reqOpt))
+		return searchAllGlobal(ctx, client.Search.Blobs, query, opt)
 	case scopeUsers:
-		return unwrap(client.Search.Users(query, opt, reqOpt))
+		return searchAllGlobal(ctx, client.Search.Users, query, opt)
 	case scopeNotes:
 		return nil, fmt.Errorf("%w: scope %q requires project_id", ErrInvalidArgument, scope)
 	default:
@@ -113,24 +100,24 @@ func (s *SearchTools) searchGlobal(client *gitlab.Client, query, scope string, o
 }
 
 //nolint:cyclop // Dispatch by scope — each case is one line.
-func (s *SearchTools) searchGroup(client *gitlab.Client, gid any, query, scope string, opt *gitlab.SearchOptions, reqOpt gitlab.RequestOptionFunc) (any, error) {
+func (s *SearchTools) searchGroup(ctx context.Context, client *gitlab.Client, gid any, query, scope string, opt *gitlab.SearchOptions) (*mcp.CallToolResult, error) {
 	switch scope {
 	case scopeProjects:
-		return unwrap(client.Search.ProjectsByGroup(gid, query, opt, reqOpt))
+		return searchAllNamespace(ctx, client.Search.ProjectsByGroup, gid, query, opt)
 	case scopeIssues:
-		return unwrap(client.Search.IssuesByGroup(gid, query, opt, reqOpt))
+		return searchAllNamespace(ctx, client.Search.IssuesByGroup, gid, query, opt)
 	case scopeMergeRequests:
-		return unwrap(client.Search.MergeRequestsByGroup(gid, query, opt, reqOpt))
+		return searchAllNamespace(ctx, client.Search.MergeRequestsByGroup, gid, query, opt)
 	case scopeMilestones:
-		return unwrap(client.Search.MilestonesByGroup(gid, query, opt, reqOpt))
+		return searchAllNamespace(ctx, client.Search.MilestonesByGroup, gid, query, opt)
 	case scopeWikiBlobs:
-		return unwrap(client.Search.WikiBlobsByGroup(gid, query, opt, reqOpt))
+		return searchAllNamespace(ctx, client.Search.WikiBlobsByGroup, gid, query, opt)
 	case scopeCommits:
-		return unwrap(client.Search.CommitsByGroup(gid, query, opt, reqOpt))
+		return searchAllNamespace(ctx, client.Search.CommitsByGroup, gid, query, opt)
 	case scopeBlobs:
-		return unwrap(client.Search.BlobsByGroup(gid, query, opt, reqOpt))
+		return searchAllNamespace(ctx, client.Search.BlobsByGroup, gid, query, opt)
 	case scopeUsers:
-		return unwrap(client.Search.UsersByGroup(gid, query, opt, reqOpt))
+		return searchAllNamespace(ctx, client.Search.UsersByGroup, gid, query, opt)
 	case scopeSnippetTitles:
 		return nil, fmt.Errorf("%w: scope %q is not available for group searches", ErrInvalidArgument, scope)
 	case scopeNotes:
@@ -141,24 +128,24 @@ func (s *SearchTools) searchGroup(client *gitlab.Client, gid any, query, scope s
 }
 
 //nolint:cyclop // Dispatch by scope — each case is one line.
-func (s *SearchTools) searchProject(client *gitlab.Client, pid any, query, scope string, opt *gitlab.SearchOptions, reqOpt gitlab.RequestOptionFunc) (any, error) {
+func (s *SearchTools) searchProject(ctx context.Context, client *gitlab.Client, pid any, query, scope string, opt *gitlab.SearchOptions) (*mcp.CallToolResult, error) {
 	switch scope {
 	case scopeIssues:
-		return unwrap(client.Search.IssuesByProject(pid, query, opt, reqOpt))
+		return searchAllNamespace(ctx, client.Search.IssuesByProject, pid, query, opt)
 	case scopeMergeRequests:
-		return unwrap(client.Search.MergeRequestsByProject(pid, query, opt, reqOpt))
+		return searchAllNamespace(ctx, client.Search.MergeRequestsByProject, pid, query, opt)
 	case scopeMilestones:
-		return unwrap(client.Search.MilestonesByProject(pid, query, opt, reqOpt))
+		return searchAllNamespace(ctx, client.Search.MilestonesByProject, pid, query, opt)
 	case scopeNotes:
-		return unwrap(client.Search.NotesByProject(pid, query, opt, reqOpt))
+		return searchAllNamespace(ctx, client.Search.NotesByProject, pid, query, opt)
 	case scopeWikiBlobs:
-		return unwrap(client.Search.WikiBlobsByProject(pid, query, opt, reqOpt))
+		return searchAllNamespace(ctx, client.Search.WikiBlobsByProject, pid, query, opt)
 	case scopeCommits:
-		return unwrap(client.Search.CommitsByProject(pid, query, opt, reqOpt))
+		return searchAllNamespace(ctx, client.Search.CommitsByProject, pid, query, opt)
 	case scopeBlobs:
-		return unwrap(client.Search.BlobsByProject(pid, query, opt, reqOpt))
+		return searchAllNamespace(ctx, client.Search.BlobsByProject, pid, query, opt)
 	case scopeUsers:
-		return unwrap(client.Search.UsersByProject(pid, query, opt, reqOpt))
+		return searchAllNamespace(ctx, client.Search.UsersByProject, pid, query, opt)
 	case scopeProjects:
 		return nil, fmt.Errorf("%w: scope %q is not available for project searches", ErrInvalidArgument, scope)
 	case scopeSnippetTitles:
@@ -168,9 +155,24 @@ func (s *SearchTools) searchProject(client *gitlab.Client, pid any, query, scope
 	}
 }
 
-// unwrap discards the *gitlab.Response from a search API call.
-//
-//nolint:ireturn // Generic return is intentional — each search scope returns a different type.
-func unwrap[T any](v T, _ *gitlab.Response, err error) (T, error) {
-	return v, err
+func searchAllGlobal[T any](ctx context.Context, searchFunc func(string, *gitlab.SearchOptions, ...gitlab.RequestOptionFunc) ([]*T, *gitlab.Response, error), query string, opt *gitlab.SearchOptions) (*mcp.CallToolResult, error) {
+	items, err := gitlab.ScanAndCollect(func(p gitlab.PaginationOptionFunc) ([]*T, *gitlab.Response, error) {
+		return searchFunc(query, opt, gitlab.WithContext(ctx), p)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("searchAllGlobal: %w", err)
+	}
+
+	return newToolResultJSON(items)
+}
+
+func searchAllNamespace[T any](ctx context.Context, searchFunc func(any, string, *gitlab.SearchOptions, ...gitlab.RequestOptionFunc) ([]*T, *gitlab.Response, error), namespaceID any, query string, opt *gitlab.SearchOptions) (*mcp.CallToolResult, error) {
+	items, err := gitlab.ScanAndCollect(func(p gitlab.PaginationOptionFunc) ([]*T, *gitlab.Response, error) {
+		return searchFunc(namespaceID, query, opt, gitlab.WithContext(ctx), p)
+	})
+	if err != nil {
+		return nil, fmt.Errorf("searchAllNamespace: %w", err)
+	}
+
+	return newToolResultJSON(items)
 }
