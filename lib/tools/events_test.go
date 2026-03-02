@@ -67,7 +67,7 @@ func TestListUserEvents(t *testing.T) {
 
 						// Verify expected options
 						wantOpts := &gitlab.ListContributionEventsOptions{
-							Sort: gitlab.Ptr("desc"),
+							Sort: new("desc"),
 							ListOptions: gitlab.ListOptions{
 								PerPage: maxPerPage,
 							},
@@ -102,7 +102,7 @@ func TestListUserEvents(t *testing.T) {
 						}
 
 						wantOpts := &gitlab.ListContributionEventsOptions{
-							Sort: gitlab.Ptr("desc"),
+							Sort: new("desc"),
 							ListOptions: gitlab.ListOptions{
 								PerPage: maxPerPage,
 							},
@@ -138,7 +138,7 @@ func TestListUserEvents(t *testing.T) {
 						targetType := gitlab.EventTargetTypeValue("issue")
 
 						wantOpts := &gitlab.ListContributionEventsOptions{
-							Sort:       gitlab.Ptr("desc"),
+							Sort:       new("desc"),
 							TargetType: &targetType,
 							ListOptions: gitlab.ListOptions{
 								PerPage: maxPerPage,
@@ -176,7 +176,7 @@ func TestListUserEvents(t *testing.T) {
 						eventType := gitlab.EventTypeValue("created")
 
 						wantOpts := &gitlab.ListContributionEventsOptions{
-							Sort:   gitlab.Ptr("desc"),
+							Sort:   new("desc"),
 							Action: &eventType,
 							ListOptions: gitlab.ListOptions{
 								PerPage: maxPerPage,
@@ -215,7 +215,7 @@ func TestListUserEvents(t *testing.T) {
 						afterDate, _ := gitlab.ParseISOTime("2024-01-01")
 
 						wantOpts := &gitlab.ListContributionEventsOptions{
-							Sort:   gitlab.Ptr("desc"),
+							Sort:   new("desc"),
 							Before: &beforeDate,
 							After:  &afterDate,
 							ListOptions: gitlab.ListOptions{
@@ -258,7 +258,7 @@ func TestListUserEvents(t *testing.T) {
 						eventType := gitlab.EventTypeValue("created")
 
 						wantOpts := &gitlab.ListContributionEventsOptions{
-							Sort:       gitlab.Ptr("desc"),
+							Sort:       new("desc"),
 							Before:     &beforeDate,
 							TargetType: &targetType,
 							Action:     &eventType,

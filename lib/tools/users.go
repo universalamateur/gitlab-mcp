@@ -80,7 +80,7 @@ func (u *UsersTools) getUser(ctx context.Context, client *gitlab.Client, args ge
 	case args.UserID.String != "":
 		id := strings.TrimPrefix(args.UserID.String, "@")
 		opts := gitlab.ListUsersOptions{
-			Username: gitlab.Ptr(id),
+			Username: new(id),
 		}
 
 		users, _, err := client.Users.ListUsers(&opts, gitlab.WithContext(ctx))
@@ -151,15 +151,15 @@ func (u *UsersTools) setUserStatus(ctx context.Context, client *gitlab.Client, a
 
 	// Set optional parameters
 	if args.Emoji != "" {
-		opt.Emoji = gitlab.Ptr(args.Emoji)
+		opt.Emoji = new(args.Emoji)
 	}
 
 	if args.Message != "" {
-		opt.Message = gitlab.Ptr(args.Message)
+		opt.Message = new(args.Message)
 	}
 
 	if args.Availability != "" {
-		opt.Availability = gitlab.Ptr(gitlab.AvailabilityValue(args.Availability))
+		opt.Availability = new(gitlab.AvailabilityValue(args.Availability))
 	}
 
 	status, _, err := client.Users.SetUserStatus(opt, gitlab.WithContext(ctx))

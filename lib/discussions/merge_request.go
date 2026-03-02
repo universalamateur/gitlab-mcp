@@ -64,7 +64,7 @@ func (d *MergeRequestDiscussion) List(ctx context.Context, confidential bool) ([
 // NewDiscussion creates a new discussion thread on the merge request.
 func (d *MergeRequestDiscussion) NewDiscussion(ctx context.Context, body string) (*gitlab.Discussion, error) {
 	opt := &gitlab.CreateMergeRequestDiscussionOptions{
-		Body: gitlab.Ptr(body),
+		Body: new(body),
 	}
 
 	discussion, _, err := d.client.Discussions.CreateMergeRequestDiscussion(d.projectID.Value(), d.mergeRequestIID, opt, gitlab.WithContext(ctx))
@@ -80,12 +80,12 @@ var _ PositionedManager = (*MergeRequestDiscussion)(nil)
 // NewPositionDiscussion creates a new discussion on a specific position in the merge request diff.
 func (d *MergeRequestDiscussion) NewPositionDiscussion(ctx context.Context, body string, pos *gitlab.PositionOptions, commitID string) (*gitlab.Discussion, error) {
 	opt := &gitlab.CreateMergeRequestDiscussionOptions{
-		Body:     gitlab.Ptr(body),
+		Body:     new(body),
 		Position: pos,
 	}
 
 	if commitID != "" {
-		opt.CommitID = gitlab.Ptr(commitID)
+		opt.CommitID = new(commitID)
 	}
 
 	discussion, _, err := d.client.Discussions.CreateMergeRequestDiscussion(d.projectID.Value(), d.mergeRequestIID, opt, gitlab.WithContext(ctx))
@@ -99,7 +99,7 @@ func (d *MergeRequestDiscussion) NewPositionDiscussion(ctx context.Context, body
 // AddNote adds a new note to an existing discussion thread.
 func (d *MergeRequestDiscussion) AddNote(ctx context.Context, discussionID string, body string) (*gitlab.Note, error) {
 	opt := &gitlab.AddMergeRequestDiscussionNoteOptions{
-		Body: gitlab.Ptr(body),
+		Body: new(body),
 	}
 
 	note, _, err := d.client.Discussions.AddMergeRequestDiscussionNote(d.projectID.Value(), d.mergeRequestIID, discussionID, opt, gitlab.WithContext(ctx))
@@ -113,7 +113,7 @@ func (d *MergeRequestDiscussion) AddNote(ctx context.Context, discussionID strin
 // ModifyNote updates an existing note in a discussion thread.
 func (d *MergeRequestDiscussion) ModifyNote(ctx context.Context, discussionID string, noteID int64, body string) (*gitlab.Note, error) {
 	opt := &gitlab.UpdateMergeRequestDiscussionNoteOptions{
-		Body: gitlab.Ptr(body),
+		Body: new(body),
 	}
 
 	note, _, err := d.client.Discussions.UpdateMergeRequestDiscussionNote(d.projectID.Value(), d.mergeRequestIID, discussionID, noteID, opt, gitlab.WithContext(ctx))
@@ -137,7 +137,7 @@ func (d *MergeRequestDiscussion) DeleteNote(ctx context.Context, discussionID st
 // ResolveDiscussion resolves or unresolves a thread of discussion in a merge request.
 func (d *MergeRequestDiscussion) ResolveDiscussion(ctx context.Context, discussionID string, resolved bool) (*gitlab.Discussion, error) {
 	opt := &gitlab.ResolveMergeRequestDiscussionOptions{
-		Resolved: gitlab.Ptr(resolved),
+		Resolved: new(resolved),
 	}
 
 	discussion, _, err := d.client.Discussions.ResolveMergeRequestDiscussion(d.projectID.Value(), d.mergeRequestIID, discussionID, opt, gitlab.WithContext(ctx))

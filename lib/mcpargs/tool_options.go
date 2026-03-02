@@ -40,7 +40,7 @@ func NewTool(name string, v any, opts ...mcp.ToolOption) mcp.Tool {
 func Marshal(v any) ([]mcp.ToolOption, error) { //nolint:cyclop,funlen,gocognit,gocyclo // Unfortunately reflection is complex.
 	// Get the type of the struct
 	t := reflect.TypeOf(v)
-	if t.Kind() == reflect.Ptr {
+	if t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 
@@ -104,7 +104,7 @@ func Marshal(v any) ([]mcp.ToolOption, error) { //nolint:cyclop,funlen,gocognit,
 
 		// If the field implements the MCPTyper interface, use the MCPType method to determine the tool option type.
 		var fieldValue reflect.Value
-		if reflect.ValueOf(v).Kind() == reflect.Ptr {
+		if reflect.ValueOf(v).Kind() == reflect.Pointer {
 			fieldValue = reflect.ValueOf(v).Elem().Field(i)
 		} else {
 			fieldValue = reflect.ValueOf(v).Field(i)

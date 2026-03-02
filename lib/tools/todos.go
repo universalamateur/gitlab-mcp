@@ -72,19 +72,19 @@ func (t *TodosTools) listUserTodos(ctx context.Context, client *gitlab.Client, a
 	opt.State = todoStates[args.State]
 
 	if args.AuthorID != 0 {
-		opt.AuthorID = gitlab.Ptr(args.AuthorID)
+		opt.AuthorID = new(args.AuthorID)
 	}
 
 	if args.ProjectID != 0 {
-		opt.ProjectID = gitlab.Ptr(args.ProjectID)
+		opt.ProjectID = new(args.ProjectID)
 	}
 
 	if args.GroupID != 0 {
-		opt.GroupID = gitlab.Ptr(args.GroupID)
+		opt.GroupID = new(args.GroupID)
 	}
 
 	if args.Type != "" {
-		opt.Type = gitlab.Ptr(args.Type)
+		opt.Type = new(args.Type)
 	}
 
 	nextPage := func(opts *gitlab.ListTodosOptions, page int64) {
@@ -108,9 +108,9 @@ func (t *TodosTools) listUserTodos(ctx context.Context, client *gitlab.Client, a
 }
 
 var todoStates = map[string]*string{
-	"pending": gitlab.Ptr("pending"),
-	"done":    gitlab.Ptr("done"),
-	"":        gitlab.Ptr("pending"), // Default value
+	"pending": new("pending"),
+	"done":    new("done"),
+	"":        new("pending"), // Default value
 }
 
 // todoActions is a map of all possible todo actions.

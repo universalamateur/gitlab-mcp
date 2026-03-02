@@ -71,7 +71,7 @@ func (d *CommitDiscussion) List(ctx context.Context, confidential bool) ([]*gitl
 // NewDiscussion creates a new discussion thread on the commit.
 func (d *CommitDiscussion) NewDiscussion(ctx context.Context, body string) (*gitlab.Discussion, error) {
 	opt := &gitlab.CreateCommitDiscussionOptions{
-		Body: gitlab.Ptr(body),
+		Body: new(body),
 	}
 
 	discussion, _, err := d.client.Discussions.CreateCommitDiscussion(d.projectID.Value(), d.commitID, opt, gitlab.WithContext(ctx))
@@ -87,7 +87,7 @@ var _ PositionedManager = (*CommitDiscussion)(nil)
 // NewPositionDiscussion creates a new discussion on a specific position in the merge request diff.
 func (d *CommitDiscussion) NewPositionDiscussion(ctx context.Context, body string, pos *gitlab.PositionOptions, commitID string) (*gitlab.Discussion, error) {
 	opt := &gitlab.CreateCommitDiscussionOptions{
-		Body:     gitlab.Ptr(body),
+		Body:     new(body),
 		Position: toNotePosition(pos),
 	}
 
@@ -127,7 +127,7 @@ func derefOptionalField[T any](p *T) T {
 // NewDiffDiscussion creates a new discussion on a specific position in the commit diff.
 func (d *CommitDiscussion) NewDiffDiscussion(ctx context.Context, body string, position *gitlab.NotePosition) (*gitlab.Discussion, error) {
 	opt := &gitlab.CreateCommitDiscussionOptions{
-		Body:     gitlab.Ptr(body),
+		Body:     new(body),
 		Position: position,
 	}
 
@@ -142,7 +142,7 @@ func (d *CommitDiscussion) NewDiffDiscussion(ctx context.Context, body string, p
 // AddNote adds a new note to an existing discussion thread.
 func (d *CommitDiscussion) AddNote(ctx context.Context, discussionID string, body string) (*gitlab.Note, error) {
 	opt := &gitlab.AddCommitDiscussionNoteOptions{
-		Body: gitlab.Ptr(body),
+		Body: new(body),
 	}
 
 	note, _, err := d.client.Discussions.AddCommitDiscussionNote(d.projectID.Value(), d.commitID, discussionID, opt, gitlab.WithContext(ctx))
@@ -156,7 +156,7 @@ func (d *CommitDiscussion) AddNote(ctx context.Context, discussionID string, bod
 // ModifyNote updates an existing note in a discussion thread.
 func (d *CommitDiscussion) ModifyNote(ctx context.Context, discussionID string, noteID int64, body string) (*gitlab.Note, error) {
 	opt := &gitlab.UpdateCommitDiscussionNoteOptions{
-		Body: gitlab.Ptr(body),
+		Body: new(body),
 	}
 
 	note, _, err := d.client.Discussions.UpdateCommitDiscussionNote(d.projectID.Value(), d.commitID, discussionID, noteID, opt, gitlab.WithContext(ctx))

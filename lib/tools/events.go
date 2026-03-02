@@ -92,18 +92,18 @@ func (e *EventsTools) listUserEvents(ctx context.Context, client *gitlab.Client,
 
 func listContributionEventsOptions(args listEventArgs) (*gitlab.ListContributionEventsOptions, error) {
 	opts := gitlab.ListContributionEventsOptions{
-		Sort: gitlab.Ptr(sortOrderDescending),
+		Sort: new(sortOrderDescending),
 		ListOptions: gitlab.ListOptions{
 			PerPage: maxPerPage,
 		},
 	}
 
 	if args.TargetType != "" {
-		opts.TargetType = gitlab.Ptr(gitlab.EventTargetTypeValue(args.TargetType))
+		opts.TargetType = new(gitlab.EventTargetTypeValue(args.TargetType))
 	}
 
 	if args.ActionType != "" {
-		opts.Action = gitlab.Ptr(gitlab.EventTypeValue(args.ActionType))
+		opts.Action = new(gitlab.EventTypeValue(args.ActionType))
 	}
 
 	if args.Before != "" {

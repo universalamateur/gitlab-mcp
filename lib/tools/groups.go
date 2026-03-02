@@ -79,11 +79,11 @@ func (g *GroupsTools) listSubgroups(ctx context.Context, client *gitlab.Client, 
 	}
 
 	if args.Search != "" {
-		opt.Search = gitlab.Ptr(args.Search)
+		opt.Search = new(args.Search)
 	}
 
 	if _, ok := request.GetArguments()["owned"]; ok {
-		opt.Owned = gitlab.Ptr(args.Owned)
+		opt.Owned = new(args.Owned)
 	}
 
 	opt.MinAccessLevel = accessLevel(args.MinAccessLevel)

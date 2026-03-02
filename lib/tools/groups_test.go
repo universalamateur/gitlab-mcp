@@ -146,8 +146,8 @@ func TestListSubgroups(t *testing.T) {
 					ListSubGroups(gomock.Eq("test/group"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.ListSubGroupsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Group, *gitlab.Response, error) {
 						wantOpts := defaultOpts
-						wantOpts.Search = gitlab.Ptr("search_term")
-						wantOpts.Owned = gitlab.Ptr(true)
+						wantOpts.Search = new("search_term")
+						wantOpts.Owned = new(true)
 						wantOpts.MinAccessLevel = gitlab.Ptr(gitlab.GuestPermissions)
 						wantOpts.ListOptions.OrderBy = "id"
 						wantOpts.ListOptions.Sort = sortOrderDescending

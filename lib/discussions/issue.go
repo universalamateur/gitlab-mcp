@@ -71,7 +71,7 @@ func (d *IssueDiscussion) List(ctx context.Context, confidential bool) ([]*gitla
 // NewDiscussion creates a new discussion thread on the issue.
 func (d *IssueDiscussion) NewDiscussion(ctx context.Context, body string) (*gitlab.Discussion, error) {
 	opt := &gitlab.CreateIssueDiscussionOptions{
-		Body: gitlab.Ptr(body),
+		Body: new(body),
 	}
 
 	discussion, _, err := d.client.Discussions.CreateIssueDiscussion(d.projectID.Value(), d.issueIID, opt, gitlab.WithContext(ctx))
@@ -85,7 +85,7 @@ func (d *IssueDiscussion) NewDiscussion(ctx context.Context, body string) (*gitl
 // AddNote adds a new note to an existing discussion thread.
 func (d *IssueDiscussion) AddNote(ctx context.Context, discussionID string, body string) (*gitlab.Note, error) {
 	opt := &gitlab.AddIssueDiscussionNoteOptions{
-		Body: gitlab.Ptr(body),
+		Body: new(body),
 	}
 
 	note, _, err := d.client.Discussions.AddIssueDiscussionNote(d.projectID.Value(), d.issueIID, discussionID, opt, gitlab.WithContext(ctx))
@@ -99,7 +99,7 @@ func (d *IssueDiscussion) AddNote(ctx context.Context, discussionID string, body
 // ModifyNote updates an existing note in a discussion thread.
 func (d *IssueDiscussion) ModifyNote(ctx context.Context, discussionID string, noteID int64, body string) (*gitlab.Note, error) {
 	opt := &gitlab.UpdateIssueDiscussionNoteOptions{
-		Body: gitlab.Ptr(body),
+		Body: new(body),
 	}
 
 	note, _, err := d.client.Discussions.UpdateIssueDiscussionNote(d.projectID.Value(), d.issueIID, discussionID, noteID, opt, gitlab.WithContext(ctx))

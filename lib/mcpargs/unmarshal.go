@@ -12,7 +12,7 @@ var ErrUnmarshalArguments = fmt.Errorf("failed to unmarshal arguments")
 // Field names in the struct are converted to snake_case to match keys in the arguments map.
 func Unmarshal(arguments map[string]any, v any) error { //nolint:cyclop,funlen,gocognit,gocyclo // Unfortunately reflection is complex.
 	rv := reflect.ValueOf(v)
-	if rv.Kind() != reflect.Ptr || rv.IsNil() {
+	if rv.Kind() != reflect.Pointer || rv.IsNil() {
 		return fmt.Errorf("%w: destination must be a non-nil pointer to a struct", ErrUnmarshalArguments)
 	}
 
@@ -73,7 +73,7 @@ func Unmarshal(arguments map[string]any, v any) error { //nolint:cyclop,funlen,g
 		//nolint:exhaustive
 		switch field.Type.Kind() {
 		case reflect.Struct, reflect.Chan, reflect.Func, reflect.Map, reflect.Slice, reflect.Array,
-			reflect.Interface, reflect.Ptr:
+			reflect.Interface, reflect.Pointer:
 			errs = errors.Join(errs, fmt.Errorf("%w: field %q has unsupported type %s", ErrUnmarshalArguments, field.Name, field.Type.Kind()))
 		}
 

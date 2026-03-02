@@ -39,9 +39,9 @@ var assigneeIDComparer = cmp.Comparer(func(a, b gitlab.AssigneeIDValue) bool {
 func TestListIssues(t *testing.T) {
 	// Default options template
 	defaultOpts := gitlab.ListIssuesOptions{
-		State:        gitlab.Ptr(defaultIssueState),
-		Confidential: gitlab.Ptr(false),
-		Scope:        gitlab.Ptr("all"),
+		State:        new(defaultIssueState),
+		Confidential: new(false),
+		Scope:        new("all"),
 		ListOptions: gitlab.ListOptions{
 			PerPage: maxPerPage,
 		},
@@ -106,7 +106,7 @@ func TestListIssues(t *testing.T) {
 					ListIssues(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := defaultOpts
-						wantOpts.Scope = gitlab.Ptr("assigned_to_me")
+						wantOpts.Scope = new("assigned_to_me")
 
 						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
 							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
@@ -142,7 +142,7 @@ func TestListIssues(t *testing.T) {
 					ListIssues(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := defaultOpts
-						wantOpts.Scope = gitlab.Ptr("created_by_me")
+						wantOpts.Scope = new("created_by_me")
 
 						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
 							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
@@ -181,10 +181,10 @@ func TestListIssues(t *testing.T) {
 					ListIssues(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := defaultOpts
-						wantOpts.AuthorUsername = gitlab.Ptr("author_user")
-						wantOpts.AssigneeUsername = gitlab.Ptr("other_user")
+						wantOpts.AuthorUsername = new("author_user")
+						wantOpts.AssigneeUsername = new("other_user")
 						wantOpts.Labels = &gitlab.LabelOptions{"bug", "feature"}
-						wantOpts.Milestone = gitlab.Ptr("v1.0")
+						wantOpts.Milestone = new("v1.0")
 
 						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
 							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
@@ -221,7 +221,7 @@ func TestListIssues(t *testing.T) {
 					ListIssues(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := defaultOpts
-						wantOpts.AuthorID = gitlab.Ptr(int64(5001))
+						wantOpts.AuthorID = new(int64(5001))
 						wantOpts.AssigneeID = gitlab.AssigneeID(5002)
 
 						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
@@ -250,11 +250,11 @@ func TestListIssues(t *testing.T) {
 					ListIssues(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := defaultOpts
-						wantOpts.CreatedAfter = gitlab.Ptr(time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC))
-						wantOpts.CreatedBefore = gitlab.Ptr(time.Date(2025, time.February, 1, 0, 0, 0, 0, time.UTC))
-						wantOpts.UpdatedAfter = gitlab.Ptr(time.Date(2025, time.March, 1, 0, 0, 0, 0, time.Local))  //nolint:gosmopolitan
-						wantOpts.UpdatedBefore = gitlab.Ptr(time.Date(2025, time.April, 1, 0, 0, 0, 0, time.Local)) //nolint:gosmopolitan
-						wantOpts.DueDate = gitlab.Ptr("overdue")
+						wantOpts.CreatedAfter = new(time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC))
+						wantOpts.CreatedBefore = new(time.Date(2025, time.February, 1, 0, 0, 0, 0, time.UTC))
+						wantOpts.UpdatedAfter = new(time.Date(2025, time.March, 1, 0, 0, 0, 0, time.Local))  //nolint:gosmopolitan
+						wantOpts.UpdatedBefore = new(time.Date(2025, time.April, 1, 0, 0, 0, 0, time.Local)) //nolint:gosmopolitan
+						wantOpts.DueDate = new("overdue")
 
 						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
 							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
@@ -386,7 +386,7 @@ func TestListIssues(t *testing.T) {
 					ListIssues(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := defaultOpts
-						wantOpts.State = gitlab.Ptr("closed")
+						wantOpts.State = new("closed")
 
 						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
 							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
@@ -550,8 +550,8 @@ func TestListIssues(t *testing.T) {
 func TestListGroupIssues(t *testing.T) {
 	// Default options template
 	defaultOpts := gitlab.ListGroupIssuesOptions{
-		State:        gitlab.Ptr(defaultIssueState),
-		Confidential: gitlab.Ptr(false),
+		State:        new(defaultIssueState),
+		Confidential: new(false),
 		ListOptions: gitlab.ListOptions{
 			PerPage: maxPerPage,
 		},
@@ -735,7 +735,7 @@ func TestListGroupIssues(t *testing.T) {
 					ListGroupIssues(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.ListGroupIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := defaultOpts
-						wantOpts.State = gitlab.Ptr("all")
+						wantOpts.State = new("all")
 
 						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
 							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
@@ -781,13 +781,13 @@ func TestListGroupIssues(t *testing.T) {
 					DoAndReturn(func(_ any, opts *gitlab.ListGroupIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := defaultOpts
 						wantOpts.Labels = &gitlab.LabelOptions{"bug", "feature"}
-						wantOpts.Milestone = gitlab.Ptr("v1.0")
-						wantOpts.AuthorUsername = gitlab.Ptr("test_author")
+						wantOpts.Milestone = new("v1.0")
+						wantOpts.AuthorUsername = new("test_author")
 						wantOpts.AssigneeID = gitlab.AssigneeID(123)
-						wantOpts.Search = gitlab.Ptr("critical issue")
+						wantOpts.Search = new("critical issue")
 						createdAfter, _ := time.Parse(time.RFC3339, "2023-01-01T00:00:00Z")
 						wantOpts.CreatedAfter = &createdAfter
-						wantOpts.DueDate = gitlab.Ptr("0")
+						wantOpts.DueDate = new("0")
 
 						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
 							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
@@ -937,8 +937,8 @@ func TestListGroupIssues(t *testing.T) {
 
 func TestListProjectIssues(t *testing.T) {
 	defaultOpts := gitlab.ListProjectIssuesOptions{
-		State:        gitlab.Ptr(defaultIssueState),
-		Confidential: gitlab.Ptr(false),
+		State:        new(defaultIssueState),
+		Confidential: new(false),
 		ListOptions: gitlab.ListOptions{
 			PerPage: maxPerPage,
 		},
@@ -1107,7 +1107,7 @@ func TestListProjectIssues(t *testing.T) {
 					ListProjectIssues(gomock.Eq("test-project"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.ListProjectIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := defaultOpts
-						wantOpts.State = gitlab.Ptr("all")
+						wantOpts.State = new("all")
 
 						if diff := cmp.Diff(&wantOpts, opts, cmpOpts...); diff != "" {
 							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
@@ -1167,16 +1167,16 @@ func TestListProjectIssues(t *testing.T) {
 						updatedBefore, _ := time.Parse(time.RFC3339, "2024-12-31T23:59:59Z")
 
 						wantOpts := gitlab.ListProjectIssuesOptions{
-							State:            gitlab.Ptr(defaultIssueState),
-							Confidential:     gitlab.Ptr(false),
+							State:            new(defaultIssueState),
+							Confidential:     new(false),
 							Labels:           &gitlab.LabelOptions{"enhancement"},
-							Milestone:        gitlab.Ptr("v2.0"),
-							IterationID:      gitlab.Ptr(int64(456)),
-							AuthorID:         gitlab.Ptr(int64(789)),
-							AssigneeUsername: gitlab.Ptr("test_assignee"),
-							Search:           gitlab.Ptr("urgent fix"),
+							Milestone:        new("v2.0"),
+							IterationID:      new(int64(456)),
+							AuthorID:         new(int64(789)),
+							AssigneeUsername: new("test_assignee"),
+							Search:           new("urgent fix"),
 							UpdatedBefore:    &updatedBefore,
-							DueDate:          gitlab.Ptr("week"),
+							DueDate:          new("week"),
 							ListOptions: gitlab.ListOptions{
 								PerPage: maxPerPage,
 							},

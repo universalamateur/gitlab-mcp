@@ -39,13 +39,13 @@ func TestCreateCommit(t *testing.T) {
 					CreateCommit(gomock.Eq("test/project"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.CreateCommitOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Commit, *gitlab.Response, error) {
 						wantOpts := &gitlab.CreateCommitOptions{
-							Branch:        gitlab.Ptr("feature-branch"),
-							CommitMessage: gitlab.Ptr("Add new file"),
+							Branch:        new("feature-branch"),
+							CommitMessage: new("Add new file"),
 							Actions: []*gitlab.CommitActionOptions{
 								{
 									Action:   gitlab.Ptr(gitlab.FileCreate),
-									FilePath: gitlab.Ptr("new-file.txt"),
-									Content:  gitlab.Ptr("Hello, World!"),
+									FilePath: new("new-file.txt"),
+									Content:  new("Hello, World!"),
 								},
 							},
 						}
@@ -77,13 +77,13 @@ func TestCreateCommit(t *testing.T) {
 					CreateCommit(gomock.Eq("test/project"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.CreateCommitOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Commit, *gitlab.Response, error) {
 						wantOpts := &gitlab.CreateCommitOptions{
-							Branch:        gitlab.Ptr("main"),
-							CommitMessage: gitlab.Ptr("Update existing file"),
+							Branch:        new("main"),
+							CommitMessage: new("Update existing file"),
 							Actions: []*gitlab.CommitActionOptions{
 								{
 									Action:   gitlab.Ptr(gitlab.FileUpdate),
-									FilePath: gitlab.Ptr("existing-file.txt"),
-									Content:  gitlab.Ptr("Updated content"),
+									FilePath: new("existing-file.txt"),
+									Content:  new("Updated content"),
 								},
 							},
 						}
@@ -114,12 +114,12 @@ func TestCreateCommit(t *testing.T) {
 					CreateCommit(gomock.Eq("test/project"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.CreateCommitOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Commit, *gitlab.Response, error) {
 						wantOpts := &gitlab.CreateCommitOptions{
-							Branch:        gitlab.Ptr("cleanup"),
-							CommitMessage: gitlab.Ptr("Remove old file"),
+							Branch:        new("cleanup"),
+							CommitMessage: new("Remove old file"),
 							Actions: []*gitlab.CommitActionOptions{
 								{
 									Action:   gitlab.Ptr(gitlab.FileDelete),
-									FilePath: gitlab.Ptr("old-file.txt"),
+									FilePath: new("old-file.txt"),
 								},
 							},
 						}
@@ -152,14 +152,14 @@ func TestCreateCommit(t *testing.T) {
 					CreateCommit(gomock.Eq("test/project"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.CreateCommitOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Commit, *gitlab.Response, error) {
 						wantOpts := &gitlab.CreateCommitOptions{
-							Branch:        gitlab.Ptr("refactor"),
-							CommitMessage: gitlab.Ptr("Move and update file"),
+							Branch:        new("refactor"),
+							CommitMessage: new("Move and update file"),
 							Actions: []*gitlab.CommitActionOptions{
 								{
 									Action:       gitlab.Ptr(gitlab.FileMove),
-									FilePath:     gitlab.Ptr("new/location/file.txt"),
-									PreviousPath: gitlab.Ptr("old/location/file.txt"),
-									Content:      gitlab.Ptr("Updated content in new location"),
+									FilePath:     new("new/location/file.txt"),
+									PreviousPath: new("old/location/file.txt"),
+									Content:      new("Updated content in new location"),
 								},
 							},
 						}
@@ -191,13 +191,13 @@ func TestCreateCommit(t *testing.T) {
 					CreateCommit(gomock.Eq("test/project"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.CreateCommitOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Commit, *gitlab.Response, error) {
 						wantOpts := &gitlab.CreateCommitOptions{
-							Branch:        gitlab.Ptr("reorganize"),
-							CommitMessage: gitlab.Ptr("Move file to new location"),
+							Branch:        new("reorganize"),
+							CommitMessage: new("Move file to new location"),
 							Actions: []*gitlab.CommitActionOptions{
 								{
 									Action:       gitlab.Ptr(gitlab.FileMove),
-									FilePath:     gitlab.Ptr("docs/README.md"),
-									PreviousPath: gitlab.Ptr("README.md"),
+									FilePath:     new("docs/README.md"),
+									PreviousPath: new("README.md"),
 								},
 							},
 						}
@@ -230,14 +230,14 @@ func TestCreateCommit(t *testing.T) {
 					CreateCommit(gomock.Eq("test/project"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.CreateCommitOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Commit, *gitlab.Response, error) {
 						wantOpts := &gitlab.CreateCommitOptions{
-							Branch:        gitlab.Ptr("feature-branch"),
-							StartBranch:   gitlab.Ptr("main"),
-							CommitMessage: gitlab.Ptr("Add new file from main"),
+							Branch:        new("feature-branch"),
+							StartBranch:   new("main"),
+							CommitMessage: new("Add new file from main"),
 							Actions: []*gitlab.CommitActionOptions{
 								{
 									Action:   gitlab.Ptr(gitlab.FileCreate),
-									FilePath: gitlab.Ptr("new-file.txt"),
-									Content:  gitlab.Ptr("Hello from main!"),
+									FilePath: new("new-file.txt"),
+									Content:  new("Hello from main!"),
 								},
 							},
 						}
