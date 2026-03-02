@@ -280,19 +280,19 @@ func (s *SnippetsTools) createSnippet(ctx context.Context, client *gitlab.Client
 	}
 
 	opt := &gitlab.CreateSnippetOptions{
-		Title:      gitlab.Ptr(args.Title),
+		Title:      new(args.Title),
 		Visibility: &visibilityLevel,
-		Files: gitlab.Ptr([]*gitlab.CreateSnippetFileOptions{
+		Files: new([]*gitlab.CreateSnippetFileOptions{
 			{
-				FilePath: gitlab.Ptr(args.FileName),
-				Content:  gitlab.Ptr(args.Content),
+				FilePath: new(args.FileName),
+				Content:  new(args.Content),
 			},
 		}),
 	}
 
 	// Add description if provided
 	if args.Description != "" {
-		opt.Description = gitlab.Ptr(args.Description)
+		opt.Description = new(args.Description)
 	}
 
 	snippet, _, err := client.Snippets.CreateSnippet(opt, gitlab.WithContext(ctx))
@@ -342,19 +342,19 @@ func (s *SnippetsTools) updateSnippet(ctx context.Context, client *gitlab.Client
 		return nil, fmt.Errorf("%w: invalid file action: %q", ErrInvalidArgument, args.FileAction)
 	}
 
-	opt.Files = gitlab.Ptr([]*gitlab.UpdateSnippetFileOptions{{
-		Action:   gitlab.Ptr(string(fileActionValue)),
-		FilePath: gitlab.Ptr(args.FileName),
-		Content:  gitlab.Ptr(args.Content),
+	opt.Files = new([]*gitlab.UpdateSnippetFileOptions{{
+		Action:   new(string(fileActionValue)),
+		FilePath: new(args.FileName),
+		Content:  new(args.Content),
 	}})
 
 	// Add optional parameters if provided
 	if args.Title != "" {
-		opt.Title = gitlab.Ptr(args.Title)
+		opt.Title = new(args.Title)
 	}
 
 	if args.Description != "" {
-		opt.Description = gitlab.Ptr(args.Description)
+		opt.Description = new(args.Description)
 	}
 
 	if args.Visibility != "" {
@@ -371,7 +371,7 @@ func (s *SnippetsTools) updateSnippet(ctx context.Context, client *gitlab.Client
 			return nil, fmt.Errorf("%w: invalid visibility level: %q", ErrInvalidArgument, args.Visibility)
 		}
 
-		opt.Visibility = gitlab.Ptr(visibilityLevel)
+		opt.Visibility = new(visibilityLevel)
 	}
 
 	snippet, _, err := client.Snippets.UpdateSnippet(args.SnippetID, opt, gitlab.WithContext(ctx))

@@ -43,7 +43,7 @@ func TestEditIssue(t *testing.T) {
 					UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(1)), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateIssueOptions{
-							Title: gitlab.Ptr("New Title"),
+							Title: new("New Title"),
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
 							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("UpdateIssue() options mismatch (-want +got):\n%s", diff)
@@ -68,7 +68,7 @@ func TestEditIssue(t *testing.T) {
 				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(2)), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateIssueOptions{
-							Description: gitlab.Ptr("New Description"),
+							Description: new("New Description"),
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
 							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("UpdateIssue() options mismatch for description (-want +got):\n%s", diff)
@@ -188,7 +188,7 @@ func TestEditIssue(t *testing.T) {
 				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(7)), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateIssueOptions{
-							StateEvent: gitlab.Ptr("close"),
+							StateEvent: new("close"),
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
 							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("UpdateIssue() options mismatch for closing issue (-want +got):\n%s", diff)
@@ -212,7 +212,7 @@ func TestEditIssue(t *testing.T) {
 				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(8)), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateIssueOptions{
-							StateEvent: gitlab.Ptr("reopen"),
+							StateEvent: new("reopen"),
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
 							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("UpdateIssue() options mismatch for reopening issue (-want +got):\n%s", diff)
@@ -236,7 +236,7 @@ func TestEditIssue(t *testing.T) {
 				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(9)), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateIssueOptions{
-							Confidential: gitlab.Ptr(true),
+							Confidential: new(true),
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
 							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("UpdateIssue() options mismatch for making confidential (-want +got):\n%s", diff)
@@ -261,8 +261,8 @@ func TestEditIssue(t *testing.T) {
 				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(10)), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateIssueOptions{
-							Title:        gitlab.Ptr("Secure New Title"),
-							Confidential: gitlab.Ptr(true), // confidential flag is passed through
+							Title:        new("Secure New Title"),
+							Confidential: new(true), // confidential flag is passed through
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
 							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("UpdateIssue() options mismatch for editing confidential issue (-want +got):\n%s", diff)
@@ -299,7 +299,7 @@ func TestEditIssue(t *testing.T) {
 				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(12)), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateIssueOptions{
-							DiscussionLocked: gitlab.Ptr(true),
+							DiscussionLocked: new(true),
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
 							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("UpdateIssue() options mismatch for locking discussion (-want +got):\n%s", diff)
@@ -351,7 +351,7 @@ func TestEditIssue(t *testing.T) {
 				mockIssues.EXPECT().UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(16)), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateIssueOptions{
-							Weight: gitlab.Ptr(int64(42)),
+							Weight: new(int64(42)),
 						}
 
 						if diff := cmp.Diff(wantOpts, opts, isoTimeComparer); diff != "" {
@@ -397,7 +397,7 @@ func TestEditIssue(t *testing.T) {
 					UpdateIssue(gomock.Eq("test/project"), gomock.Eq(int64(14)), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateIssueOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Issue, *gitlab.Response, error) {
 						// Check that opts are what we expect even when an error is returned
-						wantOpts := &gitlab.UpdateIssueOptions{Title: gitlab.Ptr("New Title")}
+						wantOpts := &gitlab.UpdateIssueOptions{Title: new("New Title")}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
 							return nil, newResponse(http.StatusBadRequest), fmt.Errorf("UpdateIssue() options mismatch before error (-want +got):\n%s", diff)
 						}
@@ -481,7 +481,7 @@ func TestIssueTimeTracking(t *testing.T) {
 					SetTimeEstimate(gomock.Eq("test/project"), gomock.Eq(int64(1)), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, _ int64, opts *gitlab.SetTimeEstimateOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.TimeStats, *gitlab.Response, error) {
 						wantOpts := &gitlab.SetTimeEstimateOptions{
-							Duration: gitlab.Ptr(fmt.Sprintf("%ds", 40*3600)),
+							Duration: new(fmt.Sprintf("%ds", 40*3600)),
 						}
 
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
@@ -524,8 +524,8 @@ func TestIssueTimeTracking(t *testing.T) {
 					AddSpentTime(gomock.Eq("test/project"), gomock.Eq(int64(1)), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, _ int64, opts *gitlab.AddSpentTimeOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.TimeStats, *gitlab.Response, error) {
 						wantOpts := &gitlab.AddSpentTimeOptions{
-							Duration: gitlab.Ptr("3600s"),
-							Summary:  gitlab.Ptr("Writing unit tests"),
+							Duration: new("3600s"),
+							Summary:  new("Writing unit tests"),
 						}
 
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {

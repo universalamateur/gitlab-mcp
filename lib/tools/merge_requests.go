@@ -124,7 +124,7 @@ func (m *MergeRequestsTools) ListUserMergeRequests() server.ServerTool {
 func (m *MergeRequestsTools) listUserMergeRequests(ctx context.Context, client *gitlab.Client, args listUserMergeRequestsArgs, currentUser *gitlab.User, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var (
 		opts = gitlab.ListMergeRequestsOptions{
-			Scope: gitlab.Ptr("all"),
+			Scope: new("all"),
 			ListOptions: gitlab.ListOptions{
 				PerPage: maxPerPage,
 			},
@@ -140,15 +140,15 @@ func (m *MergeRequestsTools) listUserMergeRequests(ctx context.Context, client *
 
 	switch args.Role {
 	case "author", "":
-		opts.AuthorUsername = gitlab.Ptr(username)
+		opts.AuthorUsername = new(username)
 	case "reviewer":
-		opts.ReviewerUsername = gitlab.Ptr(username)
+		opts.ReviewerUsername = new(username)
 	default:
 		return nil, fmt.Errorf("%w: invalid role: %q, must be one of 'author' or 'reviewer'", ErrInvalidArgument, args.Role)
 	}
 
 	if args.State != "" {
-		opts.State = gitlab.Ptr(args.State)
+		opts.State = new(args.State)
 	}
 
 	if args.Limit <= 0 {
@@ -203,7 +203,7 @@ func (m *MergeRequestsTools) listProjectMergeRequests(ctx context.Context, clien
 
 	// Parse optional parameters
 	if args.State != "" {
-		opts.State = gitlab.Ptr(args.State)
+		opts.State = new(args.State)
 	}
 
 	if args.Limit <= 0 {
@@ -258,7 +258,7 @@ func (m *MergeRequestsTools) listGroupMergeRequests(ctx context.Context, client 
 
 	// Parse optional parameters
 	if args.State != "" {
-		opts.State = gitlab.Ptr(args.State)
+		opts.State = new(args.State)
 	}
 
 	if args.Limit <= 0 {
@@ -477,7 +477,7 @@ func (m *MergeRequestsTools) listAllMergeRequestDiffs(ctx context.Context, clien
 
 	opts := gitlab.ListMergeRequestDiffsOptions{
 		ListOptions: gitlab.ListOptions{PerPage: maxPerPage},
-		Unidiff:     gitlab.Ptr(true),
+		Unidiff:     new(true),
 	}
 
 	for {
@@ -684,19 +684,19 @@ func (m *MergeRequestsTools) editMergeRequest(ctx context.Context, client *gitla
 
 	// Set basic fields if provided
 	if args.Title != "" {
-		opts.Title = gitlab.Ptr(args.Title)
+		opts.Title = new(args.Title)
 	}
 
 	if args.Description != "" {
-		opts.Description = gitlab.Ptr(args.Description)
+		opts.Description = new(args.Description)
 	}
 
 	if args.TargetBranch != "" {
-		opts.TargetBranch = gitlab.Ptr(args.TargetBranch)
+		opts.TargetBranch = new(args.TargetBranch)
 	}
 
 	if args.MilestoneID != 0 {
-		opts.MilestoneID = gitlab.Ptr(args.MilestoneID)
+		opts.MilestoneID = new(args.MilestoneID)
 	}
 
 	// Sets of user IDs
@@ -709,7 +709,7 @@ func (m *MergeRequestsTools) editMergeRequest(ctx context.Context, client *gitla
 
 	switch args.StateEvent {
 	case "close", "reopen":
-		opts.StateEvent = gitlab.Ptr(args.StateEvent)
+		opts.StateEvent = new(args.StateEvent)
 	case "":
 		// no-op
 	default:
@@ -805,20 +805,20 @@ func (m *MergeRequestsTools) CreateMergeRequest() server.ServerTool {
 
 func (m *MergeRequestsTools) createMergeRequest(ctx context.Context, client *gitlab.Client, args createMergeRequestArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	opts := &gitlab.CreateMergeRequestOptions{
-		Title:        gitlab.Ptr(args.Title),
-		SourceBranch: gitlab.Ptr(args.SourceBranch),
+		Title:        new(args.Title),
+		SourceBranch: new(args.SourceBranch),
 	}
 
 	if args.Description != "" {
-		opts.Description = gitlab.Ptr(args.Description)
+		opts.Description = new(args.Description)
 	}
 
 	if args.TargetBranch != "" {
-		opts.TargetBranch = gitlab.Ptr(args.TargetBranch)
+		opts.TargetBranch = new(args.TargetBranch)
 	}
 
 	if args.MilestoneID != 0 {
-		opts.MilestoneID = gitlab.Ptr(args.MilestoneID)
+		opts.MilestoneID = new(args.MilestoneID)
 	}
 
 	opts.AssigneeIDs = parseUserIDs(args.AssigneeIDs)

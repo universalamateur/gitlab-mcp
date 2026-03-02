@@ -134,7 +134,7 @@ func listUserIssuesOptions(args listIssuesArgs) (*gitlab.ListIssuesOptions, erro
 		ListOptions: gitlab.ListOptions{
 			PerPage: maxPerPage,
 		},
-		Scope: gitlab.Ptr("all"),
+		Scope: new("all"),
 	}
 
 	state := args.State
@@ -142,46 +142,46 @@ func listUserIssuesOptions(args listIssuesArgs) (*gitlab.ListIssuesOptions, erro
 		state = defaultIssueState
 	}
 
-	opt.State = gitlab.Ptr(state)
+	opt.State = new(state)
 
 	// The handling of confidential issues is a bit unintuitive: if
 	// args.Confidential is set to true, we DO NOT set opt.Confidential at all,
 	// so the response includes both, confidential and public issues. Otherwise we
 	// set the filter to false to only return public issues.
 	if !args.Confidential {
-		opt.Confidential = gitlab.Ptr(false)
+		opt.Confidential = new(false)
 	}
 
 	opt.Labels = newLabelOptions(args.Labels)
 
 	if args.Milestone != "" {
-		opt.Milestone = gitlab.Ptr(args.Milestone)
+		opt.Milestone = new(args.Milestone)
 	}
 
 	if args.IterationID != 0 {
-		opt.IterationID = gitlab.Ptr(args.IterationID)
+		opt.IterationID = new(args.IterationID)
 	}
 
 	switch {
 	case args.Author.Integer != 0:
-		opt.AuthorID = gitlab.Ptr(args.Author.Integer)
+		opt.AuthorID = new(args.Author.Integer)
 	case args.Author.String == "me":
-		opt.Scope = gitlab.Ptr("created_by_me")
+		opt.Scope = new("created_by_me")
 	case args.Author.String != "":
-		opt.AuthorUsername = gitlab.Ptr(args.Author.String)
+		opt.AuthorUsername = new(args.Author.String)
 	}
 
 	switch {
 	case args.Assignee.Integer != 0:
 		opt.AssigneeID = gitlab.AssigneeID(args.Assignee.Integer)
 	case args.Assignee.String == "me":
-		opt.Scope = gitlab.Ptr("assigned_to_me")
+		opt.Scope = new("assigned_to_me")
 	case args.Assignee.String != "":
-		opt.AssigneeUsername = gitlab.Ptr(args.Assignee.String)
+		opt.AssigneeUsername = new(args.Assignee.String)
 	}
 
 	if args.Search != "" {
-		opt.Search = gitlab.Ptr(args.Search)
+		opt.Search = new(args.Search)
 	}
 
 	// Date filters
@@ -347,42 +347,42 @@ func listProjectIssuesOptions(args listProjectIssuesArgs) (*gitlab.ListProjectIs
 		state = defaultIssueState
 	}
 
-	opt.State = gitlab.Ptr(state)
+	opt.State = new(state)
 
 	// The handling of confidential issues is a bit unintuitive: if
 	// args.Confidential is set to true, we DO NOT set opt.Confidential at all,
 	// so the response includes both, confidential and public issues. Otherwise we
 	// set the filter to false to only return public issues.
 	if !args.Confidential {
-		opt.Confidential = gitlab.Ptr(false)
+		opt.Confidential = new(false)
 	}
 
 	opt.Labels = newLabelOptions(args.Labels)
 
 	if args.Milestone != "" {
-		opt.Milestone = gitlab.Ptr(args.Milestone)
+		opt.Milestone = new(args.Milestone)
 	}
 
 	if args.IterationID != 0 {
-		opt.IterationID = gitlab.Ptr(args.IterationID)
+		opt.IterationID = new(args.IterationID)
 	}
 
 	switch {
 	case args.Author.Integer != 0:
-		opt.AuthorID = gitlab.Ptr(args.Author.Integer)
+		opt.AuthorID = new(args.Author.Integer)
 	case args.Author.String != "":
-		opt.AuthorUsername = gitlab.Ptr(args.Author.String)
+		opt.AuthorUsername = new(args.Author.String)
 	}
 
 	switch {
 	case args.Assignee.Integer != 0:
 		opt.AssigneeID = gitlab.AssigneeID(args.Assignee.Integer)
 	case args.Assignee.String != "":
-		opt.AssigneeUsername = gitlab.Ptr(args.Assignee.String)
+		opt.AssigneeUsername = new(args.Assignee.String)
 	}
 
 	if args.Search != "" {
-		opt.Search = gitlab.Ptr(args.Search)
+		opt.Search = new(args.Search)
 	}
 
 	// Date filters
@@ -421,38 +421,38 @@ func listGroupIssuesOptions(args listGroupIssuesArgs) (*gitlab.ListGroupIssuesOp
 		state = defaultIssueState
 	}
 
-	opt.State = gitlab.Ptr(state)
+	opt.State = new(state)
 
 	// The handling of confidential issues is a bit unintuitive: if
 	// args.Confidential is set to true, we DO NOT set opt.Confidential at all,
 	// so the response includes both, confidential and public issues. Otherwise we
 	// set the filter to false to only return public issues.
 	if !args.Confidential {
-		opt.Confidential = gitlab.Ptr(args.Confidential)
+		opt.Confidential = new(args.Confidential)
 	}
 
 	opt.Labels = newLabelOptions(args.Labels)
 
 	if args.Milestone != "" {
-		opt.Milestone = gitlab.Ptr(args.Milestone)
+		opt.Milestone = new(args.Milestone)
 	}
 
 	switch {
 	case args.Author.Integer != 0:
-		opt.AuthorID = gitlab.Ptr(args.Author.Integer)
+		opt.AuthorID = new(args.Author.Integer)
 	case args.Author.String != "":
-		opt.AuthorUsername = gitlab.Ptr(args.Author.String)
+		opt.AuthorUsername = new(args.Author.String)
 	}
 
 	switch {
 	case args.Assignee.Integer != 0:
 		opt.AssigneeID = gitlab.AssigneeID(args.Assignee.Integer)
 	case args.Assignee.String != "":
-		opt.AssigneeUsername = gitlab.Ptr(args.Assignee.String)
+		opt.AssigneeUsername = new(args.Assignee.String)
 	}
 
 	if args.Search != "" {
-		opt.Search = gitlab.Ptr(args.Search)
+		opt.Search = new(args.Search)
 	}
 
 	// Date filters
@@ -479,14 +479,14 @@ func listGroupIssuesOptions(args listGroupIssuesArgs) (*gitlab.ListGroupIssuesOp
 }
 
 var dueDateMap = map[string]*string{
-	"today":    gitlab.Ptr("today"),
-	"tomorrow": gitlab.Ptr("tomorrow"),
-	"overdue":  gitlab.Ptr("overdue"),
-	"week":     gitlab.Ptr("week"),
-	"month":    gitlab.Ptr("month"),
-	"recent":   gitlab.Ptr("next_month_and_previous_two_weeks"),
-	"any":      gitlab.Ptr("any"),
-	"none":     gitlab.Ptr("0"),
+	"today":    new("today"),
+	"tomorrow": new("tomorrow"),
+	"overdue":  new("overdue"),
+	"week":     new("week"),
+	"month":    new("month"),
+	"recent":   new("next_month_and_previous_two_weeks"),
+	"any":      new("any"),
+	"none":     new("0"),
 }
 
 var errParseTime = errors.New("parsing string as time failed")
@@ -580,27 +580,27 @@ func (i *IssuesTools) CreateIssue() server.ServerTool {
 
 func (i *IssuesTools) createIssue(ctx context.Context, client *gitlab.Client, args createIssueArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	opt := &gitlab.CreateIssueOptions{
-		Title: gitlab.Ptr(args.Title),
+		Title: new(args.Title),
 	}
 
 	// Set optional parameters
 	if args.Description != "" {
-		opt.Description = gitlab.Ptr(args.Description)
+		opt.Description = new(args.Description)
 	}
 
 	if args.MilestoneID != 0 {
-		opt.MilestoneID = gitlab.Ptr(args.MilestoneID)
+		opt.MilestoneID = new(args.MilestoneID)
 	}
 
 	if args.EpicID != 0 {
-		opt.EpicID = gitlab.Ptr(args.EpicID)
+		opt.EpicID = new(args.EpicID)
 	}
 
 	opt.AssigneeIDs = parseUserIDs(args.AssigneeIDs)
 	opt.Labels = newLabelOptions(args.Labels)
 
 	if _, ok := request.GetArguments()["confidential"]; ok {
-		opt.Confidential = gitlab.Ptr(args.Confidential)
+		opt.Confidential = new(args.Confidential)
 	}
 
 	issue, _, err := client.Issues.CreateIssue(args.ProjectID.Value(), opt, gitlab.WithContext(ctx))
@@ -656,23 +656,23 @@ func (i *IssuesTools) editIssue(ctx context.Context, client *gitlab.Client, args
 
 	// Build update options based on provided arguments
 	if args.Title != "" {
-		opt.Title = gitlab.Ptr(args.Title)
+		opt.Title = new(args.Title)
 	}
 
 	if args.Description != "" {
-		opt.Description = gitlab.Ptr(args.Description)
+		opt.Description = new(args.Description)
 	}
 
 	if args.StateEvent != "" {
-		opt.StateEvent = gitlab.Ptr(args.StateEvent)
+		opt.StateEvent = new(args.StateEvent)
 	}
 
 	if args.MilestoneID != 0 {
-		opt.MilestoneID = gitlab.Ptr(args.MilestoneID)
+		opt.MilestoneID = new(args.MilestoneID)
 	}
 
 	if args.EpicID != 0 {
-		opt.EpicID = gitlab.Ptr(args.EpicID)
+		opt.EpicID = new(args.EpicID)
 	}
 
 	opt.AssigneeIDs = parseUserIDs(args.AssigneeIDs)
@@ -680,12 +680,12 @@ func (i *IssuesTools) editIssue(ctx context.Context, client *gitlab.Client, args
 	opt.RemoveLabels = newLabelOptions(args.RemoveLabels)
 
 	if args.Confidential {
-		opt.Confidential = gitlab.Ptr(args.Confidential)
+		opt.Confidential = new(args.Confidential)
 	}
 
 	// Only set these if explicitly provided
 	if _, ok := request.GetArguments()["discussion_locked"]; ok {
-		opt.DiscussionLocked = gitlab.Ptr(args.DiscussionLocked)
+		opt.DiscussionLocked = new(args.DiscussionLocked)
 	}
 
 	if args.DueDate != "" {
@@ -694,11 +694,11 @@ func (i *IssuesTools) editIssue(ctx context.Context, client *gitlab.Client, args
 			return nil, fmt.Errorf("gitlab.ParseISOTime(%q): %w", args.DueDate, err)
 		}
 
-		opt.DueDate = gitlab.Ptr(date)
+		opt.DueDate = new(date)
 	}
 
 	if _, ok := request.GetArguments()["weight"]; ok {
-		opt.Weight = gitlab.Ptr(args.Weight)
+		opt.Weight = new(args.Weight)
 	}
 
 	issue, _, err = client.Issues.UpdateIssue(args.ProjectID.Value(), args.IssueIID, opt, gitlab.WithContext(ctx))
@@ -749,7 +749,7 @@ func (i *IssuesTools) issueTimeTracking(ctx context.Context, client *gitlab.Clie
 
 		default:
 			opts := gitlab.SetTimeEstimateOptions{
-				Duration: gitlab.Ptr(fmt.Sprintf("%ds", args.TimeEstimate)),
+				Duration: new(fmt.Sprintf("%ds", args.TimeEstimate)),
 			}
 
 			timeStats, _, err := client.Issues.SetTimeEstimate(args.ProjectID.Value(), args.IssueIID, &opts, gitlab.WithContext(ctx))
@@ -774,8 +774,8 @@ func (i *IssuesTools) issueTimeTracking(ctx context.Context, client *gitlab.Clie
 
 	if args.AddSpentTimeSeconds > 0 {
 		opts := gitlab.AddSpentTimeOptions{
-			Duration: gitlab.Ptr(fmt.Sprintf("%ds", args.AddSpentTimeSeconds)),
-			Summary:  gitlab.Ptr(args.AddSpentTimeSummary),
+			Duration: new(fmt.Sprintf("%ds", args.AddSpentTimeSeconds)),
+			Summary:  new(args.AddSpentTimeSummary),
 		}
 
 		timeStats, _, err := client.Issues.AddSpentTime(args.ProjectID.Value(), args.IssueIID, &opts, gitlab.WithContext(ctx))

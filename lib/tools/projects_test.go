@@ -69,10 +69,10 @@ func TestListProjects(t *testing.T) {
 					ListProjects(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(opts *gitlab.ListProjectsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Project, *gitlab.Response, error) {
 						wantOpts := defaultOpts
-						wantOpts.Search = gitlab.Ptr("search_term")
-						wantOpts.Owned = gitlab.Ptr(true)
+						wantOpts.Search = new("search_term")
+						wantOpts.Owned = new(true)
 						wantOpts.MinAccessLevel = gitlab.Ptr(gitlab.GuestPermissions)
-						wantOpts.Membership = gitlab.Ptr(true)
+						wantOpts.Membership = new(true)
 						wantOpts.ListOptions.OrderBy = "id"
 						wantOpts.ListOptions.Sort = sortOrderDescending
 
@@ -320,8 +320,8 @@ func TestListGroupProjects(t *testing.T) {
 					ListGroupProjects(gomock.Eq(groupID), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.ListGroupProjectsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Project, *gitlab.Response, error) {
 						wantOpts := defaultOpts
-						wantOpts.Search = gitlab.Ptr("search_term")
-						wantOpts.Owned = gitlab.Ptr(true)
+						wantOpts.Search = new("search_term")
+						wantOpts.Owned = new(true)
 						wantOpts.MinAccessLevel = gitlab.Ptr(gitlab.GuestPermissions)
 						wantOpts.ListOptions.OrderBy = "id"
 						wantOpts.ListOptions.Sort = sortOrderDescending

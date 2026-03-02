@@ -83,7 +83,7 @@ func (j *JobsTools) listPipelineJobs(ctx context.Context, client *gitlab.Client,
 			ListOptions: gitlab.ListOptions{
 				PerPage: maxPerPage,
 			},
-			IncludeRetried: gitlab.Ptr(args.IncludeRetried),
+			IncludeRetried: new(args.IncludeRetried),
 		}
 		jobs []*gitlab.Job
 	)
@@ -338,5 +338,5 @@ func parseBuildStates(statuses string) *[]gitlab.BuildStateValue {
 		return nil
 	}
 
-	return gitlab.Ptr(buildStates)
+	return new(buildStates)
 }

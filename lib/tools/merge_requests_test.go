@@ -320,8 +320,8 @@ func TestGetMergeRequest(t *testing.T) {
 
 func TestListUserMergeRequests(t *testing.T) {
 	defaultOpts := gitlab.ListMergeRequestsOptions{
-		AuthorUsername: gitlab.Ptr("test_user"),
-		Scope:          gitlab.Ptr("all"),
+		AuthorUsername: new("test_user"),
+		Scope:          new("all"),
 		ListOptions: gitlab.ListOptions{
 			PerPage: maxPerPage,
 		},
@@ -360,7 +360,7 @@ func TestListUserMergeRequests(t *testing.T) {
 					DoAndReturn(func(opts *gitlab.ListMergeRequestsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
 						wantOpts := defaultOpts
 
-						wantOpts.AuthorUsername = gitlab.Ptr("another_user")
+						wantOpts.AuthorUsername = new("another_user")
 						if diff := cmp.Diff(&wantOpts, opts); diff != "" {
 							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
 						}
@@ -380,7 +380,7 @@ func TestListUserMergeRequests(t *testing.T) {
 					DoAndReturn(func(opts *gitlab.ListMergeRequestsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
 						wantOpts := defaultOpts
 						wantOpts.AuthorUsername = nil
-						wantOpts.ReviewerUsername = gitlab.Ptr("another_user")
+						wantOpts.ReviewerUsername = new("another_user")
 
 						if diff := cmp.Diff(&wantOpts, opts); diff != "" {
 							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
@@ -400,7 +400,7 @@ func TestListUserMergeRequests(t *testing.T) {
 					ListMergeRequests(gomock.Any(), gomock.Any()).
 					DoAndReturn(func(opts *gitlab.ListMergeRequestsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
 						wantOpts := defaultOpts
-						wantOpts.State = gitlab.Ptr("merged")
+						wantOpts.State = new("merged")
 
 						if diff := cmp.Diff(&wantOpts, opts); diff != "" {
 							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
@@ -564,7 +564,7 @@ func TestListProjectMergeRequests(t *testing.T) {
 					ListProjectMergeRequests(gomock.Eq("test/project"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.ListProjectMergeRequestsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
 						wantOpts := defaultOpts
-						wantOpts.State = gitlab.Ptr("closed")
+						wantOpts.State = new("closed")
 
 						if diff := cmp.Diff(&wantOpts, opts); diff != "" {
 							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
@@ -722,7 +722,7 @@ func TestListGroupMergeRequests(t *testing.T) {
 					DoAndReturn(func(_ any, opts *gitlab.ListGroupMergeRequestsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
 						wantOpts := defaultOpts
 
-						wantOpts.State = gitlab.Ptr("opened")
+						wantOpts.State = new("opened")
 						if diff := cmp.Diff(&wantOpts, opts); diff != "" {
 							return nil, nil, fmt.Errorf("options mismatch (-want/+got):\n%s", diff)
 						}

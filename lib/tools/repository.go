@@ -87,14 +87,14 @@ func (r *RepositoryTools) listRepositoryDirectory(ctx context.Context, client *g
 
 	// Set optional parameters if provided
 	if args.Path != "" {
-		opt.Path = gitlab.Ptr(args.Path)
+		opt.Path = new(args.Path)
 	}
 
 	if args.Ref != "" {
-		opt.Ref = gitlab.Ptr(args.Ref)
+		opt.Ref = new(args.Ref)
 	}
 
-	opt.Recursive = gitlab.Ptr(args.Recursive)
+	opt.Recursive = new(args.Recursive)
 
 	// Make the API call to get the repository tree and handle pagination internally
 	var allTree []*gitlab.TreeNode
@@ -166,7 +166,7 @@ func (r *RepositoryTools) getRepositoryFileContents(ctx context.Context, client 
 	// Use GetRawFile when FilePath is provided
 	opt := gitlab.GetRawFileOptions{}
 	if args.Ref != "" {
-		opt.Ref = gitlab.Ptr(args.Ref)
+		opt.Ref = new(args.Ref)
 	}
 
 	contents, _, err := client.RepositoryFiles.GetRawFile(args.ProjectID.Value(), args.FilePath, &opt, gitlab.WithContext(ctx))
@@ -219,8 +219,8 @@ func (r *RepositoryTools) newCreateCommitOptions(args createCommitArgs) (*gitlab
 
 	// Build commit action
 	commitAction := &gitlab.CommitActionOptions{
-		Action:   gitlab.Ptr(gitlab.FileActionValue(args.Action)),
-		FilePath: gitlab.Ptr(args.Path),
+		Action:   new(gitlab.FileActionValue(args.Action)),
+		FilePath: new(args.Path),
 	}
 
 	// Set action-specific fields
@@ -230,29 +230,29 @@ func (r *RepositoryTools) newCreateCommitOptions(args createCommitArgs) (*gitlab
 			return nil, fmt.Errorf("%w: %s", ErrContentsRequired, args.Action)
 		}
 
-		commitAction.Content = gitlab.Ptr(args.Contents)
+		commitAction.Content = new(args.Contents)
 	case ActionMove:
 		if args.PreviousPath == "" {
 			return nil, ErrPreviousPathRequired
 		}
 
-		commitAction.PreviousPath = gitlab.Ptr(args.PreviousPath)
+		commitAction.PreviousPath = new(args.PreviousPath)
 
 		if args.Contents != "" {
-			commitAction.Content = gitlab.Ptr(args.Contents)
+			commitAction.Content = new(args.Contents)
 		}
 	}
 
 	// Return complete options
 	opts := &gitlab.CreateCommitOptions{
-		Branch:        gitlab.Ptr(args.Branch),
-		CommitMessage: gitlab.Ptr(args.CommitMessage),
+		Branch:        new(args.Branch),
+		CommitMessage: new(args.CommitMessage),
 		Actions:       []*gitlab.CommitActionOptions{commitAction},
 	}
 
 	// Add StartBranch if provided
 	if args.StartBranch != "" {
-		opts.StartBranch = gitlab.Ptr(args.StartBranch)
+		opts.StartBranch = new(args.StartBranch)
 	}
 
 	return opts, nil

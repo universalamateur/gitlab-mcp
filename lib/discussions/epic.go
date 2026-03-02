@@ -71,7 +71,7 @@ func (d *EpicDiscussion) List(ctx context.Context, confidential bool) ([]*gitlab
 // NewDiscussion creates a new discussion thread on the epic.
 func (d *EpicDiscussion) NewDiscussion(ctx context.Context, body string) (*gitlab.Discussion, error) {
 	opt := &gitlab.CreateEpicDiscussionOptions{
-		Body: gitlab.Ptr(body),
+		Body: new(body),
 	}
 
 	discussion, _, err := d.client.Discussions.CreateEpicDiscussion(d.groupID.Value(), d.epicID, opt, gitlab.WithContext(ctx))
@@ -85,7 +85,7 @@ func (d *EpicDiscussion) NewDiscussion(ctx context.Context, body string) (*gitla
 // AddNote adds a new note to an existing discussion thread.
 func (d *EpicDiscussion) AddNote(ctx context.Context, discussionID string, body string) (*gitlab.Note, error) {
 	opt := &gitlab.AddEpicDiscussionNoteOptions{
-		Body: gitlab.Ptr(body),
+		Body: new(body),
 	}
 
 	note, _, err := d.client.Discussions.AddEpicDiscussionNote(d.groupID.Value(), d.epicID, discussionID, opt, gitlab.WithContext(ctx))
@@ -99,7 +99,7 @@ func (d *EpicDiscussion) AddNote(ctx context.Context, discussionID string, body 
 // ModifyNote updates an existing note in a discussion thread.
 func (d *EpicDiscussion) ModifyNote(ctx context.Context, discussionID string, noteID int64, body string) (*gitlab.Note, error) {
 	opt := &gitlab.UpdateEpicDiscussionNoteOptions{
-		Body: gitlab.Ptr(body),
+		Body: new(body),
 	}
 
 	note, _, err := d.client.Discussions.UpdateEpicDiscussionNote(d.groupID.Value(), d.epicID, discussionID, noteID, opt, gitlab.WithContext(ctx))

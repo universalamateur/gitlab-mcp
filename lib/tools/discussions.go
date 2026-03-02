@@ -332,21 +332,21 @@ func (d *DiscussionTools) newDiffDiscussion(ctx context.Context, client *gitlab.
 
 	// Create position object
 	position := &gitlab.PositionOptions{
-		BaseSHA:      gitlab.Ptr(args.BaseSHA),
-		HeadSHA:      gitlab.Ptr(args.HeadSHA),
-		StartSHA:     gitlab.Ptr(args.StartSHA),
-		OldPath:      gitlab.Ptr(args.OldPath),
-		NewPath:      gitlab.Ptr(args.NewPath),
-		PositionType: gitlab.Ptr(args.PositionType),
+		BaseSHA:      new(args.BaseSHA),
+		HeadSHA:      new(args.HeadSHA),
+		StartSHA:     new(args.StartSHA),
+		OldPath:      new(args.OldPath),
+		NewPath:      new(args.NewPath),
+		PositionType: new(args.PositionType),
 	}
 
 	// Add line numbers if provided
 	if args.OldLine != 0 {
-		position.OldLine = gitlab.Ptr(args.OldLine)
+		position.OldLine = new(args.OldLine)
 	}
 
 	if args.NewLine != 0 {
-		position.NewLine = gitlab.Ptr(args.NewLine)
+		position.NewLine = new(args.NewLine)
 	}
 
 	// Create the diff discussion

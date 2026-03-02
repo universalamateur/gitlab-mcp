@@ -76,7 +76,7 @@ func (e *EpicTools) listGroupEpics(ctx context.Context, client *gitlab.Client, a
 
 	// Parse optional parameters
 	if args.State != "" {
-		opt.State = gitlab.Ptr(args.State)
+		opt.State = new(args.State)
 	}
 
 	for {
@@ -192,17 +192,17 @@ func (e *EpicTools) CreateEpic() server.ServerTool {
 
 func (e *EpicTools) createEpic(ctx context.Context, client *gitlab.Client, args createEpicArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	opts := &gitlab.CreateEpicOptions{
-		Title: gitlab.Ptr(args.Title),
+		Title: new(args.Title),
 	}
 
 	opts.Labels = newLabelOptions(args.Labels)
 
 	if args.Description != "" {
-		opts.Description = gitlab.Ptr(args.Description)
+		opts.Description = new(args.Description)
 	}
 
 	if _, ok := request.GetArguments()["confidential"]; ok {
-		opts.Confidential = gitlab.Ptr(args.Confidential)
+		opts.Confidential = new(args.Confidential)
 	}
 
 	if args.DueDate != "" {
@@ -211,12 +211,12 @@ func (e *EpicTools) createEpic(ctx context.Context, client *gitlab.Client, args 
 			return nil, fmt.Errorf("Invalid due_date format: %w", err)
 		}
 
-		opts.DueDateFixed = gitlab.Ptr(dueDate)
-		opts.DueDateIsFixed = gitlab.Ptr(true)
+		opts.DueDateFixed = new(dueDate)
+		opts.DueDateIsFixed = new(true)
 	}
 
 	if args.ParentID != 0 {
-		opts.ParentID = gitlab.Ptr(args.ParentID)
+		opts.ParentID = new(args.ParentID)
 	}
 
 	epic, _, err := client.Epics.CreateEpic(args.GroupID.Value(), opts, gitlab.WithContext(ctx))
@@ -266,26 +266,26 @@ func (e *EpicTools) editEpic(ctx context.Context, client *gitlab.Client, args ed
 	opts := &gitlab.UpdateEpicOptions{}
 
 	if args.Title != "" {
-		opts.Title = gitlab.Ptr(args.Title)
+		opts.Title = new(args.Title)
 	}
 
 	if args.Description != "" {
-		opts.Description = gitlab.Ptr(args.Description)
+		opts.Description = new(args.Description)
 	}
 
 	if args.ParentID != 0 {
-		opts.ParentID = gitlab.Ptr(args.ParentID)
+		opts.ParentID = new(args.ParentID)
 	}
 
 	opts.AddLabels = newLabelOptions(args.AddLabels)
 	opts.RemoveLabels = newLabelOptions(args.RemoveLabels)
 
 	if args.StateEvent != "" {
-		opts.StateEvent = gitlab.Ptr(args.StateEvent)
+		opts.StateEvent = new(args.StateEvent)
 	}
 
 	if args.Confidential {
-		opts.Confidential = gitlab.Ptr(args.Confidential)
+		opts.Confidential = new(args.Confidential)
 	}
 
 	if args.DueDate != "" {
@@ -294,8 +294,8 @@ func (e *EpicTools) editEpic(ctx context.Context, client *gitlab.Client, args ed
 			return nil, fmt.Errorf("gitlab.ParseISOTime(%q): %w", args.DueDate, err)
 		}
 
-		opts.DueDateFixed = gitlab.Ptr(dueDate)
-		opts.DueDateIsFixed = gitlab.Ptr(true)
+		opts.DueDateFixed = new(dueDate)
+		opts.DueDateIsFixed = new(true)
 	}
 
 	epic, _, err = client.Epics.UpdateEpic(args.GroupID.Value(), args.EpicIID, opts, gitlab.WithContext(ctx))

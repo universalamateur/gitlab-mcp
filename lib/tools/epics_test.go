@@ -293,7 +293,7 @@ func TestCreateEpic(t *testing.T) {
 				epicsService.EXPECT().CreateEpic(gomock.Eq(groupID), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.CreateEpicOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Epic, *gitlab.Response, error) {
 						wantOpts := &gitlab.CreateEpicOptions{
-							Title: gitlab.Ptr("Test title"),
+							Title: new("Test title"),
 						}
 
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
@@ -321,13 +321,13 @@ func TestCreateEpic(t *testing.T) {
 				epicsService.EXPECT().CreateEpic(gomock.Eq(groupID), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.CreateEpicOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Epic, *gitlab.Response, error) {
 						wantOpts := &gitlab.CreateEpicOptions{
-							Title:          gitlab.Ptr("Test title"),
+							Title:          new("Test title"),
 							Labels:         &gitlab.LabelOptions{"type::testing"},
-							Description:    gitlab.Ptr("Test description"),
-							Confidential:   gitlab.Ptr(false),
+							Description:    new("Test description"),
+							Confidential:   new(false),
 							DueDateFixed:   mustISOTime("2024-09-17"),
-							DueDateIsFixed: gitlab.Ptr(true),
-							ParentID:       gitlab.Ptr(int64(1001)),
+							DueDateIsFixed: new(true),
+							ParentID:       new(int64(1001)),
 						}
 
 						if diff := cmp.Diff(wantOpts, opts, isoTimeComparer); diff != "" {
@@ -450,7 +450,7 @@ func TestEditEpic(t *testing.T) {
 				epicsService.EXPECT().UpdateEpic(gomock.Eq(groupID), gomock.Eq(epicIID), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateEpicOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Epic, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateEpicOptions{
-							Description: gitlab.Ptr("New description"),
+							Description: new("New description"),
 						}
 
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
@@ -491,15 +491,15 @@ func TestEditEpic(t *testing.T) {
 				epicsService.EXPECT().UpdateEpic(gomock.Eq(groupID), gomock.Eq(epicIID), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, _ int64, opts *gitlab.UpdateEpicOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.Epic, *gitlab.Response, error) {
 						wantOpts := &gitlab.UpdateEpicOptions{
-							Title:          gitlab.Ptr("New title"),
-							Description:    gitlab.Ptr("New description"),
-							ParentID:       gitlab.Ptr(int64(1002)),
+							Title:          new("New title"),
+							Description:    new("New description"),
+							ParentID:       new(int64(1002)),
 							AddLabels:      &gitlab.LabelOptions{"to_be::added"},
 							RemoveLabels:   &gitlab.LabelOptions{"to_be::removed"},
-							StateEvent:     gitlab.Ptr("reopen"),
-							Confidential:   gitlab.Ptr(true),
+							StateEvent:     new("reopen"),
+							Confidential:   new(true),
 							DueDateFixed:   mustISOTime("2025-07-09"),
-							DueDateIsFixed: gitlab.Ptr(true),
+							DueDateIsFixed: new(true),
 						}
 
 						if diff := cmp.Diff(wantOpts, opts, isoTimeComparer); diff != "" {

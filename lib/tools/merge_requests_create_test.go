@@ -36,8 +36,8 @@ func TestCreateMergeRequest(t *testing.T) {
 					CreateMergeRequest(gomock.Eq("test/project"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.CreateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.CreateMergeRequestOptions{
-							Title:        gitlab.Ptr("Add new feature"),
-							SourceBranch: gitlab.Ptr("feature-branch"),
+							Title:        new("Add new feature"),
+							SourceBranch: new("feature-branch"),
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
 							return nil, nil, fmt.Errorf("CreateMergeRequest() options mismatch (-want +got):\n%s", diff)
@@ -75,16 +75,16 @@ func TestCreateMergeRequest(t *testing.T) {
 					CreateMergeRequest(gomock.Eq("test/project"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.CreateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.CreateMergeRequestOptions{
-							Title:              gitlab.Ptr("Add comprehensive feature"),
-							SourceBranch:       gitlab.Ptr("feature-branch"),
-							Description:        gitlab.Ptr("This adds a comprehensive new feature with tests"),
-							TargetBranch:       gitlab.Ptr("develop"),
+							Title:              new("Add comprehensive feature"),
+							SourceBranch:       new("feature-branch"),
+							Description:        new("This adds a comprehensive new feature with tests"),
+							TargetBranch:       new("develop"),
 							Labels:             &gitlab.LabelOptions{"feature", "enhancement"},
 							AssigneeIDs:        &[]int64{1, 2},
 							ReviewerIDs:        &[]int64{3, 4},
-							MilestoneID:        gitlab.Ptr(int64(5)),
-							RemoveSourceBranch: gitlab.Ptr(true),
-							Squash:             gitlab.Ptr(true),
+							MilestoneID:        new(int64(5)),
+							RemoveSourceBranch: new(true),
+							Squash:             new(true),
 						}
 						if diff := cmp.Diff(wantOpts, opts, assigneeIDComparer); diff != "" {
 							return nil, nil, fmt.Errorf("CreateMergeRequest() options mismatch (-want +got):\n%s", diff)
@@ -118,9 +118,9 @@ func TestCreateMergeRequest(t *testing.T) {
 					CreateMergeRequest(gomock.Eq("test/project"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.CreateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.CreateMergeRequestOptions{
-							Title:        gitlab.Ptr("Fix critical bug"),
-							SourceBranch: gitlab.Ptr("bugfix-branch"),
-							Description:  gitlab.Ptr("This fixes a critical bug in the authentication system"),
+							Title:        new("Fix critical bug"),
+							SourceBranch: new("bugfix-branch"),
+							Description:  new("This fixes a critical bug in the authentication system"),
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
 							return nil, nil, fmt.Errorf("CreateMergeRequest() options mismatch (-want +got):\n%s", diff)
@@ -152,9 +152,9 @@ func TestCreateMergeRequest(t *testing.T) {
 					CreateMergeRequest(gomock.Eq("test/project"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.CreateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.CreateMergeRequestOptions{
-							Title:        gitlab.Ptr("Implement feature X"),
-							SourceBranch: gitlab.Ptr("feature-x"),
-							TargetBranch: gitlab.Ptr("staging"),
+							Title:        new("Implement feature X"),
+							SourceBranch: new("feature-x"),
+							TargetBranch: new("staging"),
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
 							return nil, nil, fmt.Errorf("CreateMergeRequest() options mismatch (-want +got):\n%s", diff)
@@ -186,8 +186,8 @@ func TestCreateMergeRequest(t *testing.T) {
 					CreateMergeRequest(gomock.Eq("test/project"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.CreateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.CreateMergeRequestOptions{
-							Title:        gitlab.Ptr("Update documentation"),
-							SourceBranch: gitlab.Ptr("docs-update"),
+							Title:        new("Update documentation"),
+							SourceBranch: new("docs-update"),
 							AssigneeIDs:  &[]int64{42},
 							ReviewerIDs:  &[]int64{99},
 						}
@@ -220,8 +220,8 @@ func TestCreateMergeRequest(t *testing.T) {
 					CreateMergeRequest(gomock.Eq("test/project"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.CreateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.CreateMergeRequestOptions{
-							Title:        gitlab.Ptr("Refactor authentication module"),
-							SourceBranch: gitlab.Ptr("refactor-code"),
+							Title:        new("Refactor authentication module"),
+							SourceBranch: new("refactor-code"),
 							Labels:       &gitlab.LabelOptions{"refactor", "breaking-change", "high-priority"},
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
@@ -253,9 +253,9 @@ func TestCreateMergeRequest(t *testing.T) {
 					CreateMergeRequest(gomock.Eq("test/project"), gomock.Any(), gomock.Any()).
 					DoAndReturn(func(_ any, opts *gitlab.CreateMergeRequestOptions, _ ...gitlab.RequestOptionFunc) (*gitlab.MergeRequest, *gitlab.Response, error) {
 						wantOpts := &gitlab.CreateMergeRequestOptions{
-							Title:        gitlab.Ptr("Add feature for milestone"),
-							SourceBranch: gitlab.Ptr("milestone-feature"),
-							MilestoneID:  gitlab.Ptr(int64(10)),
+							Title:        new("Add feature for milestone"),
+							SourceBranch: new("milestone-feature"),
+							MilestoneID:  new(int64(10)),
 						}
 						if diff := cmp.Diff(wantOpts, opts); diff != "" {
 							return nil, nil, fmt.Errorf("CreateMergeRequest() options mismatch (-want +got):\n%s", diff)

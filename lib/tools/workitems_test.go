@@ -40,7 +40,7 @@ func TestGetWorkItem(t *testing.T) {
 							State:     "CLOSED",
 							Status:    "Complete",
 							Title:     "Validate the generated metrics",
-							CreatedAt: gitlab.Ptr(time.Date(2025, time.October, 13, 13, 19, 49, 0, time.UTC)), // "2025-10-13T13:19:49Z",
+							CreatedAt: new(time.Date(2025, time.October, 13, 13, 19, 49, 0, time.UTC)), // "2025-10-13T13:19:49Z",
 						},
 						&gitlab.Response{},
 						nil,
@@ -52,7 +52,7 @@ func TestGetWorkItem(t *testing.T) {
 				State:     "CLOSED",
 				Status:    "Complete",
 				Title:     "Validate the generated metrics",
-				CreatedAt: gitlab.Ptr(time.Date(2025, time.October, 13, 13, 19, 49, 0, time.UTC)), // "2025-10-13T13:19:49Z",
+				CreatedAt: new(time.Date(2025, time.October, 13, 13, 19, 49, 0, time.UTC)), // "2025-10-13T13:19:49Z",
 			},
 		},
 		{

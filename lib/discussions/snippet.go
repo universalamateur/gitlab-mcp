@@ -71,7 +71,7 @@ func (d *SnippetDiscussion) List(ctx context.Context, confidential bool) ([]*git
 // NewDiscussion creates a new discussion thread on the snippet.
 func (d *SnippetDiscussion) NewDiscussion(ctx context.Context, body string) (*gitlab.Discussion, error) {
 	opt := &gitlab.CreateSnippetDiscussionOptions{
-		Body: gitlab.Ptr(body),
+		Body: new(body),
 	}
 
 	discussion, _, err := d.client.Discussions.CreateSnippetDiscussion(d.projectID.Value(), d.snippetID, opt, gitlab.WithContext(ctx))
@@ -85,7 +85,7 @@ func (d *SnippetDiscussion) NewDiscussion(ctx context.Context, body string) (*gi
 // AddNote adds a new note to an existing discussion thread.
 func (d *SnippetDiscussion) AddNote(ctx context.Context, discussionID string, body string) (*gitlab.Note, error) {
 	opt := &gitlab.AddSnippetDiscussionNoteOptions{
-		Body: gitlab.Ptr(body),
+		Body: new(body),
 	}
 
 	note, _, err := d.client.Discussions.AddSnippetDiscussionNote(d.projectID.Value(), d.snippetID, discussionID, opt, gitlab.WithContext(ctx))
@@ -99,7 +99,7 @@ func (d *SnippetDiscussion) AddNote(ctx context.Context, discussionID string, bo
 // ModifyNote updates an existing note in a discussion thread.
 func (d *SnippetDiscussion) ModifyNote(ctx context.Context, discussionID string, noteID int64, body string) (*gitlab.Note, error) {
 	opt := &gitlab.UpdateSnippetDiscussionNoteOptions{
-		Body: gitlab.Ptr(body),
+		Body: new(body),
 	}
 
 	note, _, err := d.client.Discussions.UpdateSnippetDiscussionNote(d.projectID.Value(), d.snippetID, discussionID, noteID, opt, gitlab.WithContext(ctx))
