@@ -153,9 +153,7 @@ func (s *SearchTools) searchProject(ctx context.Context, client *gitlab.Client, 
 		return searchAllNamespace(ctx, client.Search.BlobsByProject, pid, query, opt, limit)
 	case searchScopeUsers:
 		return searchAllNamespace(ctx, client.Search.UsersByProject, pid, query, opt, limit)
-	case searchScopeProjects:
-		return nil, fmt.Errorf("%w: scope %q is not available for project searches", ErrInvalidArgument, scope)
-	case searchScopeSnippetTitles:
+	case searchScopeProjects, searchScopeSnippetTitles:
 		return nil, fmt.Errorf("%w: scope %q is not available for project searches", ErrInvalidArgument, scope)
 	default:
 		return nil, fmt.Errorf("%w: unsupported scope %q", ErrInvalidArgument, scope)
