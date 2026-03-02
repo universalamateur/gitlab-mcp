@@ -77,12 +77,10 @@ func (r *RepositoryTools) ListRepositoryDirectory() server.ServerTool {
 	}
 }
 
-func (r *RepositoryTools) listRepositoryDirectory(ctx context.Context, client *gitlab.Client, args listRepositoryDirectoryArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (r *RepositoryTools) listRepositoryDirectory(ctx context.Context, client *gitlab.Client, args listRepositoryDirectoryArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// Prepare options for the API call
 	opt := &gitlab.ListTreeOptions{
-		ListOptions: gitlab.ListOptions{
-			PerPage: maxPerPage,
-		},
+		ListOptions: newListOptions(request),
 	}
 
 	// Set optional parameters if provided
@@ -96,22 +94,13 @@ func (r *RepositoryTools) listRepositoryDirectory(ctx context.Context, client *g
 
 	opt.Recursive = new(args.Recursive)
 
-	// Make the API call to get the repository tree and handle pagination internally
-	var allTree []*gitlab.TreeNode
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.TreeNode, *gitlab.Response, error) {
+		return client.Repositories.ListTree(args.ProjectID.Value(), opt, gitlab.WithContext(ctx), p)
+	}
 
-	for {
-		tree, resp, err := client.Repositories.ListTree(args.ProjectID.Value(), opt, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, fmt.Errorf("ListTree(%q): %w", args.ProjectID.Value(), err)
-		}
-
-		allTree = append(allTree, tree...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opt.Page = resp.NextPage
+	allTree, err := gitlab.ScanAndCollect(pager)
+	if err != nil {
+		return nil, fmt.Errorf("ListTree(%q): %w", args.ProjectID.Value(), err)
 	}
 
 	return newToolResultJSON(allTree)
