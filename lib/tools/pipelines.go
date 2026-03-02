@@ -59,31 +59,31 @@ func (p *PipelinesTools) listProjectPipelines(ctx context.Context, client *gitla
 	}
 
 	if args.Status != "" {
-		opt.Status = gitlab.Ptr(gitlab.BuildStateValue(args.Status))
+		opt.Status = new(gitlab.BuildStateValue(args.Status))
 	}
 
 	if args.Source != "" {
-		opt.Source = gitlab.Ptr(args.Source)
+		opt.Source = new(args.Source)
 	}
 
 	if args.Ref != "" {
-		opt.Ref = gitlab.Ptr(args.Ref)
+		opt.Ref = new(args.Ref)
 	}
 
 	if args.SHA != "" {
-		opt.SHA = gitlab.Ptr(args.SHA)
+		opt.SHA = new(args.SHA)
 	}
 
 	if args.Username != "" {
-		opt.Username = gitlab.Ptr(args.Username)
+		opt.Username = new(args.Username)
 	}
 
 	if args.OrderBy != "" {
-		opt.OrderBy = gitlab.Ptr(args.OrderBy)
+		opt.OrderBy = new(args.OrderBy)
 	}
 
 	if args.SortOrder != "" {
-		opt.Sort = gitlab.Ptr(args.SortOrder)
+		opt.Sort = new(args.SortOrder)
 	}
 
 	if args.Limit <= 0 {
@@ -151,7 +151,7 @@ func (p *PipelinesTools) CreatePipeline() server.ServerTool {
 
 func (p *PipelinesTools) createPipeline(ctx context.Context, client *gitlab.Client, args createPipelineArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	opt := &gitlab.CreatePipelineOptions{
-		Ref: gitlab.Ptr(args.Ref),
+		Ref: new(args.Ref),
 	}
 
 	if args.Variables != "" {
@@ -245,8 +245,8 @@ func parsePipelineVariables(s string) (*[]*gitlab.PipelineVariableOptions, error
 		}
 
 		vars = append(vars, &gitlab.PipelineVariableOptions{
-			Key:   gitlab.Ptr(key),
-			Value: gitlab.Ptr(value),
+			Key:   new(key),
+			Value: new(value),
 		})
 	}
 
