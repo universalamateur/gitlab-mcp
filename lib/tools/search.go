@@ -52,9 +52,9 @@ func (s *SearchTools) Search() server.ServerTool {
 	}
 }
 
-func (s *SearchTools) search(ctx context.Context, client *gitlab.Client, args searchArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (s *SearchTools) search(ctx context.Context, client *gitlab.Client, args searchArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	opt := &gitlab.SearchOptions{
-		ListOptions: gitlab.ListOptions{PerPage: maxPerPage},
+		ListOptions: newListOptions(request),
 	}
 
 	if args.Ref != "" {
