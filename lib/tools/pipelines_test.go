@@ -49,7 +49,7 @@ func TestListProjectPipelines(t *testing.T) {
 			},
 		},
 		{
-			name: "list with filters",
+			name: "list with status and ref filters",
 			args: map[string]any{
 				"project_id": "owner/project",
 				"status":     "success",
@@ -69,6 +69,88 @@ func TestListProjectPipelines(t *testing.T) {
 
 						return []*gitlab.PipelineInfo{{ID: 1, Status: "success", Ref: "main"}}, okResponse, nil
 					})
+			},
+		},
+		{
+			name: "list with source filter",
+			args: map[string]any{
+				"project_id": "owner/project",
+				"source":     "web",
+			},
+			setupMock: func(m *glabtest.MockPipelinesServiceInterface) {
+				m.EXPECT().
+					ListProjectPipelines(gomock.Eq("owner/project"), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, opt *gitlab.ListProjectPipelinesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.PipelineInfo, *gitlab.Response, error) {
+						if opt.Source == nil || *opt.Source != "web" {
+							return nil, nil, fmt.Errorf("expected source=web, got %v", opt.Source)
+						}
+
+						return []*gitlab.PipelineInfo{{ID: 1, Status: "success", Ref: "main"}}, okResponse, nil
+					})
+			},
+		},
+		{
+			name: "list with sha and username filters",
+			args: map[string]any{
+				"project_id": "owner/project",
+				"sha":        "abc123def456",
+				"username":   "john_doe",
+			},
+			setupMock: func(m *glabtest.MockPipelinesServiceInterface) {
+				m.EXPECT().
+					ListProjectPipelines(gomock.Eq("owner/project"), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, opt *gitlab.ListProjectPipelinesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.PipelineInfo, *gitlab.Response, error) {
+						if opt.SHA == nil || *opt.SHA != "abc123def456" {
+							return nil, nil, fmt.Errorf("expected sha=abc123def456, got %v", opt.SHA)
+						}
+
+						if opt.Username == nil || *opt.Username != "john_doe" {
+							return nil, nil, fmt.Errorf("expected username=john_doe, got %v", opt.Username)
+						}
+
+						return []*gitlab.PipelineInfo{{ID: 1, Status: "success", Ref: "main"}}, okResponse, nil
+					})
+			},
+		},
+		{
+			name: "list with order_by and sort_order",
+			args: map[string]any{
+				"project_id": "owner/project",
+				"order_by":   "updated_at",
+				"sort_order": "asc",
+			},
+			setupMock: func(m *glabtest.MockPipelinesServiceInterface) {
+				m.EXPECT().
+					ListProjectPipelines(gomock.Eq("owner/project"), gomock.Any(), gomock.Any()).
+					DoAndReturn(func(_ any, opt *gitlab.ListProjectPipelinesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.PipelineInfo, *gitlab.Response, error) {
+						if opt.OrderBy == nil || *opt.OrderBy != "updated_at" {
+							return nil, nil, fmt.Errorf("expected order_by=updated_at, got %v", opt.OrderBy)
+						}
+
+						if opt.Sort == nil || *opt.Sort != "asc" {
+							return nil, nil, fmt.Errorf("expected sort=asc, got %v", opt.Sort)
+						}
+
+						return []*gitlab.PipelineInfo{{ID: 1, Status: "success", Ref: "main"}}, okResponse, nil
+					})
+			},
+		},
+		{
+			name: "list with limit",
+			args: map[string]any{
+				"project_id": "owner/project",
+				"limit":      5,
+			},
+			setupMock: func(m *glabtest.MockPipelinesServiceInterface) {
+				m.EXPECT().
+					ListProjectPipelines(gomock.Eq("owner/project"), gomock.Any(), gomock.Any()).
+					Return([]*gitlab.PipelineInfo{
+						{ID: 1, Status: "success", Ref: "main"},
+						{ID: 2, Status: "failed", Ref: "feature"},
+						{ID: 3, Status: "running", Ref: "develop"},
+						{ID: 4, Status: "success", Ref: "staging"},
+						{ID: 5, Status: "canceled", Ref: "hotfix"},
+					}, okResponse, nil)
 			},
 		},
 		{
