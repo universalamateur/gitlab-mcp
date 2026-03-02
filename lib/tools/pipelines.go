@@ -53,9 +53,9 @@ func (p *PipelinesTools) ListProjectPipelines() server.ServerTool {
 	}
 }
 
-func (p *PipelinesTools) listProjectPipelines(ctx context.Context, client *gitlab.Client, args listProjectPipelinesArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (p *PipelinesTools) listProjectPipelines(ctx context.Context, client *gitlab.Client, args listProjectPipelinesArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	opt := &gitlab.ListProjectPipelinesOptions{
-		ListOptions: gitlab.ListOptions{PerPage: maxPerPage},
+		ListOptions: newListOptions(request),
 	}
 
 	if args.Status != "" {
@@ -90,25 +90,13 @@ func (p *PipelinesTools) listProjectPipelines(ctx context.Context, client *gitla
 		args.Limit = defaultPipelinesLimit
 	}
 
-	var pipelines []*gitlab.PipelineInfo
-
-	for {
-		p, resp, err := client.Pipelines.ListProjectPipelines(args.ProjectID.Value(), opt, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, fmt.Errorf("ListProjectPipelines(%q): %w", args.ProjectID.Value(), err)
-		}
-
-		pipelines = append(pipelines, p...)
-
-		if resp.NextPage == 0 || len(pipelines) >= args.Limit {
-			break
-		}
-
-		opt.Page = resp.NextPage
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.PipelineInfo, *gitlab.Response, error) {
+		return client.Pipelines.ListProjectPipelines(args.ProjectID.Value(), opt, gitlab.WithContext(ctx), p)
 	}
 
-	if len(pipelines) > args.Limit {
-		pipelines = pipelines[:args.Limit]
+	pipelines, err := gitlab.ScanAndCollectN(pager, args.Limit)
+	if err != nil {
+		return nil, fmt.Errorf("ListProjectPipelines(%q): %w", args.ProjectID.Value(), err)
 	}
 
 	return newToolResultJSON(pipelines)
