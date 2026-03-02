@@ -512,3 +512,101 @@ func TestSearch(t *testing.T) {
 		})
 	}
 }
+
+func TestSearch_Limit(t *testing.T) {
+	okResponse := &gitlab.Response{Response: &http.Response{StatusCode: http.StatusOK}}
+
+	allIssues := []*gitlab.Issue{
+		{ID: 1, Title: "First issue"},
+		{ID: 2, Title: "Second issue"},
+		{ID: 3, Title: "Third issue"},
+	}
+
+	wantIssues := []*gitlab.Issue{
+		{ID: 1, Title: "First issue"},
+	}
+
+	tests := []struct {
+		name      string
+		args      map[string]any
+		setupMock func(*glabtest.MockSearchServiceInterface)
+	}{
+		{
+			name: "global search respects limit",
+			args: map[string]any{
+				"search": "bug",
+				"scope":  "issues",
+				"limit":  1,
+			},
+			setupMock: func(m *glabtest.MockSearchServiceInterface) {
+				m.EXPECT().
+					Issues(gomock.Eq("bug"), gomock.Any(), gomock.Any()).
+					Return(allIssues, okResponse, nil)
+			},
+		},
+		{
+			name: "group search respects limit",
+			args: map[string]any{
+				"search":   "bug",
+				"scope":    "issues",
+				"group_id": "my-group",
+				"limit":    1,
+			},
+			setupMock: func(m *glabtest.MockSearchServiceInterface) {
+				m.EXPECT().
+					IssuesByGroup(gomock.Eq("my-group"), gomock.Eq("bug"), gomock.Any(), gomock.Any()).
+					Return(allIssues, okResponse, nil)
+			},
+		},
+		{
+			name: "project search respects limit",
+			args: map[string]any{
+				"search":     "bug",
+				"scope":      "issues",
+				"project_id": "owner/project",
+				"limit":      1,
+			},
+			setupMock: func(m *glabtest.MockSearchServiceInterface) {
+				m.EXPECT().
+					IssuesByProject(gomock.Eq("owner/project"), gomock.Eq("bug"), gomock.Any(), gomock.Any()).
+					Return(allIssues, okResponse, nil)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gitlabClient := glabtest.NewTestClient(t)
+			ctx := glctx.WithClient(t.Context(), gitlabClient.Client)
+
+			tt.setupMock(gitlabClient.MockSearch)
+
+			srv := mcptest.NewUnstartedServer(t)
+			AddTo(srv)
+
+			if err := srv.Start(ctx); err != nil {
+				t.Fatalf("failed to start MCP test server: %v", err)
+			}
+			defer srv.Close()
+
+			var req mcp.CallToolRequest
+
+			req.Params.Name = "search"
+			req.Params.Arguments = tt.args
+
+			result, err := srv.Client().CallTool(t.Context(), req)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			var got []*gitlab.Issue
+			if err := unmarshalResult(result, &got); err != nil {
+				t.Fatalf("decode error: %v", err)
+			}
+
+			if diff := cmp.Diff(wantIssues, got); diff != "" {
+				t.Errorf("issues mismatch (-want/+got):\n%s", diff)
+			}
+		})
+	}
+}
