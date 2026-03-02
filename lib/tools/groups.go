@@ -8,7 +8,6 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 
-	"gitlab.com/fforster/gitlab-mcp/lib/gliter"
 	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
 
@@ -88,25 +87,17 @@ func (g *GroupsTools) listSubgroups(ctx context.Context, client *gitlab.Client, 
 
 	opt.MinAccessLevel = accessLevel(args.MinAccessLevel)
 
-	nextPage := func(opts *gitlab.ListSubGroupsOptions, page int64) {
-		opts.Page = page
-	}
-
 	if args.Limit <= 0 {
 		args.Limit = defaultGroupsLimit
 	}
 
-	iter := gliter.AllWithID(ctx, args.GroupID.Value(), client.Groups.ListSubGroups, *opt, nextPage)
-	iter = gliter.Limited(iter, args.Limit)
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.Group, *gitlab.Response, error) {
+		return client.Groups.ListSubGroups(args.GroupID.Value(), opt, gitlab.WithContext(ctx), p)
+	}
 
-	var groups []*gitlab.Group
-
-	for group, err := range iter {
-		if err != nil {
-			return nil, fmt.Errorf("ListSubGroups(): %w", err)
-		}
-
-		groups = append(groups, group)
+	groups, err := gitlab.ScanAndCollectN(pager, args.Limit)
+	if err != nil {
+		return nil, fmt.Errorf("ListSubGroups(): %w", err)
 	}
 
 	return newToolResultJSON(groups)
