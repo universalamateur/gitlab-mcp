@@ -13,7 +13,6 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 
-	"gitlab.com/fforster/gitlab-mcp/lib/gliter"
 	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
 
@@ -108,21 +107,13 @@ func (i *IssuesTools) listIssues(ctx context.Context, client *gitlab.Client, arg
 		args.Limit = defaultIssuesLimit
 	}
 
-	nextPage := func(opts *gitlab.ListIssuesOptions, page int64) {
-		opts.Page = page
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+		return client.Issues.ListIssues(opt, gitlab.WithContext(ctx), p)
 	}
 
-	iter := gliter.All(ctx, client.Issues.ListIssues, *opt, nextPage)
-	iter = gliter.Limited(iter, args.Limit)
-
-	var issues []*gitlab.Issue
-
-	for issue, err := range iter {
-		if err != nil {
-			return nil, fmt.Errorf("ListIssues(): %w", err)
-		}
-
-		issues = append(issues, issue)
+	issues, err := gitlab.ScanAndCollectN(pager, args.Limit)
+	if err != nil {
+		return nil, fmt.Errorf("ListIssues(): %w", err)
 	}
 
 	return newToolResultJSON(issues)
@@ -250,21 +241,13 @@ func (i *IssuesTools) listGroupIssues(ctx context.Context, client *gitlab.Client
 		args.Limit = defaultIssuesLimit
 	}
 
-	nextPage := func(opts *gitlab.ListGroupIssuesOptions, page int64) {
-		opts.Page = page
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+		return client.Issues.ListGroupIssues(args.GroupID.Value(), opt, gitlab.WithContext(ctx), p)
 	}
 
-	iter := gliter.AllWithID(ctx, args.GroupID.Value(), client.Issues.ListGroupIssues, *opt, nextPage)
-	iter = gliter.Limited(iter, args.Limit)
-
-	var issues []*gitlab.Issue
-
-	for issue, err := range iter {
-		if err != nil {
-			return nil, fmt.Errorf("ListGroupIssues(%q): %w", args.GroupID.Value(), err)
-		}
-
-		issues = append(issues, issue)
+	issues, err := gitlab.ScanAndCollectN(pager, args.Limit)
+	if err != nil {
+		return nil, fmt.Errorf("ListGroupIssues(%q): %w", args.GroupID.Value(), err)
 	}
 
 	return newToolResultJSON(issues)
@@ -314,21 +297,13 @@ func (i *IssuesTools) listProjectIssues(ctx context.Context, client *gitlab.Clie
 		args.Limit = defaultIssuesLimit
 	}
 
-	nextPage := func(opts *gitlab.ListProjectIssuesOptions, page int64) {
-		opts.Page = page
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+		return client.Issues.ListProjectIssues(args.ProjectID.Value(), opt, gitlab.WithContext(ctx), p)
 	}
 
-	iter := gliter.AllWithID(ctx, args.ProjectID.Value(), client.Issues.ListProjectIssues, *opt, nextPage)
-	iter = gliter.Limited(iter, args.Limit)
-
-	var issues []*gitlab.Issue
-
-	for issue, err := range iter {
-		if err != nil {
-			return nil, fmt.Errorf("ListProjectIssues(%q): %w", args.ProjectID.Value(), err)
-		}
-
-		issues = append(issues, issue)
+	issues, err := gitlab.ScanAndCollectN(pager, args.Limit)
+	if err != nil {
+		return nil, fmt.Errorf("ListProjectIssues(%q): %w", args.ProjectID.Value(), err)
 	}
 
 	return newToolResultJSON(issues)
@@ -526,29 +501,18 @@ func (i *IssuesTools) ListMergeRequestsRelatedToIssue() server.ServerTool {
 	}
 }
 
-func (i *IssuesTools) listMergeRequestsRelatedToIssue(ctx context.Context, client *gitlab.Client, args listMergeRequestsRelatedToIssueArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var (
-		opt = gitlab.ListMergeRequestsRelatedToIssueOptions{
-			ListOptions: gitlab.ListOptions{
-				PerPage: maxPerPage,
-			},
-		}
-		mergeRequests []*gitlab.BasicMergeRequest
-	)
+func (i *IssuesTools) listMergeRequestsRelatedToIssue(ctx context.Context, client *gitlab.Client, args listMergeRequestsRelatedToIssueArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	opts := gitlab.ListMergeRequestsRelatedToIssueOptions{
+		ListOptions: newListOptions(request),
+	}
 
-	for {
-		mrs, resp, err := client.Issues.ListMergeRequestsRelatedToIssue(args.ProjectID.Value(), args.IssueIID, &opt, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, fmt.Errorf("ListMergeRequestsRelatedToIssue(%q, %d): %w", args.ProjectID.Value(), args.IssueIID, err)
-		}
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
+		return client.Issues.ListMergeRequestsRelatedToIssue(args.ProjectID.Value(), args.IssueIID, &opts, gitlab.WithContext(ctx), p)
+	}
 
-		mergeRequests = append(mergeRequests, mrs...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opt.Page = resp.NextPage
+	mergeRequests, err := gitlab.ScanAndCollect(pager)
+	if err != nil {
+		return nil, fmt.Errorf("ListMergeRequestsRelatedToIssue(%q, %d): %w", args.ProjectID.Value(), args.IssueIID, err)
 	}
 
 	return newToolResultJSON(mergeRequests)

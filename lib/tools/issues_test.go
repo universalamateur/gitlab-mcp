@@ -423,11 +423,8 @@ func TestListIssues(t *testing.T) {
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
 				mockIssues.EXPECT().
 					ListIssues(gomock.Any(), gomock.Any()).
-					DoAndReturn(func(opts *gitlab.ListIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
-						page := opts.ListOptions.Page
-						if page == 0 {
-							page = 1
-						}
+					DoAndReturn(func(opts *gitlab.ListIssuesOptions, reqOpts ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+						page := pageFromRequestOptions(t, reqOpts)
 
 						if opts.ListOptions.PerPage <= 0 {
 							return nil, nil, fmt.Errorf("per_page must be greater than 0")
@@ -814,11 +811,8 @@ func TestListGroupIssues(t *testing.T) {
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
 				mockIssues.EXPECT().
 					ListGroupIssues(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, opts *gitlab.ListGroupIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
-						page := opts.ListOptions.Page
-						if page == 0 {
-							page = 1
-						}
+					DoAndReturn(func(_ any, opts *gitlab.ListGroupIssuesOptions, reqOpts ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+						page := pageFromRequestOptions(t, reqOpts)
 
 						if opts.ListOptions.PerPage <= 0 {
 							return nil, nil, fmt.Errorf("per_page must be greater than 0")
@@ -1207,11 +1201,8 @@ func TestListProjectIssues(t *testing.T) {
 			setupMock: func(mockIssues *glabtest.MockIssuesServiceInterface) {
 				mockIssues.EXPECT().
 					ListProjectIssues(gomock.Eq("test-project"), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, opts *gitlab.ListProjectIssuesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
-						page := opts.ListOptions.Page
-						if page == 0 {
-							page = 1
-						}
+					DoAndReturn(func(_ any, opts *gitlab.ListProjectIssuesOptions, reqOpts ...gitlab.RequestOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+						page := pageFromRequestOptions(t, reqOpts)
 
 						if opts.ListOptions.PerPage <= 0 {
 							return nil, nil, fmt.Errorf("per_page must be greater than 0")
