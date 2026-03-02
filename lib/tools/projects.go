@@ -8,7 +8,6 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 
-	"gitlab.com/fforster/gitlab-mcp/lib/gliter"
 	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
 
@@ -99,25 +98,17 @@ func (p *ProjectsTools) listProjects(ctx context.Context, client *gitlab.Client,
 		return mcp.NewToolResultError(`The search order by "similarity" is only available when both, the "search" argument is non-empty and the "membership" argument is true.`), nil
 	}
 
-	nextPage := func(opts *gitlab.ListProjectsOptions, page int64) {
-		opts.Page = page
-	}
-
 	if args.Limit <= 0 {
 		args.Limit = defaultProjectsLimit
 	}
 
-	iter := gliter.All(ctx, client.Projects.ListProjects, *opt, nextPage)
-	iter = gliter.Limited(iter, args.Limit)
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.Project, *gitlab.Response, error) {
+		return client.Projects.ListProjects(opt, gitlab.WithContext(ctx), p)
+	}
 
-	var projects []*gitlab.Project
-
-	for project, err := range iter {
-		if err != nil {
-			return nil, fmt.Errorf("ListProjects: %w", err)
-		}
-
-		projects = append(projects, project)
+	projects, err := gitlab.ScanAndCollectN(pager, args.Limit)
+	if err != nil {
+		return nil, fmt.Errorf("ListProjects: %w", err)
 	}
 
 	return newToolResultJSON(projects)
@@ -148,25 +139,17 @@ func (p *ProjectsTools) listGroupProjects(ctx context.Context, client *gitlab.Cl
 		return mcp.NewToolResultError(`The search order by "similarity" is only available when the "search" argument is non-empty.`), nil
 	}
 
-	nextPage := func(opts *gitlab.ListGroupProjectsOptions, page int64) {
-		opts.Page = page
-	}
-
 	if args.Limit <= 0 {
 		args.Limit = defaultProjectsLimit
 	}
 
-	iter := gliter.AllWithID(ctx, args.GroupID.Value(), client.Groups.ListGroupProjects, *opt, nextPage)
-	iter = gliter.Limited(iter, args.Limit)
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.Project, *gitlab.Response, error) {
+		return client.Groups.ListGroupProjects(args.GroupID.Value(), opt, gitlab.WithContext(ctx), p)
+	}
 
-	var projects []*gitlab.Project
-
-	for project, err := range iter {
-		if err != nil {
-			return nil, fmt.Errorf("ListProjects: %w", err)
-		}
-
-		projects = append(projects, project)
+	projects, err := gitlab.ScanAndCollectN(pager, args.Limit)
+	if err != nil {
+		return nil, fmt.Errorf("ListProjects: %w", err)
 	}
 
 	return newToolResultJSON(projects)

@@ -77,33 +77,22 @@ func (j *JobsTools) ListPipelineJobs() server.ServerTool {
 	}
 }
 
-func (j *JobsTools) listPipelineJobs(ctx context.Context, client *gitlab.Client, args listPipelineJobsArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var (
-		opt = &gitlab.ListJobsOptions{
-			ListOptions: gitlab.ListOptions{
-				PerPage: maxPerPage,
-			},
-			IncludeRetried: new(args.IncludeRetried),
-		}
-		jobs []*gitlab.Job
-	)
+func (j *JobsTools) listPipelineJobs(ctx context.Context, client *gitlab.Client, args listPipelineJobsArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	opt := &gitlab.ListJobsOptions{
+		ListOptions:    newListOptions(request),
+		IncludeRetried: new(args.IncludeRetried),
+	}
 
 	// Parse status parameter
 	opt.Scope = parseBuildStates(args.Status)
 
-	for {
-		j, resp, err := client.Jobs.ListPipelineJobs(args.ProjectID.Value(), args.PipelineID, opt, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, fmt.Errorf("ListPipelineJobs(%q, %d): %w", args.ProjectID.Value(), args.PipelineID, err)
-		}
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.Job, *gitlab.Response, error) {
+		return client.Jobs.ListPipelineJobs(args.ProjectID.Value(), args.PipelineID, opt, gitlab.WithContext(ctx), p)
+	}
 
-		jobs = append(jobs, j...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opt.Page = resp.NextPage
+	jobs, err := gitlab.ScanAndCollect(pager)
+	if err != nil {
+		return nil, fmt.Errorf("ListPipelineJobs(%q, %d): %w", args.ProjectID.Value(), args.PipelineID, err)
 	}
 
 	return newToolResultJSON(jobs)
@@ -127,32 +116,21 @@ func (j *JobsTools) ListDownstreamPipelines() server.ServerTool {
 	}
 }
 
-func (j *JobsTools) listDownstreamPipelines(ctx context.Context, client *gitlab.Client, args listDownstreamPipelinesArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var (
-		opt = &gitlab.ListJobsOptions{
-			ListOptions: gitlab.ListOptions{
-				PerPage: maxPerPage,
-			},
-		}
-		bridges []*gitlab.Bridge
-	)
+func (j *JobsTools) listDownstreamPipelines(ctx context.Context, client *gitlab.Client, args listDownstreamPipelinesArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	opt := &gitlab.ListJobsOptions{
+		ListOptions: newListOptions(request),
+	}
 
 	// Parse status parameter
 	opt.Scope = parseBuildStates(args.Status)
 
-	for {
-		b, resp, err := client.Jobs.ListPipelineBridges(args.ProjectID.Value(), args.PipelineID, opt, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, fmt.Errorf("ListPipelineBridges(%q, %d): %w", args.ProjectID.Value(), args.PipelineID, err)
-		}
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.Bridge, *gitlab.Response, error) {
+		return client.Jobs.ListPipelineBridges(args.ProjectID.Value(), args.PipelineID, opt, gitlab.WithContext(ctx), p)
+	}
 
-		bridges = append(bridges, b...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opt.Page = resp.NextPage
+	bridges, err := gitlab.ScanAndCollect(pager)
+	if err != nil {
+		return nil, fmt.Errorf("ListPipelineBridges(%q, %d): %w", args.ProjectID.Value(), args.PipelineID, err)
 	}
 
 	return newToolResultJSON(bridges)

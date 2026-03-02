@@ -203,9 +203,9 @@ func TestListUserTodos(t *testing.T) {
 				// Second call returns results without NextPage (end of pagination)
 				mockTodos.EXPECT().
 					ListTodos(gomock.Any(), gomock.Any()).
-					DoAndReturn(func(opts *gitlab.ListTodosOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.Todo, *gitlab.Response, error) {
-						if opts.Page != 2 {
-							t.Errorf("expected Page 2, got %d", opts.Page)
+					DoAndReturn(func(opts *gitlab.ListTodosOptions, reqOpts ...gitlab.RequestOptionFunc) ([]*gitlab.Todo, *gitlab.Response, error) {
+						if got, want := pageFromRequestOptions(t, reqOpts), int64(2); got != want {
+							t.Errorf("got request for page %d, want page %d", got, want)
 						}
 
 						return []*gitlab.Todo{{ID: 15}}, &gitlab.Response{

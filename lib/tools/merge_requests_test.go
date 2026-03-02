@@ -213,9 +213,9 @@ func TestGetMergeRequest(t *testing.T) {
 				// First page of diffs
 				firstPage := mockMR.EXPECT().
 					ListMergeRequestDiffs(gomock.Any(), gomock.Eq(int64(101)), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int64, opts *gitlab.ListMergeRequestDiffsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.MergeRequestDiff, *gitlab.Response, error) {
-						if opts.Page != 0 {
-							t.Errorf("expected first page request, got page %d", opts.Page)
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.ListMergeRequestDiffsOptions, reqOpts ...gitlab.RequestOptionFunc) ([]*gitlab.MergeRequestDiff, *gitlab.Response, error) {
+						if got, want := pageFromRequestOptions(t, reqOpts), int64(1); got != want {
+							t.Errorf("got request for page %d, want page %d", got, want)
 						}
 
 						return []*gitlab.MergeRequestDiff{
@@ -233,9 +233,9 @@ func TestGetMergeRequest(t *testing.T) {
 				// Second page of diffs
 				mockMR.EXPECT().
 					ListMergeRequestDiffs(gomock.Any(), gomock.Eq(int64(101)), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int64, opts *gitlab.ListMergeRequestDiffsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.MergeRequestDiff, *gitlab.Response, error) {
-						if opts.Page != 2 {
-							t.Errorf("expected second page request, got page %d", opts.Page)
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.ListMergeRequestDiffsOptions, reqOpts ...gitlab.RequestOptionFunc) ([]*gitlab.MergeRequestDiff, *gitlab.Response, error) {
+						if got, want := pageFromRequestOptions(t, reqOpts), int64(2); got != want {
+							t.Errorf("got request for page %d, want page %d", got, want)
 						}
 
 						return []*gitlab.MergeRequestDiff{
@@ -436,11 +436,8 @@ func TestListUserMergeRequests(t *testing.T) {
 			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface) {
 				mockMR.EXPECT().
 					ListMergeRequests(gomock.Any(), gomock.Any()).
-					DoAndReturn(func(opts *gitlab.ListMergeRequestsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
-						page := opts.ListOptions.Page
-						if page == 0 {
-							page = 1
-						}
+					DoAndReturn(func(opts *gitlab.ListMergeRequestsOptions, reqOpts ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
+						page := pageFromRequestOptions(t, reqOpts)
 
 						if opts.ListOptions.PerPage <= 0 {
 							return nil, nil, fmt.Errorf("per_page must be greater than 0")
@@ -600,11 +597,8 @@ func TestListProjectMergeRequests(t *testing.T) {
 			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface) {
 				mockMR.EXPECT().
 					ListProjectMergeRequests(gomock.Eq("test/project"), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, opts *gitlab.ListProjectMergeRequestsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
-						page := opts.ListOptions.Page
-						if page == 0 {
-							page = 1
-						}
+					DoAndReturn(func(_ any, opts *gitlab.ListProjectMergeRequestsOptions, reqOpts ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
+						page := pageFromRequestOptions(t, reqOpts)
 
 						if opts.ListOptions.PerPage <= 0 {
 							return nil, nil, fmt.Errorf("per_page must be greater than 0")
@@ -756,11 +750,8 @@ func TestListGroupMergeRequests(t *testing.T) {
 			setupMock: func(mockMR *glabtest.MockMergeRequestsServiceInterface) {
 				mockMR.EXPECT().
 					ListGroupMergeRequests(gomock.Eq("test-group"), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, opts *gitlab.ListGroupMergeRequestsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
-						page := opts.ListOptions.Page
-						if page == 0 {
-							page = 1
-						}
+					DoAndReturn(func(_ any, opts *gitlab.ListGroupMergeRequestsOptions, reqOpts ...gitlab.RequestOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
+						page := pageFromRequestOptions(t, reqOpts)
 
 						if opts.ListOptions.PerPage <= 0 {
 							return nil, nil, fmt.Errorf("per_page must be greater than 0")
@@ -951,9 +942,9 @@ func TestListDraftNotes(t *testing.T) {
 				// First page
 				firstPage := mockDraftNotes.EXPECT().
 					ListDraftNotes(gomock.Eq("test/project"), gomock.Eq(int64(101)), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int64, opts *gitlab.ListDraftNotesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.DraftNote, *gitlab.Response, error) {
-						if opts.Page != 0 {
-							t.Errorf("expected first page request, got page %d", opts.Page)
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.ListDraftNotesOptions, reqOpts ...gitlab.RequestOptionFunc) ([]*gitlab.DraftNote, *gitlab.Response, error) {
+						if got, want := pageFromRequestOptions(t, reqOpts), int64(1); got != want {
+							t.Errorf("got request for page %d, want page %d", got, want)
 						}
 
 						return []*gitlab.DraftNote{
@@ -971,9 +962,9 @@ func TestListDraftNotes(t *testing.T) {
 				// Second page
 				mockDraftNotes.EXPECT().
 					ListDraftNotes(gomock.Eq("test/project"), gomock.Eq(int64(101)), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_ any, _ int64, opts *gitlab.ListDraftNotesOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.DraftNote, *gitlab.Response, error) {
-						if opts.Page != 2 {
-							t.Errorf("expected second page request, got page %d", opts.Page)
+					DoAndReturn(func(_ any, _ int64, opts *gitlab.ListDraftNotesOptions, reqOpts ...gitlab.RequestOptionFunc) ([]*gitlab.DraftNote, *gitlab.Response, error) {
+						if got, want := pageFromRequestOptions(t, reqOpts), int64(2); got != want {
+							t.Errorf("got request for page %d, want page %d", got, want)
 						}
 
 						return []*gitlab.DraftNote{

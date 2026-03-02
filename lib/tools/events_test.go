@@ -291,13 +291,15 @@ func TestListUserEvents(t *testing.T) {
 				// First page
 				mockUsers.EXPECT().
 					ListUserContributionEvents(gomock.Any(), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(uid any, opts *gitlab.ListContributionEventsOptions, _ ...gitlab.RequestOptionFunc) ([]*gitlab.ContributionEvent, *gitlab.Response, error) {
+					DoAndReturn(func(uid any, opts *gitlab.ListContributionEventsOptions, reqOpts ...gitlab.RequestOptionFunc) ([]*gitlab.ContributionEvent, *gitlab.Response, error) {
 						if uid != testUser {
 							return nil, nil, fmt.Errorf("expected username %q, got %v", testUser, uid)
 						}
 
-						switch opts.Page {
-						case 0:
+						page := pageFromRequestOptions(t, reqOpts)
+
+						switch page {
+						case 1:
 							// First page
 							return events[:1], &gitlab.Response{
 								Response: &http.Response{StatusCode: http.StatusOK},
@@ -310,9 +312,10 @@ func TestListUserEvents(t *testing.T) {
 								Response: &http.Response{StatusCode: http.StatusOK},
 								NextPage: 0, // No more pages
 							}, nil
-						}
 
-						return nil, nil, fmt.Errorf("unexpected page: %d", opts.Page)
+						default:
+							return nil, nil, fmt.Errorf("unexpected page: %d", page)
+						}
 					}).
 					Times(2)
 			},

@@ -74,29 +74,18 @@ func (s *SnippetsTools) ListUserSnippets() server.ServerTool {
 	}
 }
 
-func (s *SnippetsTools) listUserSnippets(ctx context.Context, client *gitlab.Client, _ struct{}, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var (
-		opt = &gitlab.ListSnippetsOptions{
-			ListOptions: gitlab.ListOptions{
-				PerPage: maxPerPage,
-			},
-		}
-		snippets []*gitlab.Snippet
-	)
+func (s *SnippetsTools) listUserSnippets(ctx context.Context, client *gitlab.Client, _ struct{}, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	opt := &gitlab.ListSnippetsOptions{
+		ListOptions: newListOptions(request),
+	}
 
-	for {
-		snips, resp, err := client.Snippets.ListSnippets(opt, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, fmt.Errorf("ListSnippets: %w", err)
-		}
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.Snippet, *gitlab.Response, error) {
+		return client.Snippets.ListSnippets(opt, gitlab.WithContext(ctx), p)
+	}
 
-		snippets = append(snippets, snips...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opt.Page = resp.NextPage
+	snippets, err := gitlab.ScanAndCollect(pager)
+	if err != nil {
+		return nil, fmt.Errorf("ListSnippets: %w", err)
 	}
 
 	return newToolResultJSON(snippets)
@@ -118,66 +107,46 @@ func (s *SnippetsTools) ListAllSnippets() server.ServerTool {
 	}
 }
 
-func (s *SnippetsTools) listAllSnippets(ctx context.Context, client *gitlab.Client, args listAllSnippetsArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (s *SnippetsTools) listAllSnippets(ctx context.Context, client *gitlab.Client, args listAllSnippetsArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	if args.IncludePrivate {
-		return s.listAllSnippetsIncludingPrivate(ctx, client)
+		return s.listAllSnippetsIncludingPrivate(ctx, client, request)
 	}
 
-	return s.listAllPublicSnippets(ctx, client)
+	return s.listAllPublicSnippets(ctx, client, request)
 }
 
 // listAllSnippetsIncludingPrivate lists all snippets, private and public.
-func (s *SnippetsTools) listAllSnippetsIncludingPrivate(ctx context.Context, client *gitlab.Client) (*mcp.CallToolResult, error) {
+func (s *SnippetsTools) listAllSnippetsIncludingPrivate(ctx context.Context, client *gitlab.Client, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	opt := &gitlab.ListAllSnippetsOptions{
-		ListOptions: gitlab.ListOptions{
-			PerPage: maxPerPage,
-		},
+		ListOptions: newListOptions(request),
 	}
 
-	var snippets []*gitlab.Snippet
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.Snippet, *gitlab.Response, error) {
+		return client.Snippets.ListAllSnippets(opt, gitlab.WithContext(ctx), p)
+	}
 
-	for {
-		snips, resp, err := client.Snippets.ListAllSnippets(opt, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, fmt.Errorf("ListAllSnippets: %w", err)
-		}
-
-		snippets = append(snippets, snips...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opt.Page = resp.NextPage
+	snippets, err := gitlab.ScanAndCollect(pager)
+	if err != nil {
+		return nil, fmt.Errorf("ListAllSnippets: %w", err)
 	}
 
 	return newToolResultJSON(snippets)
 }
 
 // listAllPublicSnippets lists all public snippets.
-func (s *SnippetsTools) listAllPublicSnippets(ctx context.Context, client *gitlab.Client) (*mcp.CallToolResult, error) {
+func (s *SnippetsTools) listAllPublicSnippets(ctx context.Context, client *gitlab.Client, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	// List only public snippets
 	opt := &gitlab.ExploreSnippetsOptions{
-		ListOptions: gitlab.ListOptions{
-			PerPage: maxPerPage,
-		},
+		ListOptions: newListOptions(request),
 	}
 
-	var snippets []*gitlab.Snippet
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.Snippet, *gitlab.Response, error) {
+		return client.Snippets.ExploreSnippets(opt, gitlab.WithContext(ctx), p)
+	}
 
-	for {
-		snips, resp, err := client.Snippets.ExploreSnippets(opt, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, fmt.Errorf("ExploreSnippets: %w", err)
-		}
-
-		snippets = append(snippets, snips...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opt.Page = resp.NextPage
+	snippets, err := gitlab.ScanAndCollect(pager)
+	if err != nil {
+		return nil, fmt.Errorf("ExploreSnippets: %w", err)
 	}
 
 	return newToolResultJSON(snippets)

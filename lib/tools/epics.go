@@ -65,33 +65,22 @@ func (e *EpicTools) ListGroupEpics() server.ServerTool {
 }
 
 func (e *EpicTools) listGroupEpics(ctx context.Context, client *gitlab.Client, args listGroupEpicsArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var (
-		opt = &gitlab.ListGroupEpicsOptions{
-			ListOptions: gitlab.ListOptions{
-				PerPage: maxPerPage,
-			},
-		}
-		epics []*gitlab.Epic
-	)
+	opt := &gitlab.ListGroupEpicsOptions{
+		ListOptions: newListOptions(request),
+	}
 
 	// Parse optional parameters
 	if args.State != "" {
 		opt.State = new(args.State)
 	}
 
-	for {
-		e, resp, err := client.Epics.ListGroupEpics(args.GroupID.Value(), opt, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, fmt.Errorf("ListGroupEpics(%q): %w", args.GroupID.Value(), err)
-		}
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.Epic, *gitlab.Response, error) {
+		return client.Epics.ListGroupEpics(args.GroupID.Value(), opt, gitlab.WithContext(ctx), p)
+	}
 
-		epics = append(epics, e...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opt.Page = resp.NextPage
+	epics, err := gitlab.ScanAndCollect(pager)
+	if err != nil {
+		return nil, fmt.Errorf("ListGroupEpics(%q): %w", args.GroupID.Value(), err)
 	}
 
 	return newToolResultJSON(epics)
@@ -141,27 +130,15 @@ func (e *EpicTools) ListEpicIssues() server.ServerTool {
 }
 
 func (e *EpicTools) listEpicIssues(ctx context.Context, client *gitlab.Client, args listEpicIssuesArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var (
-		opts = gitlab.ListOptions{
-			PerPage: maxPerPage,
-		}
-		issues []*gitlab.Issue
-	)
+	opts := newListOptions(request)
 
-	// Fetch issues from GitLab
-	for {
-		is, resp, err := client.EpicIssues.ListEpicIssues(args.GroupID.Value(), args.EpicIID, &opts, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, fmt.Errorf("ListEpicIssues(%q, %d): %w", args.GroupID.Value(), args.EpicIID, err)
-		}
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+		return client.EpicIssues.ListEpicIssues(args.GroupID.Value(), args.EpicIID, &opts, gitlab.WithContext(ctx), p)
+	}
 
-		issues = append(issues, is...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opts.Page = resp.NextPage
+	issues, err := gitlab.ScanAndCollect(pager)
+	if err != nil {
+		return nil, fmt.Errorf("ListEpicIssues(%q, %d): %w", args.GroupID.Value(), args.EpicIID, err)
 	}
 
 	return newToolResultJSON(issues)
