@@ -13,16 +13,16 @@ import (
 
 // Search scope constants used in the switch dispatchers.
 const (
-	scopeProjects      = "projects"
-	scopeIssues        = "issues"
-	scopeMergeRequests = "merge_requests"
-	scopeMilestones    = "milestones"
-	scopeSnippetTitles = "snippet_titles"
-	scopeWikiBlobs     = "wiki_blobs"
-	scopeCommits       = "commits"
-	scopeBlobs         = "blobs"
-	scopeUsers         = "users"
-	scopeNotes         = "notes"
+	searchScopeProjects      = "projects"
+	searchScopeIssues        = "issues"
+	searchScopeMergeRequests = "merge_requests"
+	searchScopeMilestones    = "milestones"
+	searchScopeSnippetTitles = "snippet_titles"
+	searchScopeWikiBlobs     = "wiki_blobs"
+	searchScopeCommits       = "commits"
+	searchScopeBlobs         = "blobs"
+	searchScopeUsers         = "users"
+	searchScopeNotes         = "notes"
 )
 
 // SearchTools provides search capabilities across GitLab resources.
@@ -74,25 +74,25 @@ func (s *SearchTools) search(ctx context.Context, client *gitlab.Client, args se
 //nolint:cyclop // Dispatch by scope — each case is one line.
 func (s *SearchTools) searchGlobal(ctx context.Context, client *gitlab.Client, query, scope string, opt *gitlab.SearchOptions) (*mcp.CallToolResult, error) {
 	switch scope {
-	case scopeProjects:
+	case searchScopeProjects:
 		return searchAllGlobal(ctx, client.Search.Projects, query, opt)
-	case scopeIssues:
+	case searchScopeIssues:
 		return searchAllGlobal(ctx, client.Search.Issues, query, opt)
-	case scopeMergeRequests:
+	case searchScopeMergeRequests:
 		return searchAllGlobal(ctx, client.Search.MergeRequests, query, opt)
-	case scopeMilestones:
+	case searchScopeMilestones:
 		return searchAllGlobal(ctx, client.Search.Milestones, query, opt)
-	case scopeSnippetTitles:
+	case searchScopeSnippetTitles:
 		return searchAllGlobal(ctx, client.Search.SnippetTitles, query, opt)
-	case scopeWikiBlobs:
+	case searchScopeWikiBlobs:
 		return searchAllGlobal(ctx, client.Search.WikiBlobs, query, opt)
-	case scopeCommits:
+	case searchScopeCommits:
 		return searchAllGlobal(ctx, client.Search.Commits, query, opt)
-	case scopeBlobs:
+	case searchScopeBlobs:
 		return searchAllGlobal(ctx, client.Search.Blobs, query, opt)
-	case scopeUsers:
+	case searchScopeUsers:
 		return searchAllGlobal(ctx, client.Search.Users, query, opt)
-	case scopeNotes:
+	case searchScopeNotes:
 		return nil, fmt.Errorf("%w: scope %q requires project_id", ErrInvalidArgument, scope)
 	default:
 		return nil, fmt.Errorf("%w: unsupported scope %q", ErrInvalidArgument, scope)
@@ -102,25 +102,25 @@ func (s *SearchTools) searchGlobal(ctx context.Context, client *gitlab.Client, q
 //nolint:cyclop // Dispatch by scope — each case is one line.
 func (s *SearchTools) searchGroup(ctx context.Context, client *gitlab.Client, gid any, query, scope string, opt *gitlab.SearchOptions) (*mcp.CallToolResult, error) {
 	switch scope {
-	case scopeProjects:
+	case searchScopeProjects:
 		return searchAllNamespace(ctx, client.Search.ProjectsByGroup, gid, query, opt)
-	case scopeIssues:
+	case searchScopeIssues:
 		return searchAllNamespace(ctx, client.Search.IssuesByGroup, gid, query, opt)
-	case scopeMergeRequests:
+	case searchScopeMergeRequests:
 		return searchAllNamespace(ctx, client.Search.MergeRequestsByGroup, gid, query, opt)
-	case scopeMilestones:
+	case searchScopeMilestones:
 		return searchAllNamespace(ctx, client.Search.MilestonesByGroup, gid, query, opt)
-	case scopeWikiBlobs:
+	case searchScopeWikiBlobs:
 		return searchAllNamespace(ctx, client.Search.WikiBlobsByGroup, gid, query, opt)
-	case scopeCommits:
+	case searchScopeCommits:
 		return searchAllNamespace(ctx, client.Search.CommitsByGroup, gid, query, opt)
-	case scopeBlobs:
+	case searchScopeBlobs:
 		return searchAllNamespace(ctx, client.Search.BlobsByGroup, gid, query, opt)
-	case scopeUsers:
+	case searchScopeUsers:
 		return searchAllNamespace(ctx, client.Search.UsersByGroup, gid, query, opt)
-	case scopeSnippetTitles:
+	case searchScopeSnippetTitles:
 		return nil, fmt.Errorf("%w: scope %q is not available for group searches", ErrInvalidArgument, scope)
-	case scopeNotes:
+	case searchScopeNotes:
 		return nil, fmt.Errorf("%w: scope %q requires project_id", ErrInvalidArgument, scope)
 	default:
 		return nil, fmt.Errorf("%w: unsupported scope %q", ErrInvalidArgument, scope)
@@ -130,25 +130,25 @@ func (s *SearchTools) searchGroup(ctx context.Context, client *gitlab.Client, gi
 //nolint:cyclop // Dispatch by scope — each case is one line.
 func (s *SearchTools) searchProject(ctx context.Context, client *gitlab.Client, pid any, query, scope string, opt *gitlab.SearchOptions) (*mcp.CallToolResult, error) {
 	switch scope {
-	case scopeIssues:
+	case searchScopeIssues:
 		return searchAllNamespace(ctx, client.Search.IssuesByProject, pid, query, opt)
-	case scopeMergeRequests:
+	case searchScopeMergeRequests:
 		return searchAllNamespace(ctx, client.Search.MergeRequestsByProject, pid, query, opt)
-	case scopeMilestones:
+	case searchScopeMilestones:
 		return searchAllNamespace(ctx, client.Search.MilestonesByProject, pid, query, opt)
-	case scopeNotes:
+	case searchScopeNotes:
 		return searchAllNamespace(ctx, client.Search.NotesByProject, pid, query, opt)
-	case scopeWikiBlobs:
+	case searchScopeWikiBlobs:
 		return searchAllNamespace(ctx, client.Search.WikiBlobsByProject, pid, query, opt)
-	case scopeCommits:
+	case searchScopeCommits:
 		return searchAllNamespace(ctx, client.Search.CommitsByProject, pid, query, opt)
-	case scopeBlobs:
+	case searchScopeBlobs:
 		return searchAllNamespace(ctx, client.Search.BlobsByProject, pid, query, opt)
-	case scopeUsers:
+	case searchScopeUsers:
 		return searchAllNamespace(ctx, client.Search.UsersByProject, pid, query, opt)
-	case scopeProjects:
+	case searchScopeProjects:
 		return nil, fmt.Errorf("%w: scope %q is not available for project searches", ErrInvalidArgument, scope)
-	case scopeSnippetTitles:
+	case searchScopeSnippetTitles:
 		return nil, fmt.Errorf("%w: scope %q is not available for project searches", ErrInvalidArgument, scope)
 	default:
 		return nil, fmt.Errorf("%w: unsupported scope %q", ErrInvalidArgument, scope)
