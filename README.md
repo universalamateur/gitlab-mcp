@@ -16,8 +16,8 @@ GitLab MCP implements the [Model Context Protocol](https://github.com/anthropics
 
 - Work Items (Epics, Issues, Tasks)
 - Merge Requests
+- Pipelines and Jobs
 - Discussions and Notes
-- Jobs
 - Projects
 - Repository Files and Directories
 - Snippets
@@ -207,10 +207,12 @@ You can provide these environment variables in one of two ways:
 
 | Tool Name | Description |
 |-----------|-------------|
+| `cancel_pipeline` | Cancel a running pipeline |
 | `complete_all_todo_items` | Marks all pending todo items for the current user as done |
 | `complete_todo_item` | Marks a single pending todo item as done |
 | `create_epic` | Creates a new GitLab epic |
 | `create_issue` | Creates a new GitLab issue |
+| `create_pipeline` | Create a new pipeline for a branch or tag, optionally with variables |
 | `create_snippet` | Create a new snippet |
 | `delete_snippet` | Delete a snippet |
 | `discussion_add_note` | Adds a new note (i.e. a reply) to an existing discussion thread |
@@ -233,6 +235,7 @@ You can provide these environment variables in one of two ways:
 | `get_merge_request_participants` | Get a list of merge request participants |
 | `get_merge_request_reviewers` | Get a list of merge request reviewers |
 | `get_merge_request` | Get a single merge request |
+| `get_pipeline` | Get a single pipeline by ID |
 | `get_project` | Get a single project |
 | `get_repository_file_contents` | Get the contents of a single file from the repository |
 | `get_snippet_content` | Get the raw content of a snippet |
@@ -242,8 +245,8 @@ You can provide these environment variables in one of two ways:
 | `get_work_item` | Get a work item (e.g. epic, issue, task) |
 | `issue_time_tracking` | Updates time tracking information for an issue, such as the time estimate and spent time. |
 | `list_all_snippets` | List all snippets the user has access to |
-| `list_draft_notes` | Returns a list of draft notes for the merge request |
 | `list_downstream_pipelines` | Get a list of downstream pipeline triggers for a pipeline |
+| `list_draft_notes` | Returns a list of draft notes for the merge request |
 | `list_epic_issues` | Returns a list of issues assigned to the provided epic |
 | `list_group_epics` | Get all epics for a specific group |
 | `list_group_issues` | Get a list of a group's issues |
@@ -253,9 +256,10 @@ You can provide these environment variables in one of two ways:
 | `list_merge_request_pipelines` | Get a list of merge request pipelines |
 | `list_merge_requests_related_to_issue` | Get all merge requests that are related to the specified issue |
 | `list_pipeline_jobs` | Get a list of jobs for a pipeline |
-| `list_projects` | Get a list of GitLab projects |
 | `list_project_issues` | Get a list of a project's issues |
 | `list_project_merge_requests` | Get all merge requests for this project |
+| `list_project_pipelines` | Get a list of pipelines for a project |
+| `list_projects` | Get a list of GitLab projects |
 | `list_repository_directory` | Get a list of repository files and directories in a project |
 | `list_subgroups` | Get a list of subgroups in a GitLab group |
 | `list_user_events` | Get events for users between |
@@ -263,6 +267,7 @@ You can provide these environment variables in one of two ways:
 | `list_user_snippets` | List snippets owned by the current user |
 | `list_user_todos` | Get all todos for the current user, with optional filtering by state (pending, done) and a limit on the number returned (default 100). |
 | `retry_job` | Retry a single job of a project |
+| `retry_pipeline` | Retry all failed jobs in a pipeline |
 | `set_user_status` | Set the current user's status |
 | `trigger_manual_job` | Trigger a manual job for a project |
 | `update_snippet` | Update an existing snippet |
