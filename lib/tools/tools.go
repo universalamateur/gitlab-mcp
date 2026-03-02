@@ -45,6 +45,7 @@ func AddTo(srv ToolAdder) {
 	new(MergeRequestsTools).AddTo(srv)
 	new(ProjectsTools).AddTo(srv)
 	new(RepositoryTools).AddTo(srv)
+	new(SearchTools).AddTo(srv)
 	new(SnippetsTools).AddTo(srv)
 	new(TodosTools).AddTo(srv)
 	new(UsersTools).AddTo(srv)
