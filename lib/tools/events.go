@@ -63,28 +63,20 @@ func (e *EventsTools) listUserEvents(ctx context.Context, client *gitlab.Client,
 		return nil, err
 	}
 
-	var events []*gitlab.ContributionEvent
+	// Limit to one page if no boundaries were set. Loading all events will not
+	// fit in a context anyway.
+	limit := -1 // -1 means unlimited
+	if args.Before == "" || args.After == "" {
+		limit = int(opts.ListOptions.PerPage)
+	}
 
-	for {
-		eventPage, response, err := client.Users.ListUserContributionEvents(args.Username, opts, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, fmt.Errorf("ListUserContributionEvents: %w", err)
-		}
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.ContributionEvent, *gitlab.Response, error) {
+		return client.Users.ListUserContributionEvents(args.Username, opts, gitlab.WithContext(ctx), p)
+	}
 
-		events = append(events, eventPage...)
-
-		// Limit to one page if no boundaries were set. Loading all events will not
-		// fit in a context anyway.
-		if args.Before == "" || args.After == "" {
-			break
-		}
-
-		if response.NextPage == 0 {
-			break
-		}
-
-		opts.Page = response.NextPage
-		opts.PerPage = maxPerPage
+	events, err := gitlab.ScanAndCollectN(pager, limit)
+	if err != nil {
+		return nil, fmt.Errorf("ListUserContributionEvents: %w", err)
 	}
 
 	return newToolResultJSON(events)
