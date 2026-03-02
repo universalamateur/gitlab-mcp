@@ -11,7 +11,6 @@ import (
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 
 	"gitlab.com/fforster/gitlab-mcp/lib/discussions"
-	"gitlab.com/fforster/gitlab-mcp/lib/gliter"
 	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
 
@@ -121,15 +120,12 @@ func (m *MergeRequestsTools) ListUserMergeRequests() server.ServerTool {
 	}
 }
 
-func (m *MergeRequestsTools) listUserMergeRequests(ctx context.Context, client *gitlab.Client, args listUserMergeRequestsArgs, currentUser *gitlab.User, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (m *MergeRequestsTools) listUserMergeRequests(ctx context.Context, client *gitlab.Client, args listUserMergeRequestsArgs, currentUser *gitlab.User, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	var (
 		opts = gitlab.ListMergeRequestsOptions{
-			Scope: new("all"),
-			ListOptions: gitlab.ListOptions{
-				PerPage: maxPerPage,
-			},
+			Scope:       new("all"),
+			ListOptions: newListOptions(request),
 		}
-		mergeRequests []*gitlab.BasicMergeRequest
 	)
 
 	// Parse optional parameters
@@ -155,19 +151,13 @@ func (m *MergeRequestsTools) listUserMergeRequests(ctx context.Context, client *
 		args.Limit = defaultMergeRequestsLimit
 	}
 
-	nextPage := func(opts *gitlab.ListMergeRequestsOptions, page int64) {
-		opts.ListOptions.Page = page
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
+		return client.MergeRequests.ListMergeRequests(&opts, gitlab.WithContext(ctx), p)
 	}
 
-	iter := gliter.All(ctx, client.MergeRequests.ListMergeRequests, opts, nextPage)
-	iter = gliter.Limited(iter, args.Limit)
-
-	for mr, err := range iter {
-		if err != nil {
-			return nil, fmt.Errorf("ListMergeRequests(): %w", err)
-		}
-
-		mergeRequests = append(mergeRequests, mr)
+	mergeRequests, err := gitlab.ScanAndCollectN(pager, args.Limit)
+	if err != nil {
+		return nil, fmt.Errorf("ListMergeRequests(%v): %w", username, err)
 	}
 
 	return newToolResultJSON(mergeRequests)
@@ -191,15 +181,10 @@ func (m *MergeRequestsTools) ListProjectMergeRequests() server.ServerTool {
 	}
 }
 
-func (m *MergeRequestsTools) listProjectMergeRequests(ctx context.Context, client *gitlab.Client, args listProjectMergeRequestsArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var (
-		opts = gitlab.ListProjectMergeRequestsOptions{
-			ListOptions: gitlab.ListOptions{
-				PerPage: maxPerPage,
-			},
-		}
-		mergeRequests []*gitlab.BasicMergeRequest
-	)
+func (m *MergeRequestsTools) listProjectMergeRequests(ctx context.Context, client *gitlab.Client, args listProjectMergeRequestsArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	opts := gitlab.ListProjectMergeRequestsOptions{
+		ListOptions: newListOptions(request),
+	}
 
 	// Parse optional parameters
 	if args.State != "" {
@@ -210,19 +195,13 @@ func (m *MergeRequestsTools) listProjectMergeRequests(ctx context.Context, clien
 		args.Limit = defaultMergeRequestsLimit
 	}
 
-	nextPage := func(opts *gitlab.ListProjectMergeRequestsOptions, page int64) {
-		opts.Page = page
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
+		return client.MergeRequests.ListProjectMergeRequests(args.ProjectID.Value(), &opts, gitlab.WithContext(ctx), p)
 	}
 
-	iter := gliter.AllWithID(ctx, args.ProjectID.Value(), client.MergeRequests.ListProjectMergeRequests, opts, nextPage)
-	iter = gliter.Limited(iter, args.Limit)
-
-	for mr, err := range iter {
-		if err != nil {
-			return nil, fmt.Errorf("ListProjectMergeRequests(%v): %w", args.ProjectID.Value(), err)
-		}
-
-		mergeRequests = append(mergeRequests, mr)
+	mergeRequests, err := gitlab.ScanAndCollectN(pager, args.Limit)
+	if err != nil {
+		return nil, fmt.Errorf("ListProjectMergeRequests(%v): %w", args.ProjectID.Value(), err)
 	}
 
 	return newToolResultJSON(mergeRequests)
@@ -246,15 +225,10 @@ func (m *MergeRequestsTools) ListGroupMergeRequests() server.ServerTool {
 	}
 }
 
-func (m *MergeRequestsTools) listGroupMergeRequests(ctx context.Context, client *gitlab.Client, args listGroupMergeRequestsArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var (
-		opts = gitlab.ListGroupMergeRequestsOptions{
-			ListOptions: gitlab.ListOptions{
-				PerPage: maxPerPage,
-			},
-		}
-		mergeRequests []*gitlab.BasicMergeRequest
-	)
+func (m *MergeRequestsTools) listGroupMergeRequests(ctx context.Context, client *gitlab.Client, args listGroupMergeRequestsArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	opts := gitlab.ListGroupMergeRequestsOptions{
+		ListOptions: newListOptions(request),
+	}
 
 	// Parse optional parameters
 	if args.State != "" {
@@ -265,19 +239,13 @@ func (m *MergeRequestsTools) listGroupMergeRequests(ctx context.Context, client 
 		args.Limit = defaultMergeRequestsLimit
 	}
 
-	nextPage := func(opts *gitlab.ListGroupMergeRequestsOptions, page int64) {
-		opts.Page = page
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.BasicMergeRequest, *gitlab.Response, error) {
+		return client.MergeRequests.ListGroupMergeRequests(args.GroupID.Value(), &opts, gitlab.WithContext(ctx), p)
 	}
 
-	iter := gliter.AllWithID(ctx, args.GroupID.Value(), client.MergeRequests.ListGroupMergeRequests, opts, nextPage)
-	iter = gliter.Limited(iter, args.Limit)
-
-	for mr, err := range iter {
-		if err != nil {
-			return nil, fmt.Errorf("ListGroupMergeRequests(%v): %w", args.GroupID.Value(), err)
-		}
-
-		mergeRequests = append(mergeRequests, mr)
+	mergeRequests, err := gitlab.ScanAndCollectN(pager, args.Limit)
+	if err != nil {
+		return nil, fmt.Errorf("ListGroupMergeRequests(%v): %w", args.GroupID.Value(), err)
 	}
 
 	return newToolResultJSON(mergeRequests)
@@ -417,29 +385,18 @@ func (m *MergeRequestsTools) GetMergeRequestCommits() server.ServerTool {
 	}
 }
 
-func (m *MergeRequestsTools) getMergeRequestCommits(ctx context.Context, client *gitlab.Client, args getMergeRequestCommitsArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var (
-		opt = gitlab.GetMergeRequestCommitsOptions{
-			ListOptions: gitlab.ListOptions{
-				PerPage: maxPerPage,
-			},
-		}
-		commits []*gitlab.Commit
-	)
+func (m *MergeRequestsTools) getMergeRequestCommits(ctx context.Context, client *gitlab.Client, args getMergeRequestCommitsArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	opts := gitlab.GetMergeRequestCommitsOptions{
+		ListOptions: newListOptions(request),
+	}
 
-	for {
-		c, resp, err := client.MergeRequests.GetMergeRequestCommits(args.ProjectID.Value(), args.MergeRequestIID, &opt, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, fmt.Errorf("GetMergeRequestCommits(%q, %d): %w", args.ProjectID.Value(), args.MergeRequestIID, err)
-		}
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.Commit, *gitlab.Response, error) {
+		return client.MergeRequests.GetMergeRequestCommits(args.ProjectID.Value(), args.MergeRequestIID, &opts, gitlab.WithContext(ctx), p)
+	}
 
-		commits = append(commits, c...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opt.Page = resp.NextPage
+	commits, err := gitlab.ScanAndCollect(pager)
+	if err != nil {
+		return nil, fmt.Errorf("GetMergeRequestCommits(%q, %d): %w", args.ProjectID.Value(), args.MergeRequestIID, err)
 	}
 
 	return newToolResultJSON(commits)
@@ -473,29 +430,21 @@ func (m *MergeRequestsTools) listMergeRequestDiffs(ctx context.Context, client *
 
 // listAllMergeRequestDiffs fetches all diffs for a given merge request, handling pagination.
 func (m *MergeRequestsTools) listAllMergeRequestDiffs(ctx context.Context, client *gitlab.Client, projectID any, mrIID int64) ([]*gitlab.MergeRequestDiff, error) {
-	var allDiffs []*gitlab.MergeRequestDiff
-
 	opts := gitlab.ListMergeRequestDiffsOptions{
 		ListOptions: gitlab.ListOptions{PerPage: maxPerPage},
 		Unidiff:     new(true),
 	}
 
-	for {
-		diffs, resp, err := client.MergeRequests.ListMergeRequestDiffs(projectID, mrIID, &opts, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, fmt.Errorf("listing merge request diffs for MR IID %d (project %v): %w", mrIID, projectID, err)
-		}
-
-		allDiffs = append(allDiffs, diffs...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opts.Page = resp.NextPage
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.MergeRequestDiff, *gitlab.Response, error) {
+		return client.MergeRequests.ListMergeRequestDiffs(projectID, mrIID, &opts, gitlab.WithContext(ctx), p)
 	}
 
-	return allDiffs, nil
+	diffs, err := gitlab.ScanAndCollect(pager)
+	if err != nil {
+		return nil, fmt.Errorf("listing merge request diffs for MR IID %d (project %v): %w", mrIID, projectID, err)
+	}
+
+	return diffs, nil
 }
 
 type getMergeRequestParticipantsArgs struct {
@@ -593,29 +542,18 @@ func (m *MergeRequestsTools) GetIssuesClosedOnMerge() server.ServerTool {
 	}
 }
 
-func (m *MergeRequestsTools) getIssuesClosedOnMerge(ctx context.Context, client *gitlab.Client, args getIssuesClosedOnMergeArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var (
-		opt = gitlab.GetIssuesClosedOnMergeOptions{
-			ListOptions: gitlab.ListOptions{
-				PerPage: maxPerPage,
-			},
-		}
-		issues []*gitlab.Issue
-	)
+func (m *MergeRequestsTools) getIssuesClosedOnMerge(ctx context.Context, client *gitlab.Client, args getIssuesClosedOnMergeArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	opts := gitlab.GetIssuesClosedOnMergeOptions{
+		ListOptions: newListOptions(request),
+	}
 
-	for {
-		is, resp, err := client.MergeRequests.GetIssuesClosedOnMerge(args.ProjectID.Value(), args.MergeRequestIID, &opt, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, fmt.Errorf("GetIssuesClosedOnMerge(%q, %d): %w", args.ProjectID.Value(), args.MergeRequestIID, err)
-		}
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.Issue, *gitlab.Response, error) {
+		return client.MergeRequests.GetIssuesClosedOnMerge(args.ProjectID.Value(), args.MergeRequestIID, &opts, gitlab.WithContext(ctx), p)
+	}
 
-		issues = append(issues, is...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opt.Page = resp.NextPage
+	issues, err := gitlab.ScanAndCollect(pager)
+	if err != nil {
+		return nil, fmt.Errorf("GetIssuesClosedOnMerge(%q, %d): %w", args.ProjectID.Value(), args.MergeRequestIID, err)
 	}
 
 	return newToolResultJSON(issues)
@@ -762,29 +700,18 @@ func (m *MergeRequestsTools) ListDraftNotes() server.ServerTool {
 }
 
 // listDraftNotes returns all draft notes for the merge request.
-func (m *MergeRequestsTools) listDraftNotes(ctx context.Context, client *gitlab.Client, args listDraftNotesArgs, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	var (
-		opt = &gitlab.ListDraftNotesOptions{
-			ListOptions: gitlab.ListOptions{
-				PerPage: maxPerPage,
-			},
-		}
-		allNotes []*gitlab.DraftNote
-	)
+func (m *MergeRequestsTools) listDraftNotes(ctx context.Context, client *gitlab.Client, args listDraftNotesArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	opts := &gitlab.ListDraftNotesOptions{
+		ListOptions: newListOptions(request),
+	}
 
-	for {
-		notes, resp, err := client.DraftNotes.ListDraftNotes(args.ProjectID.Value(), args.MergeRequestIID, opt, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, fmt.Errorf("ListDraftNotes(%v, %d): %w", args.ProjectID.Value(), args.MergeRequestIID, err)
-		}
+	pager := func(p gitlab.PaginationOptionFunc) ([]*gitlab.DraftNote, *gitlab.Response, error) {
+		return client.DraftNotes.ListDraftNotes(args.ProjectID.Value(), args.MergeRequestIID, opts, gitlab.WithContext(ctx), p)
+	}
 
-		allNotes = append(allNotes, notes...)
-
-		if resp.NextPage == 0 {
-			break
-		}
-
-		opt.Page = resp.NextPage
+	allNotes, err := gitlab.ScanAndCollect(pager)
+	if err != nil {
+		return nil, fmt.Errorf("ListDraftNotes(%v, %d): %w", args.ProjectID.Value(), args.MergeRequestIID, err)
 	}
 
 	return newToolResultJSON(allNotes)
