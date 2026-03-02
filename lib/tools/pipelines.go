@@ -32,8 +32,8 @@ func (p *PipelinesTools) AddTo(srv ToolAdder) {
 
 type listProjectPipelinesArgs struct {
 	ProjectID mcpargs.ID `mcp_desc:"ID of the project either in owner/project format or the numeric project ID" mcp_required:"true"`
-	Status    string     `mcp_desc:"Filter pipelines by status: created, waiting_for_resource, preparing, pending, running, success, failed, canceled, skipped, manual, scheduled"`
-	Source    string     `mcp_desc:"Filter pipelines by source: push, web, trigger, schedule, api, external, pipeline, chat, webide, merge_request_event, external_pull_request_event, parent_pipeline, ondemand_dast_scan, ondemand_dast_validation"`
+	Status    string     `mcp_desc:"Filter pipelines by status" mcp_enum:"created,waiting_for_resource,preparing,pending,running,success,failed,canceled,skipped,manual,scheduled"`
+	Source    string     `mcp_desc:"Filter pipelines by source" mcp_enum:"push,web,trigger,schedule,api,external,pipeline,chat,webide,merge_request_event,external_pull_request_event,parent_pipeline,ondemand_dast_scan,ondemand_dast_validation"`
 	Ref       string     `mcp_desc:"Filter pipelines by git ref (branch or tag name)"`
 	SHA       string     `mcp_desc:"Filter pipelines by commit SHA"`
 	Username  string     `mcp_desc:"Filter pipelines by the username of the user who triggered them"`
