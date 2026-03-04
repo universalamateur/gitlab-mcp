@@ -9,8 +9,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/mcptest"
-	gitlab "gitlab.com/gitlab-org/api/client-go"
-	glabtest "gitlab.com/gitlab-org/api/client-go/testing"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
+	glabtest "gitlab.com/gitlab-org/api/client-go/v2/testing"
 
 	"gitlab.com/fforster/gitlab-mcp/lib/glctx"
 )
@@ -38,7 +38,7 @@ func TestGetWorkItem(t *testing.T) {
 							ID:        175125690,
 							IID:       123,
 							State:     "CLOSED",
-							Status:    "Complete",
+							Status:    new("Complete"),
 							Title:     "Validate the generated metrics",
 							CreatedAt: new(time.Date(2025, time.October, 13, 13, 19, 49, 0, time.UTC)), // "2025-10-13T13:19:49Z",
 						},
@@ -50,7 +50,7 @@ func TestGetWorkItem(t *testing.T) {
 				ID:        175125690,
 				IID:       123,
 				State:     "CLOSED",
-				Status:    "Complete",
+				Status:    new("Complete"),
 				Title:     "Validate the generated metrics",
 				CreatedAt: new(time.Date(2025, time.October, 13, 13, 19, 49, 0, time.UTC)), // "2025-10-13T13:19:49Z",
 			},

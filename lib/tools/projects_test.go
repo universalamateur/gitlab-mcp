@@ -12,8 +12,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/mcptest"
-	gitlab "gitlab.com/gitlab-org/api/client-go"
-	glabtest "gitlab.com/gitlab-org/api/client-go/testing"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
+	glabtest "gitlab.com/gitlab-org/api/client-go/v2/testing"
 
 	"gitlab.com/fforster/gitlab-mcp/lib/glctx"
 )

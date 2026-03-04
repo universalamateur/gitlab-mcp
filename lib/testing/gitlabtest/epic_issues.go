@@ -3,7 +3,7 @@ package gitlabtest
 import (
 	"fmt"
 
-	gitlab "gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 )
 
 // FakeEpicIssuesService is a partial implementation of the gitlab.EpicIssuesServiceInterface to be used in unit tests.

@@ -7,7 +7,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	gitlab "gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 
 	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
@@ -70,7 +70,7 @@ func (u *UsersTools) getUser(ctx context.Context, client *gitlab.Client, args ge
 
 	switch {
 	case args.UserID.Integer != 0:
-		user, _, err := client.Users.GetUser(args.UserID.Integer, gitlab.GetUsersOptions{}, gitlab.WithContext(ctx))
+		user, _, err := client.Users.GetUser(args.UserID.Integer, nil, gitlab.WithContext(ctx))
 		if err != nil {
 			return nil, fmt.Errorf("GetUser(%d): %w", args.UserID.Integer, err)
 		}

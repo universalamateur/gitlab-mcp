@@ -7,6 +7,7 @@ require (
 	github.com/mark3labs/mcp-go v0.44.1
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
+	gitlab.com/gitlab-org/api/client-go/v2 v2.2.1
 	golang.org/x/oauth2 v0.35.0
 )
 
@@ -30,5 +31,4 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
-	gitlab.com/gitlab-org/api/client-go v1.46.0
 )
