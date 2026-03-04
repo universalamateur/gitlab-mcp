@@ -7,7 +7,7 @@ import (
 	"context"
 	"errors"
 
-	gitlab "gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
 )
 
 // ErrNoClient is the error returned when no GitLab client is found in the context.
