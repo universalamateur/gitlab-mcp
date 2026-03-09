@@ -62,8 +62,8 @@ github.com/wk8/go-ordered-map/v2 v2.1.8/go.mod h1:5nJHM5DyteebpVlHnWMV0rPz6Zp7+x
 github.com/yosida95/uritemplate/v3 v3.0.2 h1:Ed3Oyj9yrmi9087+NczuL5BwkIc4wvTb5zIM+UJPGz4=
 github.com/yosida95/uritemplate/v3 v3.0.2/go.mod h1:ILOh0sOhIJR3+L/8afwt/kE++YT040gmv5BQTMR2HP4=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
-gitlab.com/gitlab-org/api/client-go/v2 v2.3.0 h1:cRwKHsX6nVJ4ZvO5/Jcm0PGxp+Vex5SggsgW4I3DP/M=
-gitlab.com/gitlab-org/api/client-go/v2 v2.3.0/go.mod h1:VgLJtaCDLsRwjgiwZLA4mDH31R44eRxp1vgUHuZnbvM=
+gitlab.com/gitlab-org/api/client-go/v2 v2.4.0 h1:nsmSWVRZ4c9Rq3lg0mBP4JJMXlJAj9NYfmK5ZHrCCuY=
+gitlab.com/gitlab-org/api/client-go/v2 v2.4.0/go.mod h1:VgLJtaCDLsRwjgiwZLA4mDH31R44eRxp1vgUHuZnbvM=
 go.uber.org/mock v0.6.0 h1:hyF9dfmbgIX5EfOdasqLsWD6xqpNZlXblLB/Dbnwv3Y=
 go.uber.org/mock v0.6.0/go.mod h1:KiVJ4BqZJaMj4svdfmHM0AUx4NJYO8ZNpPnZn1Z+BBU=
 go.yaml.in/yaml/v3 v3.0.4/go.mod h1:DhzuOOF2ATzADvBadXxruRBLzYTpT36CKvDb3+aBEFg=
