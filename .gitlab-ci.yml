@@ -22,8 +22,8 @@ include:
   # It includes standard checks, gitlab-scanners, validations and release processes
   # common to all projects using this template library.
   # see https://gitlab.com/gitlab-com/gl-infra/common-ci-tasks/-/blob/main/README.md#templatesstandardyml
-  - component: $CI_SERVER_FQDN/gitlab-com/gl-infra/common-ci-tasks/standard-build@v4.14
+  - component: $CI_SERVER_FQDN/gitlab-com/gl-infra/common-ci-tasks/standard-build@v4.16
 
   # Runs golang standard tests, including tests, goreleaser, golangci-lint and go-mod-tidy
   # see https://gitlab.com/gitlab-com/gl-infra/common-ci-tasks/-/blob/main/templates/golang.md
-  - component: $CI_SERVER_FQDN/gitlab-com/gl-infra/common-ci-tasks/golang-build@v4.14
+  - component: $CI_SERVER_FQDN/gitlab-com/gl-infra/common-ci-tasks/golang-build@v4.16
