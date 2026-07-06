@@ -7,7 +7,7 @@ require (
 	github.com/mark3labs/mcp-go v0.55.1
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
-	gitlab.com/gitlab-org/api/client-go/v2 v2.44.0
+	gitlab.com/gitlab-org/api/client-go/v2 v2.45.0
 	golang.org/x/oauth2 v0.36.0
 )
 
@@ -19,7 +19,7 @@ require (
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
 	github.com/spf13/cast v1.7.1 // indirect
 	go.uber.org/mock v0.6.0 // indirect
-	golang.org/x/text v0.37.0 // indirect
+	golang.org/x/text v0.38.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 )
 
