@@ -22,6 +22,7 @@ GitLab MCP implements the [Model Context Protocol](https://github.com/anthropics
 - Repository Files and Directories
 - Snippets
 - User information
+- Wiki Pages
 
 ## Installation
 
@@ -214,7 +215,9 @@ You can provide these environment variables in one of two ways:
 | `create_issue` | Creates a new GitLab issue |
 | `create_pipeline` | Create a new pipeline for a branch or tag, optionally with variables |
 | `create_snippet` | Create a new snippet |
+| `create_wiki_page` | Create a new wiki page |
 | `delete_snippet` | Delete a snippet |
+| `delete_wiki_page` | Delete a wiki page |
 | `discussion_add_note` | Adds a new note (i.e. a reply) to an existing discussion thread |
 | `discussion_delete_note` | Deletes a note from a discussion thread |
 | `discussion_list` | Lists all discussions for a GitLab resource |
@@ -225,6 +228,7 @@ You can provide these environment variables in one of two ways:
 | `download_job_log` | Download a log file for a specific job |
 | `edit_epic` | Updates an existing GitLab epic |
 | `edit_issue` | Updates an existing GitLab issue. You can modify the issue's title, description, and metadata, and close/reopen issues. |
+| `edit_wiki_page` | Edit an existing wiki page |
 | `get_epic_links` | GetEpicLinks gets all child epics of an epic |
 | `get_group` | Fetches information about a GitLab group |
 | `get_issues_closed_on_merge` | Get all the issues that would be closed by merging the provided merge request |
@@ -242,6 +246,7 @@ You can provide these environment variables in one of two ways:
 | `get_snippet` | Returns the metadata of a snippet, such as title and description. File content is not returned |
 | `get_user_status` | Get a user's status |
 | `get_user` | Get information about a specific user or the current user. In particular, this tool can be used to resolve a username to an ID. |
+| `get_wiki_page` | Get a wiki page, including its content |
 | `get_work_item` | Get a work item (e.g. epic, issue, task) |
 | `issue_time_tracking` | Updates time tracking information for an issue, such as the time estimate and spent time. |
 | `list_all_snippets` | List all snippets the user has access to |
@@ -266,6 +271,7 @@ You can provide these environment variables in one of two ways:
 | `list_user_merge_requests` | Get all merge requests authored by or assigned to a user for review |
 | `list_user_snippets` | List snippets owned by the current user |
 | `list_user_todos` | Get all todos for the current user, with optional filtering by state (pending, done) and a limit on the number returned (default 100). |
+| `list_wiki_pages` | List all wiki pages of a project |
 | `retry_job` | Retry a single job of a project |
 | `retry_pipeline` | Retry all failed jobs in a pipeline |
 | `set_user_status` | Set the current user's status |

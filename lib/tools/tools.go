@@ -50,6 +50,7 @@ func AddTo(srv ToolAdder) {
 	new(SnippetsTools).AddTo(srv)
 	new(TodosTools).AddTo(srv)
 	new(UsersTools).AddTo(srv)
+	new(WikisTools).AddTo(srv)
 	new(WorkItemsTools).AddTo(srv)
 }
 
