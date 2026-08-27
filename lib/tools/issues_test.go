@@ -71,18 +71,18 @@ func TestListIssues(t *testing.T) {
 						}
 
 						return []*gitlab.Issue{
-								{
-									ID:          12345,
-									IID:         123,
-									ProjectID:   54321,
-									Title:       "Test user issue 1",
-									Description: "Test description 1",
-									State:       "opened",
-								},
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-								NextPage: 0,
-							}, nil
+							{
+								ID:          12345,
+								IID:         123,
+								ProjectID:   54321,
+								Title:       "Test user issue 1",
+								Description: "Test description 1",
+								State:       "opened",
+							},
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: 0,
+						}, nil
 					})
 			},
 			want: []*gitlab.Issue{
@@ -113,15 +113,15 @@ func TestListIssues(t *testing.T) {
 						}
 
 						return []*gitlab.Issue{
-								{
-									ID:    2002,
-									IID:   202,
-									Title: "My issue",
-								},
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-								NextPage: 0,
-							}, nil
+							{
+								ID:    2002,
+								IID:   202,
+								Title: "My issue",
+							},
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: 0,
+						}, nil
 					})
 			},
 			want: []*gitlab.Issue{
@@ -149,15 +149,15 @@ func TestListIssues(t *testing.T) {
 						}
 
 						return []*gitlab.Issue{
-								{
-									ID:    2002,
-									IID:   202,
-									Title: "My issue",
-								},
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-								NextPage: 0,
-							}, nil
+							{
+								ID:    2002,
+								IID:   202,
+								Title: "My issue",
+							},
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: 0,
+						}, nil
 					})
 			},
 			want: []*gitlab.Issue{
@@ -191,15 +191,15 @@ func TestListIssues(t *testing.T) {
 						}
 
 						return []*gitlab.Issue{
-								{
-									ID:    2001,
-									IID:   201,
-									Title: "Other user's issue",
-								},
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-								NextPage: 0,
-							}, nil
+							{
+								ID:    2001,
+								IID:   201,
+								Title: "Other user's issue",
+							},
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: 0,
+						}, nil
 					})
 			},
 			want: []*gitlab.Issue{
@@ -261,15 +261,15 @@ func TestListIssues(t *testing.T) {
 						}
 
 						return []*gitlab.Issue{
-								{
-									ID:    2002,
-									IID:   202,
-									Title: "My issue",
-								},
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-								NextPage: 0,
-							}, nil
+							{
+								ID:    2002,
+								IID:   202,
+								Title: "My issue",
+							},
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: 0,
+						}, nil
 					})
 			},
 			want: []*gitlab.Issue{
@@ -355,16 +355,16 @@ func TestListIssues(t *testing.T) {
 						}
 
 						return []*gitlab.Issue{
-								{
-									ID:           3001,
-									IID:          301,
-									Title:        "Confidential issue",
-									Confidential: true,
-								},
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-								NextPage: 0,
-							}, nil
+							{
+								ID:           3001,
+								IID:          301,
+								Title:        "Confidential issue",
+								Confidential: true,
+							},
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: 0,
+						}, nil
 					})
 			},
 			want: []*gitlab.Issue{
@@ -393,16 +393,16 @@ func TestListIssues(t *testing.T) {
 						}
 
 						return []*gitlab.Issue{
-								{
-									ID:    4001,
-									IID:   401,
-									Title: "Closed issue",
-									State: "closed",
-								},
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-								NextPage: 0,
-							}, nil
+							{
+								ID:    4001,
+								IID:   401,
+								Title: "Closed issue",
+								State: "closed",
+							},
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: 0,
+						}, nil
 					})
 			},
 			want: []*gitlab.Issue{
@@ -462,15 +462,15 @@ func TestListIssues(t *testing.T) {
 						}
 
 						return []*gitlab.Issue{
-								{
-									ID:    5001,
-									IID:   501,
-									Title: "High priority issue",
-								},
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-								NextPage: 0,
-							}, nil
+							{
+								ID:    5001,
+								IID:   501,
+								Title: "High priority issue",
+							},
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: 0,
+						}, nil
 					})
 			},
 			want: []*gitlab.Issue{
@@ -595,18 +595,18 @@ func TestListGroupIssues(t *testing.T) {
 						}
 
 						return []*gitlab.Issue{
-								{
-									ID:          12345,
-									IID:         123,
-									ProjectID:   54321,
-									Title:       "Test group issue 1",
-									Description: "Test description 1",
-									State:       "opened",
-								},
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-								NextPage: 0,
-							}, nil
+							{
+								ID:          12345,
+								IID:         123,
+								ProjectID:   54321,
+								Title:       "Test group issue 1",
+								Description: "Test description 1",
+								State:       "opened",
+							},
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: 0,
+						}, nil
 					})
 			},
 			want: []*gitlab.Issue{
@@ -700,16 +700,16 @@ func TestListGroupIssues(t *testing.T) {
 						}
 
 						return []*gitlab.Issue{
-								{
-									ID:           2001,
-									IID:          201,
-									Title:        "Confidential issue",
-									Confidential: true,
-								},
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-								NextPage: 0,
-							}, nil
+							{
+								ID:           2001,
+								IID:          201,
+								Title:        "Confidential issue",
+								Confidential: true,
+							},
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: 0,
+						}, nil
 					})
 			},
 			want: []*gitlab.Issue{
@@ -739,16 +739,16 @@ func TestListGroupIssues(t *testing.T) {
 						}
 
 						return []*gitlab.Issue{
-								{
-									ID:    3001,
-									IID:   301,
-									Title: "Closed issue",
-									State: "closed",
-								},
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-								NextPage: 0,
-							}, nil
+							{
+								ID:    3001,
+								IID:   301,
+								Title: "Closed issue",
+								State: "closed",
+							},
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: 0,
+						}, nil
 					})
 			},
 			want: []*gitlab.Issue{
@@ -791,10 +791,10 @@ func TestListGroupIssues(t *testing.T) {
 						}
 
 						return []*gitlab.Issue{
-								{ID: 4001, Title: "Filtered group issue"},
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-							}, nil
+							{ID: 4001, Title: "Filtered group issue"},
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+						}, nil
 					})
 			},
 			want: []*gitlab.Issue{
@@ -851,15 +851,15 @@ func TestListGroupIssues(t *testing.T) {
 						}
 
 						return []*gitlab.Issue{
-								{
-									ID:    5001,
-									IID:   501,
-									Title: "High priority issue",
-								},
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-								NextPage: 0,
-							}, nil
+							{
+								ID:    5001,
+								IID:   501,
+								Title: "High priority issue",
+							},
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: 0,
+						}, nil
 					})
 			},
 			want: []*gitlab.Issue{
@@ -964,18 +964,18 @@ func TestListProjectIssues(t *testing.T) {
 						}
 
 						return []*gitlab.Issue{
-								{
-									ID:          12345,
-									IID:         123,
-									ProjectID:   54321,
-									Title:       "Test project issue 1",
-									Description: "Test description 1",
-									State:       "opened",
-								},
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-								NextPage: 0,
-							}, nil
+							{
+								ID:          12345,
+								IID:         123,
+								ProjectID:   54321,
+								Title:       "Test project issue 1",
+								Description: "Test description 1",
+								State:       "opened",
+							},
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: 0,
+						}, nil
 					})
 			},
 			want: []*gitlab.Issue{
@@ -1069,16 +1069,16 @@ func TestListProjectIssues(t *testing.T) {
 						}
 
 						return []*gitlab.Issue{
-								{
-									ID:           2001,
-									IID:          201,
-									Title:        "Confidential issue",
-									Confidential: true,
-								},
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-								NextPage: 0,
-							}, nil
+							{
+								ID:           2001,
+								IID:          201,
+								Title:        "Confidential issue",
+								Confidential: true,
+							},
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: 0,
+						}, nil
 					})
 			},
 			want: []*gitlab.Issue{
@@ -1108,22 +1108,22 @@ func TestListProjectIssues(t *testing.T) {
 						}
 
 						return []*gitlab.Issue{
-								{
-									ID:    3001,
-									IID:   301,
-									Title: "Closed issue",
-									State: "closed",
-								},
-								{
-									ID:    3002,
-									IID:   302,
-									Title: "Open issue",
-									State: "opened",
-								},
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-								NextPage: 0,
-							}, nil
+							{
+								ID:    3001,
+								IID:   301,
+								Title: "Closed issue",
+								State: "closed",
+							},
+							{
+								ID:    3002,
+								IID:   302,
+								Title: "Open issue",
+								State: "opened",
+							},
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: 0,
+						}, nil
 					})
 			},
 			want: []*gitlab.Issue{
@@ -1181,10 +1181,10 @@ func TestListProjectIssues(t *testing.T) {
 						}
 
 						return []*gitlab.Issue{
-								{ID: 5001, Title: "Filtered project issue"},
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-							}, nil
+							{ID: 5001, Title: "Filtered project issue"},
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+						}, nil
 					})
 			},
 			want: []*gitlab.Issue{
@@ -1241,15 +1241,15 @@ func TestListProjectIssues(t *testing.T) {
 						}
 
 						return []*gitlab.Issue{
-								{
-									ID:    5001,
-									IID:   501,
-									Title: "High priority issue",
-								},
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-								NextPage: 0,
-							}, nil
+							{
+								ID:    5001,
+								IID:   501,
+								Title: "High priority issue",
+							},
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+							NextPage: 0,
+						}, nil
 					})
 			},
 			want: []*gitlab.Issue{
