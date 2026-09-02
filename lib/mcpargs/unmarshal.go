@@ -60,7 +60,7 @@ func Unmarshal(arguments map[string]any, v any) error { //nolint:cyclop,funlen,g
 			ptrToField := fieldValue.Addr()
 
 			// Check if the pointer implements Unmarshaler
-			if unmarshaler, ok := ptrToField.Interface().(Unmarshaler); ok {
+			if unmarshaler, ok := reflect.TypeAssert[Unmarshaler](ptrToField); ok {
 				err := unmarshaler.Unmarshal(value)
 				if err != nil {
 					errs = errors.Join(errs, fmt.Errorf("%w: failed to unmarshal field %q: %w", ErrUnmarshalArguments, field.Name, err))

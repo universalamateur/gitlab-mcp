@@ -110,7 +110,7 @@ func Marshal(v any) ([]mcp.ToolOption, error) { //nolint:cyclop,funlen,gocognit,
 			fieldValue = reflect.ValueOf(v).Field(i)
 		}
 
-		if typer, ok := fieldValue.Interface().(Marshaler); ok {
+		if typer, ok := reflect.TypeAssert[Marshaler](fieldValue); ok {
 			switch typer.Marshal() {
 			case TypeString:
 				toolOpts = append(toolOpts, mcp.WithString(optName, propOpts...))
