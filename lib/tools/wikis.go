@@ -91,7 +91,9 @@ func (w *WikisTools) listWikiPages(ctx context.Context, client *gitlab.Client, a
 		WithContent: &args.WithContent,
 	}
 
-	wikis, _, err := client.Wikis.ListWikis(args.ProjectID.Value(), opt, gitlab.WithContext(ctx))
+	wikis, err := gitlab.ScanAndCollect(func(p gitlab.PaginationOptionFunc) ([]*gitlab.Wiki, *gitlab.Response, error) {
+		return client.Wikis.ListWikis(args.ProjectID.Value(), opt, gitlab.WithContext(ctx), p)
+	})
 	if err != nil {
 		return nil, fmt.Errorf("ListWikis(%q): %w", args.ProjectID.Value(), err)
 	}
