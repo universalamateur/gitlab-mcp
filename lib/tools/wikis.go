@@ -55,21 +55,6 @@ func (w *WikisTools) AddTo(srv ToolAdder) {
 	)
 }
 
-func wikiFormatValue(format string) (gitlab.WikiFormatValue, error) {
-	switch format {
-	case wikiFormatMarkdown:
-		return gitlab.WikiFormatMarkdown, nil
-	case wikiFormatRDoc:
-		return gitlab.WikiFormatRDoc, nil
-	case wikiFormatASCIIDoc:
-		return gitlab.WikiFormatASCIIDoc, nil
-	case wikiFormatOrg:
-		return gitlab.WikiFormatOrg, nil
-	default:
-		return "", fmt.Errorf("%w: invalid wiki format: %q", ErrInvalidArgument, format)
-	}
-}
-
 type listWikiPagesArgs struct {
 	ProjectID   mcpargs.ID `mcp_desc:"The project to list wiki pages from, using either owner/project format or numeric project ID" mcp_required:"true"`
 	WithContent bool       `mcp_desc:"Include the content of each wiki page in the results. Default is false (metadata only)."`
@@ -168,7 +153,7 @@ func (w *WikisTools) createWikiPage(ctx context.Context, client *gitlab.Client, 
 			return nil, err
 		}
 
-		opt.Format = &format
+		opt.Format = format
 	}
 
 	wiki, _, err := client.Wikis.CreateWikiPage(args.ProjectID.Value(), opt, gitlab.WithContext(ctx))
@@ -216,7 +201,7 @@ func (w *WikisTools) editWikiPage(ctx context.Context, client *gitlab.Client, ar
 			return nil, err
 		}
 
-		opt.Format = &format
+		opt.Format = format
 	}
 
 	if opt.Title == nil && opt.Content == nil && opt.Format == nil {
@@ -255,4 +240,20 @@ func (w *WikisTools) deleteWikiPage(ctx context.Context, client *gitlab.Client, 
 	}
 
 	return mcp.NewToolResultText("success"), nil
+}
+
+var wikiFormats = map[string]*gitlab.WikiFormatValue{
+	string(gitlab.WikiFormatMarkdown): new(gitlab.WikiFormatMarkdown),
+	string(gitlab.WikiFormatRDoc):     new(gitlab.WikiFormatRDoc),
+	string(gitlab.WikiFormatASCIIDoc): new(gitlab.WikiFormatASCIIDoc),
+	string(gitlab.WikiFormatOrg):      new(gitlab.WikiFormatOrg),
+}
+
+func wikiFormatValue(s string) (*gitlab.WikiFormatValue, error) {
+	f, ok := wikiFormats[s]
+	if !ok {
+		return nil, fmt.Errorf("%w: invalid wiki format: %q", ErrInvalidArgument, s)
+	}
+
+	return f, nil
 }
