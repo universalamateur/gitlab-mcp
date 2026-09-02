@@ -11,13 +11,6 @@ import (
 	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
 
-const (
-	wikiFormatMarkdown = "markdown"
-	wikiFormatRDoc     = "rdoc"
-	wikiFormatASCIIDoc = "asciidoc"
-	wikiFormatOrg      = "org"
-)
-
 // WikisServiceInterface defines the interface for wiki-related GitLab operations.
 // It provides methods for listing, retrieving, creating, updating, and deleting wiki pages.
 type WikisServiceInterface interface {
