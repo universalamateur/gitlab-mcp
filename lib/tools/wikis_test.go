@@ -108,19 +108,19 @@ func TestListWikiPages(t *testing.T) {
 						}
 
 						return []*gitlab.Wiki{
-								{
-									Slug:   "home",
-									Title:  "Home",
-									Format: gitlab.WikiFormatMarkdown,
-								},
-								{
-									Slug:   "Setup-Dokploy-Host",
-									Title:  "Setup Dokploy Host",
-									Format: gitlab.WikiFormatMarkdown,
-								},
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-							}, nil
+							{
+								Slug:   "home",
+								Title:  "Home",
+								Format: gitlab.WikiFormatMarkdown,
+							},
+							{
+								Slug:   "Setup-Dokploy-Host",
+								Title:  "Setup Dokploy Host",
+								Format: gitlab.WikiFormatMarkdown,
+							},
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+						}, nil
 					})
 			},
 			want: []*gitlab.Wiki{
@@ -155,16 +155,16 @@ func TestListWikiPages(t *testing.T) {
 						}
 
 						return []*gitlab.Wiki{
-								{
-									Slug:     "home",
-									Title:    "Home",
-									Content:  "# Home\n\nWelcome!",
-									Encoding: "UTF-8",
-									Format:   gitlab.WikiFormatMarkdown,
-								},
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-							}, nil
+							{
+								Slug:     "home",
+								Title:    "Home",
+								Content:  "# Home\n\nWelcome!",
+								Encoding: "UTF-8",
+								Format:   gitlab.WikiFormatMarkdown,
+							},
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+						}, nil
 					})
 			},
 			want: []*gitlab.Wiki{
@@ -284,14 +284,14 @@ func TestGetWikiPage(t *testing.T) {
 						}
 
 						return &gitlab.Wiki{
-								Slug:     "Setup-Dokploy-Host",
-								Title:    "Setup Dokploy Host",
-								Content:  "# Setup\n\nSteps.",
-								Encoding: "UTF-8",
-								Format:   gitlab.WikiFormatMarkdown,
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-							}, nil
+							Slug:     "Setup-Dokploy-Host",
+							Title:    "Setup Dokploy Host",
+							Content:  "# Setup\n\nSteps.",
+							Encoding: "UTF-8",
+							Format:   gitlab.WikiFormatMarkdown,
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+						}, nil
 					})
 			},
 			want: &gitlab.Wiki{
@@ -324,13 +324,13 @@ func TestGetWikiPage(t *testing.T) {
 						}
 
 						return &gitlab.Wiki{
-								Slug:    "group/subgroup-page",
-								Title:   "Subgroup page",
-								Content: "<h1>Subgroup page</h1>",
-								Format:  gitlab.WikiFormatMarkdown,
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-							}, nil
+							Slug:    "group/subgroup-page",
+							Title:   "Subgroup page",
+							Content: "<h1>Subgroup page</h1>",
+							Format:  gitlab.WikiFormatMarkdown,
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+						}, nil
 					})
 			},
 			want: &gitlab.Wiki{
@@ -448,13 +448,13 @@ func TestCreateWikiPage(t *testing.T) {
 						}
 
 						return &gitlab.Wiki{
-								Slug:    "Onboarding-guide",
-								Title:   "Onboarding guide",
-								Content: "# Onboarding guide\n\nWelcome aboard.",
-								Format:  gitlab.WikiFormatMarkdown,
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusCreated},
-							}, nil
+							Slug:    "Onboarding-guide",
+							Title:   "Onboarding guide",
+							Content: "# Onboarding guide\n\nWelcome aboard.",
+							Format:  gitlab.WikiFormatMarkdown,
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusCreated},
+						}, nil
 					})
 			},
 			want: &gitlab.Wiki{
@@ -487,13 +487,13 @@ func TestCreateWikiPage(t *testing.T) {
 						}
 
 						return &gitlab.Wiki{
-								Slug:    "Runbook",
-								Title:   "Runbook",
-								Content: "= Runbook",
-								Format:  gitlab.WikiFormatASCIIDoc,
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusCreated},
-							}, nil
+							Slug:    "Runbook",
+							Title:   "Runbook",
+							Content: "= Runbook",
+							Format:  gitlab.WikiFormatASCIIDoc,
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusCreated},
+						}, nil
 					})
 			},
 			want: &gitlab.Wiki{
@@ -615,12 +615,12 @@ func TestEditWikiPage(t *testing.T) {
 						}
 
 						return &gitlab.Wiki{
-								Slug:   "Onboarding",
-								Title:  "Onboarding",
-								Format: gitlab.WikiFormatMarkdown,
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-							}, nil
+							Slug:   "Onboarding",
+							Title:  "Onboarding",
+							Format: gitlab.WikiFormatMarkdown,
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+						}, nil
 					})
 			},
 			want: &gitlab.Wiki{
@@ -649,13 +649,13 @@ func TestEditWikiPage(t *testing.T) {
 						}
 
 						return &gitlab.Wiki{
-								Slug:    "home",
-								Title:   "Home",
-								Content: "# Home\n\nUpdated.",
-								Format:  gitlab.WikiFormatMarkdown,
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-							}, nil
+							Slug:    "home",
+							Title:   "Home",
+							Content: "# Home\n\nUpdated.",
+							Format:  gitlab.WikiFormatMarkdown,
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+						}, nil
 					})
 			},
 			want: &gitlab.Wiki{
@@ -685,12 +685,12 @@ func TestEditWikiPage(t *testing.T) {
 						}
 
 						return &gitlab.Wiki{
-								Slug:   "home",
-								Title:  "Home",
-								Format: gitlab.WikiFormatOrg,
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-							}, nil
+							Slug:   "home",
+							Title:  "Home",
+							Format: gitlab.WikiFormatOrg,
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+						}, nil
 					})
 			},
 			want: &gitlab.Wiki{
@@ -723,13 +723,13 @@ func TestEditWikiPage(t *testing.T) {
 						}
 
 						return &gitlab.Wiki{
-								Slug:    "Start-here",
-								Title:   "Start here",
-								Content: "Start here.",
-								Format:  gitlab.WikiFormatRDoc,
-							}, &gitlab.Response{
-								Response: &http.Response{StatusCode: http.StatusOK},
-							}, nil
+							Slug:    "Start-here",
+							Title:   "Start here",
+							Content: "Start here.",
+							Format:  gitlab.WikiFormatRDoc,
+						}, &gitlab.Response{
+							Response: &http.Response{StatusCode: http.StatusOK},
+						}, nil
 					})
 			},
 			want: &gitlab.Wiki{
