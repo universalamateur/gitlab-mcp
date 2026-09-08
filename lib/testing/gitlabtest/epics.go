@@ -3,7 +3,7 @@ package gitlabtest
 import (
 	"fmt"
 
-	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v3"
 )
 
 // FakeEpicsService is a partial implementation of the gitlab.EpicsServiceInterface to be used in unit tests.

@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/spf13/pflag"
-	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v3"
 	"golang.org/x/oauth2"
 
 	"gitlab.com/fforster/gitlab-mcp/lib/auth"

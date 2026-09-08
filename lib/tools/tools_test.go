@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
-	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v3"
 )
 
 // pageFromRequestOptions extracts the requested page from a list of request options.
