@@ -9,8 +9,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/mcptest"
-	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
-	glabtest "gitlab.com/gitlab-org/api/client-go/v2/testing"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v3"
+	glabtest "gitlab.com/gitlab-org/api/client-go/v3/testing"
 
 	"gitlab.com/fforster/gitlab-mcp/lib/glctx"
 )
@@ -84,15 +84,15 @@ func TestGetUser(t *testing.T) {
 						}
 
 						return []*gitlab.User{
-							{
-								ID:       3,
-								Username: "search_user",
-								Name:     "Search User",
-								Email:    "search@example.com",
-							},
-						}, &gitlab.Response{
-							Response: &http.Response{StatusCode: http.StatusOK},
-						}, nil
+								{
+									ID:       3,
+									Username: "search_user",
+									Name:     "Search User",
+									Email:    "search@example.com",
+								},
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+							}, nil
 					})
 			},
 			want: &gitlab.User{
@@ -116,15 +116,15 @@ func TestGetUser(t *testing.T) {
 						}
 
 						return []*gitlab.User{
-							{
-								ID:       4,
-								Username: "prefixed_user",
-								Name:     "Prefixed User",
-								Email:    "prefixed@example.com",
-							},
-						}, &gitlab.Response{
-							Response: &http.Response{StatusCode: http.StatusOK},
-						}, nil
+								{
+									ID:       4,
+									Username: "prefixed_user",
+									Name:     "Prefixed User",
+									Email:    "prefixed@example.com",
+								},
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+							}, nil
 					})
 			},
 			want: &gitlab.User{
@@ -428,13 +428,13 @@ func TestSetUserStatus(t *testing.T) {
 						}
 
 						return &gitlab.UserStatus{
-							Emoji:        "coffee",
-							Message:      "Taking a break",
-							MessageHTML:  "Taking a break",
-							Availability: "busy",
-						}, &gitlab.Response{
-							Response: &http.Response{StatusCode: http.StatusOK},
-						}, nil
+								Emoji:        "coffee",
+								Message:      "Taking a break",
+								MessageHTML:  "Taking a break",
+								Availability: "busy",
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+							}, nil
 					})
 			},
 			want: &gitlab.UserStatus{
@@ -466,13 +466,13 @@ func TestSetUserStatus(t *testing.T) {
 						}
 
 						return &gitlab.UserStatus{
-							Emoji:        "speech_balloon", // Default emoji
-							Message:      "Working remotely",
-							MessageHTML:  "Working remotely",
-							Availability: "not_set", // Default availability
-						}, &gitlab.Response{
-							Response: &http.Response{StatusCode: http.StatusOK},
-						}, nil
+								Emoji:        "speech_balloon", // Default emoji
+								Message:      "Working remotely",
+								MessageHTML:  "Working remotely",
+								Availability: "not_set", // Default availability
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+							}, nil
 					})
 			},
 			want: &gitlab.UserStatus{
@@ -504,13 +504,13 @@ func TestSetUserStatus(t *testing.T) {
 						}
 
 						return &gitlab.UserStatus{
-							Emoji:        "",
-							Message:      "",
-							MessageHTML:  "",
-							Availability: "busy",
-						}, &gitlab.Response{
-							Response: &http.Response{StatusCode: http.StatusOK},
-						}, nil
+								Emoji:        "",
+								Message:      "",
+								MessageHTML:  "",
+								Availability: "busy",
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+							}, nil
 					})
 			},
 			want: &gitlab.UserStatus{
@@ -545,13 +545,13 @@ func TestSetUserStatus(t *testing.T) {
 						}
 
 						return &gitlab.UserStatus{
-							Emoji:        "",
-							Message:      "",
-							MessageHTML:  "",
-							Availability: "not_set",
-						}, &gitlab.Response{
-							Response: &http.Response{StatusCode: http.StatusOK},
-						}, nil
+								Emoji:        "",
+								Message:      "",
+								MessageHTML:  "",
+								Availability: "not_set",
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+							}, nil
 					})
 			},
 			want: &gitlab.UserStatus{

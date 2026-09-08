@@ -9,8 +9,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/mcptest"
-	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
-	glabtest "gitlab.com/gitlab-org/api/client-go/v2/testing"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v3"
+	glabtest "gitlab.com/gitlab-org/api/client-go/v3/testing"
 
 	"gitlab.com/fforster/gitlab-mcp/lib/glctx"
 )
@@ -219,15 +219,15 @@ func TestGetMergeRequest(t *testing.T) {
 						}
 
 						return []*gitlab.MergeRequestDiff{
-							{
-								OldPath: "file1.go",
-								NewPath: "file1.go",
-								Diff:    "@@ -1,3 +1,3 @@\n Line 1\n-Line 2\n+Updated Line 2\n",
-							},
-						}, &gitlab.Response{
-							Response: &http.Response{StatusCode: http.StatusOK},
-							NextPage: 2,
-						}, nil
+								{
+									OldPath: "file1.go",
+									NewPath: "file1.go",
+									Diff:    "@@ -1,3 +1,3 @@\n Line 1\n-Line 2\n+Updated Line 2\n",
+								},
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+								NextPage: 2,
+							}, nil
 					})
 
 				// Second page of diffs
@@ -239,15 +239,15 @@ func TestGetMergeRequest(t *testing.T) {
 						}
 
 						return []*gitlab.MergeRequestDiff{
-							{
-								OldPath: "file2.go",
-								NewPath: "file2.go",
-								Diff:    "@@ -10,5 +10,6 @@\n func Example() {\n+    // Add comment\n     fmt.Println(\"test\")\n }\n",
-							},
-						}, &gitlab.Response{
-							Response: &http.Response{StatusCode: http.StatusOK},
-							NextPage: 0, // No more pages
-						}, nil
+								{
+									OldPath: "file2.go",
+									NewPath: "file2.go",
+									Diff:    "@@ -10,5 +10,6 @@\n func Example() {\n+    // Add comment\n     fmt.Println(\"test\")\n }\n",
+								},
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+								NextPage: 0, // No more pages
+							}, nil
 					}).
 					After(firstPage.Call)
 			},
@@ -948,15 +948,15 @@ func TestListDraftNotes(t *testing.T) {
 						}
 
 						return []*gitlab.DraftNote{
-							{
-								ID:       1,
-								AuthorID: 100,
-								Note:     "First page draft note",
-							},
-						}, &gitlab.Response{
-							Response: &http.Response{StatusCode: http.StatusOK},
-							NextPage: 2,
-						}, nil
+								{
+									ID:       1,
+									AuthorID: 100,
+									Note:     "First page draft note",
+								},
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+								NextPage: 2,
+							}, nil
 					})
 
 				// Second page
@@ -968,15 +968,15 @@ func TestListDraftNotes(t *testing.T) {
 						}
 
 						return []*gitlab.DraftNote{
-							{
-								ID:       2,
-								AuthorID: 101,
-								Note:     "Second page draft note",
-							},
-						}, &gitlab.Response{
-							Response: &http.Response{StatusCode: http.StatusOK},
-							NextPage: 0, // No more pages
-						}, nil
+								{
+									ID:       2,
+									AuthorID: 101,
+									Note:     "Second page draft note",
+								},
+							}, &gitlab.Response{
+								Response: &http.Response{StatusCode: http.StatusOK},
+								NextPage: 0, // No more pages
+							}, nil
 					}).
 					After(firstPage.Call)
 			},

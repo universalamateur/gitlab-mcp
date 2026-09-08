@@ -18,7 +18,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v3"
 
 	"gitlab.com/fforster/gitlab-mcp/lib/glctx"
 	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"

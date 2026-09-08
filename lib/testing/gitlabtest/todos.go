@@ -1,7 +1,7 @@
 package gitlabtest
 
 import (
-	gitlab "gitlab.com/gitlab-org/api/client-go/v2"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v3"
 )
 
 // FakeTodosService is a partial implementation of the gitlab.TodosServiceInterface for unit tests.
