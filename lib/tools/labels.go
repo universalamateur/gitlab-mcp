@@ -62,25 +62,11 @@ func (l *LabelsTools) listProjectLabels(ctx context.Context, client *gitlab.Clie
 		args.Limit = defaultLabelsLimit
 	}
 
-	var labels []*gitlab.Label
-
-	for {
-		page, resp, err := client.Labels.ListLabels(args.ProjectID.Value(), opt, gitlab.WithContext(ctx))
-		if err != nil {
-			return nil, fmt.Errorf("ListLabels(%q): %w", args.ProjectID.Value(), err)
-		}
-
-		labels = append(labels, page...)
-
-		if resp.NextPage == 0 || len(labels) >= args.Limit {
-			break
-		}
-
-		opt.Page = resp.NextPage
-	}
-
-	if len(labels) > args.Limit {
-		labels = labels[:args.Limit]
+	labels, err := gitlab.ScanAndCollectN(func(p gitlab.PaginationOptionFunc) ([]*gitlab.Label, *gitlab.Response, error) {
+		return client.Labels.ListLabels(args.ProjectID.Value(), opt, gitlab.WithContext(ctx), p)
+	}, args.Limit)
+	if err != nil {
+		return nil, fmt.Errorf("ListLabels(%q): %w", args.ProjectID.Value(), err)
 	}
 
 	return newToolResultJSON(labels)
