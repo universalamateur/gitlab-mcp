@@ -43,7 +43,7 @@ func TestCreateCommit(t *testing.T) {
 							CommitMessage: new("Add new file"),
 							Actions: []*gitlab.CommitActionOptions{
 								{
-									Action:   gitlab.Ptr(gitlab.FileCreate),
+									Action:   new(gitlab.FileCreate),
 									FilePath: new("new-file.txt"),
 									Content:  new("Hello, World!"),
 								},
@@ -81,7 +81,7 @@ func TestCreateCommit(t *testing.T) {
 							CommitMessage: new("Update existing file"),
 							Actions: []*gitlab.CommitActionOptions{
 								{
-									Action:   gitlab.Ptr(gitlab.FileUpdate),
+									Action:   new(gitlab.FileUpdate),
 									FilePath: new("existing-file.txt"),
 									Content:  new("Updated content"),
 								},
@@ -118,7 +118,7 @@ func TestCreateCommit(t *testing.T) {
 							CommitMessage: new("Remove old file"),
 							Actions: []*gitlab.CommitActionOptions{
 								{
-									Action:   gitlab.Ptr(gitlab.FileDelete),
+									Action:   new(gitlab.FileDelete),
 									FilePath: new("old-file.txt"),
 								},
 							},
@@ -156,7 +156,7 @@ func TestCreateCommit(t *testing.T) {
 							CommitMessage: new("Move and update file"),
 							Actions: []*gitlab.CommitActionOptions{
 								{
-									Action:       gitlab.Ptr(gitlab.FileMove),
+									Action:       new(gitlab.FileMove),
 									FilePath:     new("new/location/file.txt"),
 									PreviousPath: new("old/location/file.txt"),
 									Content:      new("Updated content in new location"),
@@ -195,7 +195,7 @@ func TestCreateCommit(t *testing.T) {
 							CommitMessage: new("Move file to new location"),
 							Actions: []*gitlab.CommitActionOptions{
 								{
-									Action:       gitlab.Ptr(gitlab.FileMove),
+									Action:       new(gitlab.FileMove),
 									FilePath:     new("docs/README.md"),
 									PreviousPath: new("README.md"),
 								},
@@ -235,7 +235,7 @@ func TestCreateCommit(t *testing.T) {
 							CommitMessage: new("Add new file from main"),
 							Actions: []*gitlab.CommitActionOptions{
 								{
-									Action:   gitlab.Ptr(gitlab.FileCreate),
+									Action:   new(gitlab.FileCreate),
 									FilePath: new("new-file.txt"),
 									Content:  new("Hello from main!"),
 								},

@@ -71,7 +71,7 @@ func TestListProjects(t *testing.T) {
 						wantOpts := defaultOpts
 						wantOpts.Search = new("search_term")
 						wantOpts.Owned = new(true)
-						wantOpts.MinAccessLevel = gitlab.Ptr(gitlab.GuestPermissions)
+						wantOpts.MinAccessLevel = new(gitlab.GuestPermissions)
 						wantOpts.Membership = new(true)
 						wantOpts.ListOptions.OrderBy = "id"
 						wantOpts.ListOptions.Sort = sortOrderDescending
@@ -322,7 +322,7 @@ func TestListGroupProjects(t *testing.T) {
 						wantOpts := defaultOpts
 						wantOpts.Search = new("search_term")
 						wantOpts.Owned = new(true)
-						wantOpts.MinAccessLevel = gitlab.Ptr(gitlab.GuestPermissions)
+						wantOpts.MinAccessLevel = new(gitlab.GuestPermissions)
 						wantOpts.ListOptions.OrderBy = "id"
 						wantOpts.ListOptions.Sort = sortOrderDescending
 
