@@ -104,12 +104,12 @@ var todoStates = map[string]*string{
 
 // todoActions is a map of all possible todo actions.
 var todoActions = map[string]*gitlab.TodoAction{
-	string(gitlab.TodoAssigned):          gitlab.Ptr(gitlab.TodoAssigned),
-	string(gitlab.TodoMentioned):         gitlab.Ptr(gitlab.TodoMentioned),
-	string(gitlab.TodoBuildFailed):       gitlab.Ptr(gitlab.TodoBuildFailed),
-	string(gitlab.TodoMarked):            gitlab.Ptr(gitlab.TodoMarked),
-	string(gitlab.TodoApprovalRequired):  gitlab.Ptr(gitlab.TodoApprovalRequired),
-	string(gitlab.TodoDirectlyAddressed): gitlab.Ptr(gitlab.TodoDirectlyAddressed),
+	string(gitlab.TodoAssigned):          new(gitlab.TodoAssigned),
+	string(gitlab.TodoMentioned):         new(gitlab.TodoMentioned),
+	string(gitlab.TodoBuildFailed):       new(gitlab.TodoBuildFailed),
+	string(gitlab.TodoMarked):            new(gitlab.TodoMarked),
+	string(gitlab.TodoApprovalRequired):  new(gitlab.TodoApprovalRequired),
+	string(gitlab.TodoDirectlyAddressed): new(gitlab.TodoDirectlyAddressed),
 }
 
 type completeTodoItemArgs struct {

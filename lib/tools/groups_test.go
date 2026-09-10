@@ -148,7 +148,7 @@ func TestListSubgroups(t *testing.T) {
 						wantOpts := defaultOpts
 						wantOpts.Search = new("search_term")
 						wantOpts.Owned = new(true)
-						wantOpts.MinAccessLevel = gitlab.Ptr(gitlab.GuestPermissions)
+						wantOpts.MinAccessLevel = new(gitlab.GuestPermissions)
 						wantOpts.ListOptions.OrderBy = "id"
 						wantOpts.ListOptions.Sort = sortOrderDescending
 
