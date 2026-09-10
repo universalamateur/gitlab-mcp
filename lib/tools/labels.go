@@ -6,7 +6,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	gitlab "gitlab.com/gitlab-org/api/client-go"
+	gitlab "gitlab.com/gitlab-org/api/client-go/v3"
 
 	"gitlab.com/fforster/gitlab-mcp/lib/mcpargs"
 )
@@ -55,7 +55,7 @@ func (l *LabelsTools) listProjectLabels(ctx context.Context, client *gitlab.Clie
 	}
 
 	if args.Search != "" {
-		opt.Search = gitlab.Ptr(args.Search)
+		opt.Search = new(args.Search)
 	}
 
 	if args.Limit <= 0 {
@@ -110,16 +110,16 @@ func (l *LabelsTools) CreateProjectLabel() server.ServerTool {
 
 func (l *LabelsTools) createProjectLabel(ctx context.Context, client *gitlab.Client, args createProjectLabelArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	opt := &gitlab.CreateLabelOptions{
-		Name:  gitlab.Ptr(args.Name),
-		Color: gitlab.Ptr(args.Color),
+		Name:  new(args.Name),
+		Color: new(args.Color),
 	}
 
 	if args.Description != "" {
-		opt.Description = gitlab.Ptr(args.Description)
+		opt.Description = new(args.Description)
 	}
 
 	if _, ok := request.GetArguments()["priority"]; ok {
-		opt.Priority = gitlab.Ptr(args.Priority)
+		opt.Priority = gitlab.NewNullableWithValue(args.Priority)
 	}
 
 	label, _, err := client.Labels.CreateLabel(args.ProjectID.Value(), opt, gitlab.WithContext(ctx))
@@ -157,19 +157,19 @@ func (l *LabelsTools) updateProjectLabel(ctx context.Context, client *gitlab.Cli
 	opt := &gitlab.UpdateLabelOptions{}
 
 	if args.NewName != "" {
-		opt.NewName = gitlab.Ptr(args.NewName)
+		opt.NewName = new(args.NewName)
 	}
 
 	if args.Color != "" {
-		opt.Color = gitlab.Ptr(args.Color)
+		opt.Color = new(args.Color)
 	}
 
 	if args.Description != "" {
-		opt.Description = gitlab.Ptr(args.Description)
+		opt.Description = new(args.Description)
 	}
 
 	if _, ok := request.GetArguments()["priority"]; ok {
-		opt.Priority = gitlab.Ptr(args.Priority)
+		opt.Priority = gitlab.NewNullableWithValue(args.Priority)
 	}
 
 	label, _, err := client.Labels.UpdateLabel(args.ProjectID.Value(), args.Name, opt, gitlab.WithContext(ctx))
@@ -233,7 +233,7 @@ func (l *LabelsTools) listGroupLabels(ctx context.Context, client *gitlab.Client
 	}
 
 	if args.Search != "" {
-		opt.Search = gitlab.Ptr(args.Search)
+		opt.Search = new(args.Search)
 	}
 
 	if args.Limit <= 0 {
@@ -288,16 +288,16 @@ func (l *LabelsTools) CreateGroupLabel() server.ServerTool {
 
 func (l *LabelsTools) createGroupLabel(ctx context.Context, client *gitlab.Client, args createGroupLabelArgs, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	opt := &gitlab.CreateGroupLabelOptions{
-		Name:  gitlab.Ptr(args.Name),
-		Color: gitlab.Ptr(args.Color),
+		Name:  new(args.Name),
+		Color: new(args.Color),
 	}
 
 	if args.Description != "" {
-		opt.Description = gitlab.Ptr(args.Description)
+		opt.Description = new(args.Description)
 	}
 
 	if _, ok := request.GetArguments()["priority"]; ok {
-		opt.Priority = gitlab.Ptr(args.Priority)
+		opt.Priority = gitlab.NewNullableWithValue(args.Priority)
 	}
 
 	label, _, err := client.GroupLabels.CreateGroupLabel(args.GroupID.Value(), opt, gitlab.WithContext(ctx))
@@ -335,19 +335,19 @@ func (l *LabelsTools) updateGroupLabel(ctx context.Context, client *gitlab.Clien
 	opt := &gitlab.UpdateGroupLabelOptions{}
 
 	if args.NewName != "" {
-		opt.NewName = gitlab.Ptr(args.NewName)
+		opt.NewName = new(args.NewName)
 	}
 
 	if args.Color != "" {
-		opt.Color = gitlab.Ptr(args.Color)
+		opt.Color = new(args.Color)
 	}
 
 	if args.Description != "" {
-		opt.Description = gitlab.Ptr(args.Description)
+		opt.Description = new(args.Description)
 	}
 
 	if _, ok := request.GetArguments()["priority"]; ok {
-		opt.Priority = gitlab.Ptr(args.Priority)
+		opt.Priority = gitlab.NewNullableWithValue(args.Priority)
 	}
 
 	label, _, err := client.GroupLabels.UpdateGroupLabel(args.GroupID.Value(), args.Name, opt, gitlab.WithContext(ctx))
