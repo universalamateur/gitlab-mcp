@@ -1,5 +1,9 @@
 # GitLab MCP
 
+![Project logo](./logo.png)
+
+[Lead repository on GitLab](https://gitlab.com/universalamateur1/gitlab-mcp)
+
 A Model Context Protocol (MCP) server for GitLab, enabling Claude to interact directly with your GitLab instance.
 
 > [!warning]
